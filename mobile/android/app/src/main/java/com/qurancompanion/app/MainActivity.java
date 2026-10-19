@@ -46,6 +46,7 @@ public final class MainActivity extends Activity {
     private ScrollView scroll;
     private EditText input;
     private TextView status;
+    private TextView headerStatus;
     private Spinner languageSpinner;
     private SpeechRecognizer recognizer;
     private TextToSpeech tts;
