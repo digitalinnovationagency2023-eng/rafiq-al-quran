@@ -1,0 +1,27 @@
+{
+  "name": "@quran-app/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API for the Quran-only conversational app: retrieval, citations, feedback, donations, admin.",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "import:quran": "node scripts/importQuran.js",
+    "validate:dataset": "node scripts/validateDataset.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0"
+  }
+}

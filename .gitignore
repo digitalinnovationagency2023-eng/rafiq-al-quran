@@ -1,0 +1,24 @@
+node_modules/
+dist/
+*.log
+.env
+.env.*
+!.env.example
+
+# Imported dataset and its raw downloads are reproducible, not source
+server/data/
+mobile/android/app/src/main/assets/*.tsv
+mobile/android/build/
+mobile/android/app/build/
+web/dist/
+
+# Local databases and OS noise
+*.db
+*.db-wal
+*.db-shm
+.DS_Store
+Thumbs.db
+
+# Signing material must never be committed
+*.keystore
+*.jks

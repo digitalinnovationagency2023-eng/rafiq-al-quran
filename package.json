@@ -1,0 +1,26 @@
+{
+  "name": "quran-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Quran-only conversational application. Free core experience, verified sources, retrieval-first answers.",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "import:quran": "npm run import:quran -w server",
+    "validate:dataset": "npm run validate:dataset -w server",
+    "dev": "npm run dev -w server & npm run dev -w web",
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "start": "npm run start -w server",
+    "test": "npm run test -w server && npm run test -w web",
+    "test:server": "npm run test -w server",
+    "test:web": "npm run test -w web"
+  }
+}
