@@ -53,7 +53,7 @@ for (const asset of ["assets/quran.tsv", "assets/translations.tsv", "assets/chap
 }
 
 const appLabel = /application-label:'([^']+)'/.exec(badgingText);
-check("app label is Quran Companion", Boolean(appLabel && appLabel[1] === "Quran AI"), appLabel ? appLabel[1] : "missing");
+check("app label is Quran Companion", Boolean(appLabel && appLabel[1] === "Noor Al-Quran"), appLabel ? appLabel[1] : "missing");
 
 const sizeMb = (fs.statSync(apk).size / (1024 * 1024)).toFixed(2);
 console.log(`\nAPK: ${apk}`);
