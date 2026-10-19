@@ -98,6 +98,7 @@ public final class PagesActivity extends Activity {
                 + "• It does not present a translation as the Arabic text, or imitated speech as Quranic recitation.");
         section(parent, "Limitations",
                 "Retrieval is keyword and concept based over the bundled dataset. It may misunderstand a question, miss relevant verses, or rank a less relevant passage highly. When it cannot identify sufficiently relevant verses it says so explicitly and never concludes that the Quran does not address a topic. Please consult qualified scholars where religious interpretation is required.");
+        section(parent, "Contact", "Digital Innovative Agency FZ LLC\nEmail: info@rqmbooks.com\nPhone / WhatsApp: +971 9 501 0254\nWhatsApp chat: https://wa.me/97195010254");
         section(parent, "Notices",
                 "The English and Arabic notices are the approved wording. Other interface languages show the English notice and are marked as pending professional review.");
     }

@@ -24,6 +24,13 @@ dataset checksum and the translation licence status. Every substantive answer ca
 retrieval is not confident, the app shows the exact fallback wording and never claims that the Quran does not
 address the topic. Conversations are stored on the device and can be deleted with **New conversation**.
 
+## Contact
+
+Digital Innovative Agency FZ LLC
+- Email: info@rqmbooks.com
+- Phone / WhatsApp: +971 9 501 0254
+- WhatsApp chat: https://wa.me/97195010254
+
 ## Build the APK
 
 Requirements: JDK 17+, Android SDK with `platforms;android-34` and `build-tools;34.0.0`
