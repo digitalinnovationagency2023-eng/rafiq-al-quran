@@ -62,7 +62,8 @@ donation checkout online. Leaving it empty produces a fully offline build.
 |---|---|---|
 | Server data, retrieval, API, donations, safety | `npm run test -w server` | 53 passed |
 | Native app core logic against real bundled assets | `node mobile/android/scripts/runLogicTests.js` | 25 passed |
-| APK packaging check | `node mobile/android/scripts/buildApk.js` | signed & verified, 3.29 MB |
+| APK packaging check | `node mobile/android/scripts/verifyApk.js` | 15/15 checks passed (signature, manifest, bundled assets, dex) |
+| Live API smoke | health, ask (EN/AR), fallback, sources, donations config, reciters, feedback, admin auth | all expected status codes |
 
 ## Guarantees encoded in the code and tests
 

@@ -37,6 +37,17 @@ validation.
 - size 3.29 MB;
 - **not** device-tested: no emulator/physical device was available (see `docs/LIMITATIONS.md`).
 
+## APK packaging verification — 15 checks passed
+
+`node mobile/android/scripts/verifyApk.js`: signed (apksigner verify), package/launchable activity/label, minSdk 23,
+RECORD_AUDIO and INTERNET permissions, `classes.dex` present, all six dataset assets bundled.
+
+## Live API smoke test (local server)
+
+/api/health 200 · /api/ask EN 200 (answer) · /api/ask AR 200 (answer) · unrelated question 200 (fallback)
+· /api/sources 200 · /api/donations/config 200 (live:false) · /api/reciters 200 (enabled:false)
+· /api/feedback 201 · /api/admin/summary 200 with token, 401 without.
+
 ## Server dataset validation
 
 `npm run validate:dataset -w server` — completeness, chapter counts, translation completeness, checksum and
