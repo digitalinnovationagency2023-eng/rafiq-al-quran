@@ -1,4 +1,4 @@
-package com.qurancompanion.app.logic;
+package com.rqmbooks.rafiqalquran.logic;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,10 +1,10 @@
-package com.qurancompanion.app;
+package com.rqmbooks.rafiqalquran;
 
-import com.qurancompanion.app.logic.Answer;
-import com.qurancompanion.app.logic.Chapter;
-import com.qurancompanion.app.logic.Passage;
-import com.qurancompanion.app.logic.Provenance;
-import com.qurancompanion.app.logic.TranslationMeta;
+import com.rqmbooks.rafiqalquran.logic.Answer;
+import com.rqmbooks.rafiqalquran.logic.Chapter;
+import com.rqmbooks.rafiqalquran.logic.Passage;
+import com.rqmbooks.rafiqalquran.logic.Provenance;
+import com.rqmbooks.rafiqalquran.logic.TranslationMeta;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

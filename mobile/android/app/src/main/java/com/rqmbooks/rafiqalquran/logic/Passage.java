@@ -1,4 +1,4 @@
-package com.qurancompanion.app.logic;
+package com.rqmbooks.rafiqalquran.logic;
 
 /** A single verified passage ready for display. */
 public final class Passage {

@@ -1,4 +1,4 @@
-package com.qurancompanion.app.logic;
+package com.rqmbooks.rafiqalquran.logic;
 
 /** Provenance recorded when the dataset was imported from the source API. */
 public final class Provenance {

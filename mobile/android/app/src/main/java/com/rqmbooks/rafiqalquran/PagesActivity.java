@@ -1,4 +1,4 @@
-package com.qurancompanion.app;
+package com.rqmbooks.rafiqalquran;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -17,10 +17,10 @@ import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.qurancompanion.app.logic.Dataset;
-import com.qurancompanion.app.logic.Language;
-import com.qurancompanion.app.logic.Notices;
-import com.qurancompanion.app.logic.TranslationMeta;
+import com.rqmbooks.rafiqalquran.logic.Dataset;
+import com.rqmbooks.rafiqalquran.logic.Language;
+import com.rqmbooks.rafiqalquran.logic.Notices;
+import com.rqmbooks.rafiqalquran.logic.TranslationMeta;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -195,7 +195,7 @@ public final class PagesActivity extends Activity {
             status.setText("Enter a valid amount.");
             return;
         }
-        String invalid = com.qurancompanion.app.logic.DonationRules.validate(minor, "AED");
+        String invalid = com.rqmbooks.rafiqalquran.logic.DonationRules.validate(minor, "AED");
         if (invalid != null) {
             status.setText(invalid);
             return;

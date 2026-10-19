@@ -1,4 +1,4 @@
-package com.qurancompanion.app.logic;
+package com.rqmbooks.rafiqalquran.logic;
 
 /**
  * The exact required notices and the exact fallback wording. English and Arabic

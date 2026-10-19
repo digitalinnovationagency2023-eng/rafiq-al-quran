@@ -1,4 +1,4 @@
-package com.qurancompanion.app.logic;
+package com.rqmbooks.rafiqalquran.logic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,7 +108,7 @@ public final class AnswerComposer {
     public static Integer parseChapterReference(Dataset dataset, String question) {
         if (question == null) return null;
         String lowered = question.toLowerCase();
-        for (com.qurancompanion.app.logic.Chapter chapter : chapters(dataset)) {
+        for (com.rqmbooks.rafiqalquran.logic.Chapter chapter : chapters(dataset)) {
             String english = chapter.nameEnglish.toLowerCase();
             if (english.length() >= 3 && lowered.contains(english)) return chapter.id;
             if (chapter.nameArabic.length() >= 3 && question.contains(chapter.nameArabic)) return chapter.id;

@@ -31,7 +31,7 @@ validation.
 
 `node mobile/android/scripts/buildApk.js`
 
-- package `com.qurancompanion.app`, versionName 1.0.0, minSdk 23, targetSdk 34;
+- package `com.rqmbooks.rafiqalquran`, versionName 1.0.0, minSdk 23, targetSdk 34;
 - signed (apksigner verify passed) and zipaligned;
 - bundles the dataset assets (`quran.tsv`, `translations.tsv`, …) and `classes.dex`; no WebView class in the APK;
 - size 3.29 MB;

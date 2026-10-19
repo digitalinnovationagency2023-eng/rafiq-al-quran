@@ -40,7 +40,7 @@ check("signature verifies (apksigner)", signature.status === 0 && /certificate D
 
 const badging = capture(path.join(buildTools, "aapt2.exe"), ["dump", "badging", apk]);
 const badgingText = badging.output;
-check("package is com.qurancompanion.app", /package: name='com\.qurancompanion\.app'/.test(badgingText));
+check("package is com.rqmbooks.rafiqalquran", /package: name='com\.qurancompanion\.app'/.test(badgingText));
 check("launchable activity present", /launchable-activity: name='com\.qurancompanion\.app\.MainActivity'/.test(badgingText));
 check("microphone permission declared", /uses-permission: name='android\.permission\.RECORD_AUDIO'/.test(badgingText));
 check("internet permission declared", /uses-permission: name='android\.permission\.INTERNET'/.test(badgingText));

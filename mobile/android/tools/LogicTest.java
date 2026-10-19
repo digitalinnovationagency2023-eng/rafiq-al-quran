@@ -1,10 +1,10 @@
-import com.qurancompanion.app.logic.Answer;
-import com.qurancompanion.app.logic.AnswerComposer;
-import com.qurancompanion.app.logic.Dataset;
-import com.qurancompanion.app.logic.DatasetLoader;
-import com.qurancompanion.app.logic.DonationRules;
-import com.qurancompanion.app.logic.Notices;
-import com.qurancompanion.app.logic.Passage;
+import com.rqmbooks.rafiqalquran.logic.Answer;
+import com.rqmbooks.rafiqalquran.logic.AnswerComposer;
+import com.rqmbooks.rafiqalquran.logic.Dataset;
+import com.rqmbooks.rafiqalquran.logic.DatasetLoader;
+import com.rqmbooks.rafiqalquran.logic.DonationRules;
+import com.rqmbooks.rafiqalquran.logic.Notices;
+import com.rqmbooks.rafiqalquran.logic.Passage;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

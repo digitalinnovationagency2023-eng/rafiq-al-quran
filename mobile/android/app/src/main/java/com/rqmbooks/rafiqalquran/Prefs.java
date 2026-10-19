@@ -1,4 +1,4 @@
-package com.qurancompanion.app;
+package com.rqmbooks.rafiqalquran;
 
 import android.content.Context;
 import android.content.SharedPreferences;

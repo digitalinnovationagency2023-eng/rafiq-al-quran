@@ -1,9 +1,9 @@
-package com.qurancompanion.app;
+package com.rqmbooks.rafiqalquran;
 
 import android.content.Context;
 
-import com.qurancompanion.app.logic.Dataset;
-import com.qurancompanion.app.logic.DatasetLoader;
+import com.rqmbooks.rafiqalquran.logic.Dataset;
+import com.rqmbooks.rafiqalquran.logic.DatasetLoader;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

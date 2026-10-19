@@ -1,4 +1,4 @@
-package com.qurancompanion.app;
+package com.rqmbooks.rafiqalquran;
 
 import android.Manifest;
 import android.app.Activity;
@@ -25,12 +25,12 @@ import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import com.qurancompanion.app.logic.Answer;
-import com.qurancompanion.app.logic.AnswerComposer;
-import com.qurancompanion.app.logic.Dataset;
-import com.qurancompanion.app.logic.Language;
-import com.qurancompanion.app.logic.Notices;
-import com.qurancompanion.app.logic.Passage;
+import com.rqmbooks.rafiqalquran.logic.Answer;
+import com.rqmbooks.rafiqalquran.logic.AnswerComposer;
+import com.rqmbooks.rafiqalquran.logic.Dataset;
+import com.rqmbooks.rafiqalquran.logic.Language;
+import com.rqmbooks.rafiqalquran.logic.Notices;
+import com.rqmbooks.rafiqalquran.logic.Passage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -496,7 +496,7 @@ public final class MainActivity extends Activity {
             }
             boolean valid = true;
             for (Passage passage : turn.answer.passages) {
-                com.qurancompanion.app.logic.Verse verse = dataset == null ? null : dataset.verse(passage.verseKey);
+                com.rqmbooks.rafiqalquran.logic.Verse verse = dataset == null ? null : dataset.verse(passage.verseKey);
                 if (verse == null || !verse.arabic.equals(passage.arabic)) valid = false;
             }
             if (valid) turns.add(turn);

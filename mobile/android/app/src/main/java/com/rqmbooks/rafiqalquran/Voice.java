@@ -1,4 +1,4 @@
-package com.qurancompanion.app;
+package com.rqmbooks.rafiqalquran;
 
 import android.content.Context;
 import android.content.Intent;
@@ -48,11 +48,11 @@ public final class Voice {
     }
 
     /** Text spoken aloud: translation + references only, never the Arabic verse. */
-    public static String spokenText(com.qurancompanion.app.logic.Answer answer) {
+    public static String spokenText(com.rqmbooks.rafiqalquran.logic.Answer answer) {
         if (answer == null) return "";
         if ("fallback".equals(answer.kind)) return answer.message;
         StringBuilder builder = new StringBuilder();
-        for (com.qurancompanion.app.logic.Passage passage : answer.passages) {
+        for (com.rqmbooks.rafiqalquran.logic.Passage passage : answer.passages) {
             builder.append(passage.referenceLabel).append(". ").append(passage.translationText).append(' ');
         }
         builder.append(" ").append(answer.message);
