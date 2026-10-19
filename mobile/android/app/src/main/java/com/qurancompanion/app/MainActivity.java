@@ -55,10 +55,12 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = new Prefs(this);
-        setContentView(buildRoot());
+        View root = buildRoot();
+        setContentView(root, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         new Thread(() -> {
             try {
                 final Dataset loaded = Assets.dataset(this);
+                Assets.ensureLanguage(this, loaded, "en");
                 runOnUiThread(() -> {
                     dataset = loaded;
                     loadHistory();
@@ -91,7 +93,7 @@ public final class MainActivity extends Activity {
         topbar.setBackgroundColor(Ui.PAPER);
 
         LinearLayout titleBox = Ui.column(this);
-        TextView title = Ui.text(this, "QURAN COMPANION", 16f, Ui.INK);
+        TextView title = Ui.text(this, "QURAN AI", 16f, Ui.INK);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         title.setLetterSpacing(0.12f);
         TextView tagline = Ui.text(this, "Find verses, respectfully", 11f, Ui.MUTED);
@@ -115,6 +117,8 @@ public final class MainActivity extends Activity {
         languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 prefs.setLanguage(Language.codes().get(position));
+                final String chosen = Language.codes().get(position);
+                new Thread(() -> { if (dataset != null) { try { Assets.ensureLanguage(MainActivity.this, dataset, chosen); } catch (Exception ignored) { } } }).start();
                 updatePlaceholder();
             }
             @Override public void onNothingSelected(AdapterView<?> parent) { }

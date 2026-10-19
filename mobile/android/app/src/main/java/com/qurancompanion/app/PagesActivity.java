@@ -83,7 +83,7 @@ public final class PagesActivity extends Activity {
     }
 
     private void renderAbout(LinearLayout parent) {
-        heading(parent, "About Quran Companion",
+        heading(parent, "About Quran AI",
                 "A free, Quran-focused conversational app. It helps users locate and read verses, with the Arabic text and an identified translation shown separately.");
         section(parent, "What it does",
                 "• Retrieves verses from a validated local Quran dataset and identified translations.\n"

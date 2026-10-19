@@ -82,12 +82,7 @@ public final class Dataset {
             dataset.translations.put(meta.language, meta);
         }
 
-        for (String line : translationLines) {
-            if (line.trim().isEmpty()) continue;
-            String[] parts = line.split("\t", 3);
-            if (parts.length < 3) continue;
-            dataset.translationText.put(parts[0] + "|" + parts[1], parts[2]);
-        }
+        dataset.addTranslations(translationLines);
 
         for (String line : lexiconLines) {
             if (line.trim().isEmpty()) continue;
@@ -129,14 +124,45 @@ public final class Dataset {
         return dataset;
     }
 
-    private static List<String> splitTerms(String value) {
-        List<String> out = new ArrayList<>();
+    private static List<String> splitTerms(String value) {        List<String> out = new ArrayList<>();
         if (value == null || value.trim().isEmpty()) return out;
         for (String term : value.split(",")) {
             String trimmed = term.trim().toLowerCase();
             if (!trimmed.isEmpty()) out.add(trimmed);
         }
         return out;
+    }
+
+    /** Adds one language's translation rows and indexes it on demand. */
+    public void addTranslations(List<String> lines) {
+        Map<String, Integer> verseIndexByKey = new HashMap<>();
+        for (int index = 0; index < verses.size(); index++) verseIndexByKey.put(verses.get(index).key, index);
+        for (String line : lines) {
+            if (line == null || line.trim().isEmpty()) continue;
+            String[] parts = line.split("\t", 3);
+            if (parts.length < 3) continue;
+            String language = parts[0];
+            String verseKey = parts[1];
+            translationText.put(language + "|" + verseKey, parts[2]);
+            Integer verseIndex = verseIndexByKey.get(verseKey);
+            if (verseIndex == null) continue;
+            for (String token : new java.util.LinkedHashSet<>(latinTokens(parts[2]))) {
+                if (token.length() < 2) continue;
+                for (String form : latinForms(token)) {
+                    String key = language + "|" + form;
+                    List<Integer> bucket = translationIndex.get(key);
+                    if (bucket == null) {
+                        bucket = new ArrayList<>();
+                        translationIndex.put(key, bucket);
+                    }
+                    bucket.add(verseIndex);
+                }
+            }
+        }
+    }
+
+    public boolean hasTranslationLanguage(String language) {
+        return translationText.containsKey(language + "|1:1");
     }
 
     private void buildIndexes() {
@@ -150,29 +176,6 @@ public final class Dataset {
                         arabicIndex.put(form, bucket);
                     }
                     bucket.add(index);
-                }
-            }
-        }
-
-        Map<String, Integer> verseIndexByKey = new HashMap<>();
-        for (int index = 0; index < verses.size(); index++) verseIndexByKey.put(verses.get(index).key, index);
-
-        for (Map.Entry<String, String> entry : translationText.entrySet()) {
-            String composite = entry.getKey();
-            int pipe = composite.indexOf('|');
-            String language = composite.substring(0, pipe);
-            Integer verseIndex = verseIndexByKey.get(composite.substring(pipe + 1));
-            if (verseIndex == null) continue;
-            for (String token : new java.util.LinkedHashSet<>(latinTokens(entry.getValue()))) {
-                if (token.length() < 2) continue;
-                for (String form : latinForms(token)) {
-                    String key = language + "|" + form;
-                    List<Integer> bucket = translationIndex.get(key);
-                    if (bucket == null) {
-                        bucket = new ArrayList<>();
-                        translationIndex.put(key, bucket);
-                    }
-                    bucket.add(verseIndex);
                 }
             }
         }
