@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Noor Al-Quran</string>
+    <string name="app_name">Rafiq Al-Quran</string>
     <!-- Set this to the Quran Companion API origin (for example https://api.your-domain.com)
          to enable optional online services: feedback reports and donation checkout.
          Leave empty for a fully offline build. -->

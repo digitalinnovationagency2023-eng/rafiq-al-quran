@@ -94,10 +94,10 @@ public final class MainActivity extends Activity {
         topbar.setBackgroundColor(Ui.PAPER);
 
         LinearLayout titleBox = Ui.column(this);
-        TextView title = Ui.text(this, "NOOR AL-QURAN", 16f, Ui.INK);
+        TextView title = Ui.text(this, "RAFIQ AL-QURAN", 16f, Ui.INK);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         title.setLetterSpacing(0.12f);
-        TextView tagline = Ui.text(this, "Find verses, respectfully", 11f, Ui.MUTED);
+        TextView tagline = Ui.text(this, "AI Assistant - Quran verse search", 11f, Ui.MUTED);
         titleBox.addView(title);
         titleBox.addView(tagline);
         LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);

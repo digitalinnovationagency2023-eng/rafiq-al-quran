@@ -1,4 +1,4 @@
-# Noor Al-Quran
+# Rafiq Al-Quran: AI Assistant
 
 A free, Quran-only conversational **native Android app** with an optional API. It helps users locate and read
 verses, with the Quranic Arabic text, an identified translation, the surah/verse reference and the source
