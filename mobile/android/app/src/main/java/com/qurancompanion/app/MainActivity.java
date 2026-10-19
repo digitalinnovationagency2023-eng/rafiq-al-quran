@@ -90,24 +90,25 @@ public final class MainActivity extends Activity {
         root.setBackgroundColor(Ui.PAPER);
 
         LinearLayout topbar = Ui.row(this);
-        topbar.setPadding(Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 10));
+        topbar.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12));
+        topbar.setBackgroundColor(Ui.INK);
         topbar.setBackgroundColor(Ui.PAPER);
 
         LinearLayout titleBox = Ui.column(this);
-        TextView title = Ui.text(this, "RAFIQ AL-QURAN", 16f, Ui.INK);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
+        TextView title = Ui.text(this, "RAFIQ AL-QURAN", 16f, Ui.GOLD);
+        title.setTypeface(Typeface.SERIF, Typeface.BOLD);
         title.setLetterSpacing(0.12f);
-        TextView tagline = Ui.text(this, "AI Assistant - Quran verse search", 11f, Ui.MUTED);
+        TextView tagline = Ui.text(this, "AI Assistant - Quran verse search", 11f, Ui.SILVER);
         titleBox.addView(title);
         titleBox.addView(tagline);
         LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         topbar.addView(titleBox, titleParams);
 
         LinearLayout controls = Ui.row(this);
-        TextView smaller = Ui.text(this, "A-", 13f, Ui.MUTED);
+        TextView smaller = Ui.text(this, "A-", 13f, Ui.SILVER);
         smaller.setPadding(Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8));
         smaller.setOnClickListener(view -> changeTextScale(-0.05f));
-        TextView larger = Ui.text(this, "A+", 15f, Ui.MUTED);
+        TextView larger = Ui.text(this, "A+", 15f, Ui.SILVER);
         larger.setPadding(Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8));
         larger.setOnClickListener(view -> changeTextScale(0.05f));
         languageSpinner = new Spinner(this);
@@ -124,7 +125,7 @@ public final class MainActivity extends Activity {
             }
             @Override public void onNothingSelected(AdapterView<?> parent) { }
         });
-        TextView menu = Ui.text(this, "\u22EE", 20f, Ui.INK);
+        TextView menu = Ui.text(this, "\u22EE", 20f, Ui.GOLD);
         menu.setPadding(Ui.dp(this, 12), Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4));
         menu.setOnClickListener(this::showMenu);
         controls.addView(smaller);
@@ -170,7 +171,7 @@ public final class MainActivity extends Activity {
 
         root.addView(topbar);
         View divider = new View(this);
-        divider.setBackgroundColor(Ui.LINE);
+        divider.setBackgroundColor(Ui.GOLD);
         divider.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 1)));
         root.addView(divider);
         root.addView(scroll);
@@ -323,7 +324,7 @@ public final class MainActivity extends Activity {
 
     private View passageCard(final Passage passage) {
         LinearLayout card = Ui.column(this);
-        card.setBackground(Ui.rounded(Ui.PAPER, Ui.LINE, 14, this));
+        card.setBackground(Ui.card(this));
         card.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);

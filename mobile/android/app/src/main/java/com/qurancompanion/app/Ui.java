@@ -11,14 +11,22 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/** Small programmatic-UI helpers. Black/white palette with restrained gold. */
+/**
+ * Mushaf-inspired palette: Kaaba black, paper white, gold calligraphy, silver
+ * hairlines and a restrained green accent. No imagery that could imply religious
+ * authority.
+ */
 public final class Ui {
-    public static final int INK = Color.parseColor("#0C0C0C");
-    public static final int PAPER = Color.parseColor("#FFFFFF");
-    public static final int MUTED = Color.parseColor("#6A6A6A");
-    public static final int LINE = Color.parseColor("#E7E7E7");
-    public static final int GOLD = Color.parseColor("#A97C22");
-    public static final int GOLD_SOFT = Color.parseColor("#F7EFDD");
+    public static final int INK = Color.parseColor("#0B0B0B");        // Kaaba black
+    public static final int PAPER = Color.parseColor("#FFFFFF");      // mushaf paper
+    public static final int MUTED = Color.parseColor("#6E6A5E");      // warm grey
+    public static final int LINE = Color.parseColor("#E8E2D2");       // ivory/silver hairline
+    public static final int SILVER = Color.parseColor("#C9C9C4");     // silver
+    public static final int GOLD = Color.parseColor("#B8912F");       // calligraphy gold
+    public static final int GOLD_DEEP = Color.parseColor("#8C6D1F");
+    public static final int GOLD_SOFT = Color.parseColor("#F7F1E1");
+    public static final int GREEN = Color.parseColor("#0E5A3A");      // restrained Kaaba green
+    public static final int GREEN_SOFT = Color.parseColor("#EAF2EC");
     public static final int DANGER = Color.parseColor("#8C2B2B");
 
     private Ui() {}
@@ -38,10 +46,19 @@ public final class Ui {
     }
 
     public static TextView label(Context context, String value) {
-        TextView view = text(context, value.toUpperCase(), 10f, MUTED);
-        view.setLetterSpacing(0.12f);
+        TextView view = text(context, value.toUpperCase(), 10f, GOLD_DEEP);
+        view.setLetterSpacing(0.16f);
         view.setTypeface(Typeface.DEFAULT_BOLD);
         return view;
+    }
+
+    /** Silver hairline with a gold inner stroke — the card frame used across the app. */
+    public static GradientDrawable card(Context context) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(PAPER);
+        drawable.setCornerRadius(dp(context, 10));
+        drawable.setStroke(dp(context, 1), LINE);
+        return drawable;
     }
 
     public static GradientDrawable rounded(int fill, int stroke, int radiusDp, Context context) {
@@ -65,15 +82,22 @@ public final class Ui {
         return layout;
     }
 
+    /** Primary = gold on black (calligraphic); secondary = black on paper. */
     public static Button button(Context context, String label, boolean primary) {
         Button button = new Button(context);
         button.setText(label);
         button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
         button.setAllCaps(false);
+        button.setLetterSpacing(0.04f);
         button.setPadding(dp(context, 14), dp(context, 6), dp(context, 14), dp(context, 6));
         button.setMinHeight(dp(context, 40));
-        button.setBackground(rounded(primary ? INK : PAPER, primary ? INK : LINE, 20, context));
-        button.setTextColor(primary ? PAPER : INK);
+        if (primary) {
+            button.setBackground(rounded(INK, GOLD, 4, context));
+            button.setTextColor(GOLD);
+        } else {
+            button.setBackground(rounded(PAPER, LINE, 4, context));
+            button.setTextColor(INK);
+        }
         return button;
     }
 
@@ -85,6 +109,14 @@ public final class Ui {
         params.topMargin = dp(context, 10);
         params.bottomMargin = dp(context, 10);
         view.setLayoutParams(params);
+        return view;
+    }
+
+    /** Thin gold rule used under the header and between sections. */
+    public static View goldRule(Context context) {
+        View view = new View(context);
+        view.setBackgroundColor(GOLD);
+        view.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(context, 2)));
         return view;
     }
 
