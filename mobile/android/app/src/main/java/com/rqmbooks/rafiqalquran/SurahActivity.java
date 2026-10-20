@@ -47,6 +47,16 @@ public final class SurahActivity extends Activity {
         title.setLetterSpacing(0.12f);
         bar.addView(back);
         bar.addView(title);
+        LinearLayout.LayoutParams flexible = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        bar.addView(new View(this), flexible);
+        TextView bookmarksButton = Ui.label(this, "Bookmarks");
+        bookmarksButton.setPadding(Ui.dp(this, 8), 0, Ui.dp(this, 8), 0);
+        bookmarksButton.setOnClickListener(v -> showBookmarks());
+        TextView historyButton = Ui.label(this, "History");
+        historyButton.setPadding(Ui.dp(this, 8), 0, Ui.dp(this, 8), 0);
+        historyButton.setOnClickListener(v -> showHistory());
+        bar.addView(bookmarksButton);
+        bar.addView(historyButton);
         root.addView(bar);
 
         list = new ListView(this);
@@ -118,6 +128,7 @@ public final class SurahActivity extends Activity {
     private void showChapter(int chapterId) {
         Chapter chapter = dataset.chapter(chapterId);
         if (chapter == null) return;
+        recordHistory(chapterId);
         String language = prefs.language();
         LinearLayout content = Ui.column(this);
         content.setPadding(Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 24));
@@ -207,6 +218,62 @@ public final class SurahActivity extends Activity {
         if (!added) { set.remove(key); }
         store().edit().putStringSet("bookmarks", set).apply();
         return added;
+    }
+
+    private void recordHistory(int chapterId) {
+        String current = store().getString("history", "");
+        StringBuilder next = new StringBuilder(String.valueOf(chapterId));
+        for (String part : current.split(",")) {
+            if (part.isEmpty() || part.equals(String.valueOf(chapterId))) continue;
+            if (next.length() < 60) next.append(',').append(part);
+        }
+        store().edit().putString("history", next.toString()).apply();
+    }
+
+    private void showKeyList(java.util.List<String> keys, java.util.List<String> labels) {
+        list.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, labels) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                view.setTextColor(Ui.INK);
+                view.setTextSize(15f);
+                view.setPadding(Ui.dp(SurahActivity.this, 14), Ui.dp(SurahActivity.this, 12),
+                        Ui.dp(SurahActivity.this, 14), Ui.dp(SurahActivity.this, 12));
+                return view;
+            }
+        });
+        list.setOnItemClickListener((parent, view, position, id) -> {
+            if (keys.isEmpty()) return;
+            String key = keys.get(position);
+            if (key.contains(":")) showChapter(Integer.parseInt(key.split(":")[0]));
+            else showChapter(Integer.parseInt(key));
+        });
+        reader.setVisibility(View.GONE);
+        list.setVisibility(View.VISIBLE);
+    }
+
+    private void showBookmarks() {
+        java.util.List<String> keys = new java.util.ArrayList<String>(store().getStringSet("bookmarks", new java.util.HashSet<String>()));
+        java.util.Collections.sort(keys);
+        java.util.List<String> labels = new java.util.ArrayList<String>();
+        for (String key : keys) labels.add(key.replace(':', ' '));
+        if (keys.isEmpty()) labels.add("No bookmarks yet — open a surah and tap Save.");
+        showKeyList(keys, labels);
+    }
+
+    private void showHistory() {
+        String current = store().getString("history", "");
+        java.util.List<String> keys = new java.util.ArrayList<String>();
+        java.util.List<String> labels = new java.util.ArrayList<String>();
+        for (String part : current.split(",")) {
+            if (part.isEmpty()) continue;
+            Chapter chapter = dataset.chapter(Integer.parseInt(part));
+            if (chapter == null) continue;
+            keys.add(part);
+            labels.add(chapter.nameEnglish + "  ·  " + chapter.nameArabic);
+        }
+        if (keys.isEmpty()) labels.add("No reading history yet — open a surah.");
+        showKeyList(keys, labels);
     }
 
     private String versionLabel(Verse verse) {
