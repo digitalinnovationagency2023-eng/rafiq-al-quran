@@ -58,6 +58,7 @@ public final class MainActivity extends Activity {
         prefs = new Prefs(this);
         View root = buildRoot();
         setContentView(root, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        root.setMinimumHeight(getResources().getDisplayMetrics().heightPixels);
         new Thread(() -> {
             try {
                 final Dataset loaded = Assets.dataset(this);
@@ -134,13 +135,8 @@ public final class MainActivity extends Activity {
         controls.addView(menu);
         topbar.addView(controls);
 
-        scroll = new ScrollView(this);
-        LinearLayout.LayoutParams scrollParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-        scroll.setLayoutParams(scrollParams);
         messages = Ui.column(this);
         messages.setPadding(Ui.dp(this, 14), Ui.dp(this, 8), Ui.dp(this, 14), Ui.dp(this, 16));
-        scroll.addView(messages);
 
         status = Ui.text(this, "Loading the Quran dataset…", 12f, Ui.MUTED);
         status.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), Ui.dp(this, 6));
@@ -174,11 +170,15 @@ public final class MainActivity extends Activity {
         divider.setBackgroundColor(Ui.GOLD);
         divider.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 1)));
         root.addView(divider);
-        root.addView(scroll);
+        root.addView(messages);
         root.addView(status);
         root.addView(composer);
         renderEmptyState();
-        return root;
+        ScrollView outer = new ScrollView(this);
+        outer.setFillViewport(true);
+        outer.addView(root);
+        scroll = outer;
+        return outer;
     }
 
     private void updatePlaceholder() {
