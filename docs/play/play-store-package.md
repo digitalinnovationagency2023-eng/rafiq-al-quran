@@ -15,12 +15,12 @@ Publisher: Digital Innovative Agency FZ LLC · info@rqmbooks.com · +971 9 501 0
 | SDK range | minSdk **24** (Android 7.0) · targetSdk **36** (Android 16 — Play requirement for new apps since 31 Aug 2026) |
 | Build toolchain | Android SDK 34 build-tools and platform (`compileSdk` 34, `targetSdk` 36), `aapt2` / `javac` / `d8` / `zipalign` / `apksigner`, **no Gradle**; **32 Java sources**. Edge-to-edge insets are handled in `Ui.init()` for Android 15+ |
 | Release APK | `dist/rafiq-al-quran-1.0.9.apk` — 3.40 MB, signed, installable |
-| AAB (unsigned, CI) | `dist/rafiq-al-quran-1.0.9.aab` — GitHub Actions artifact from `.github/workflows/build-aab.yml` (bundletool) |
-| AAB (signed, Play upload) | `dist/rafiq-al-quran-1.0.9-signed.aab` — CI AAB signed locally with `jarsigner` using the upload keystore; `jarsigner -verify` → "jar verified" |
+| AAB (unsigned, CI) | `dist/rafiq-al-quran-1.0.9.aab` — GitHub Actions artifact from `.github/workflows/build-aab.yml` (bundletool); 3,553,062 bytes |
+| AAB (signed, Play upload) | `dist/rafiq-al-quran-1.0.9-signed.aab` — CI AAB (3,556,176 bytes) signed locally with `jarsigner` using the upload keystore; `jarsigner -verify` → "jar verified" |
 | Signing key | Local upload keystore `mobile/android/build/quran-release.keystore` — gitignored, **never committed** |
-| SHA-256 | APK `43A6231F05066793425C9DC67146ECCF8E444AD4F47BCCA769209EDA11BEA1AB` · signed AAB `67F27D9EBB2D75CC03FD9169848C5B0D9E2DB76757132402076996A56854EF44` |
+| SHA-256 | APK `845E133AFF68D8D30EA49B2A2E0AA9BFA74F0895B0988A50D86FFDE6830F2104` · signed AAB `0D100D4A826BDB9E8B1AB7FB9F431BAA8F466EA197A2D04E7765B8E6AE6780D3` |
 | Version history | versionCode was **1** on the earlier local build. No build has ever been uploaded to Google Play; this is the first upload candidate (versionCode 9). |
-| CI verification | GitHub Actions "Build release AAB" run **39480456879** on commit `88d2629bd474ab77574fc48be2a47f17cb83c204` — success; AAB validated with `bundletool validate` (exit 0). `jarsigner -verify` reports the expected self-signed certificate warning. |
+| CI verification | GitHub Actions "Build release AAB" run **39483479573** on commit `9350aee1d238a1bd9d81ee382987712689d60f64` — success; AAB validated with `bundletool validate` (exit 0). `jarsigner -verify` reports the expected self-signed certificate warning. |
 
 ---
 

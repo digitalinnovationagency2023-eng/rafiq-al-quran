@@ -42,7 +42,7 @@ from the fixed run.
 - package `com.rqmbooks.rafiqalquran`, versionCode **9**, versionName **1.0.9** (aapt2 badging on
   `dist/rafiq-al-quran-1.0.9.apk`); minSdk 24, targetSdk 36;
 - **32 Java sources** compiled; signed (apksigner verify passed) and zipaligned;
-- size **3.40 MB** (3,560,379 bytes, SHA-256 `43A6231F05066793425C9DC67146ECCF8E444AD4F47BCCA769209EDA11BEA1AB`);
+- size **3.40 MB** (3,560,378 bytes, SHA-256 `845E133AFF68D8D30EA49B2A2E0AA9BFA74F0895B0988A50D86FFDE6830F2104`);
 - bundles `classes.dex`, the dataset assets (including `assets/quran-meta.tsv`) and the launcher icon.
 
 ## APK packaging verification — 20 checks passed
@@ -59,11 +59,11 @@ launcher icon packaged; app label “Rafiq Al-Quran”. Output: “APK verificat
 ## AAB — built by CI, signed locally, installed on the emulator
 
 - `.github/workflows/build-aab.yml` (aapt2/javac/d8 plus bundletool; no Gradle) — GitHub Actions run
-  [39480456879](https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39480456879),
-  commit `88d2629bd474ab77574fc48be2a47f17cb83c204`: success.
+  [39483479573](https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39483479573),
+  commit `9350aee1d238a1bd9d81ee382987712689d60f64`: success.
   Unsigned artifact: `dist/rafiq-al-quran-1.0.9.aab`.
 - Signed locally with `jarsigner` using the upload keystore → `dist/rafiq-al-quran-1.0.9-signed.aab`
-  (3,555,625 bytes, SHA-256 `300C0CD3C9A017B323A40C00476CF3BBEC45C558FA71770C1E8DA65EB2478D1D`).
+  (3,556,176 bytes, SHA-256 `0D100D4A826BDB9E8B1AB7FB9F431BAA8F466EA197A2D04E7765B8E6AE6780D3`).
   `jarsigner -verify` → “jar verified” (exit 0; self-signed certificate warning expected, no timestamp);
   `bundletool validate` → exit 0.
 - The AAB signer certificate SHA-256 matches the APK signer certificate
