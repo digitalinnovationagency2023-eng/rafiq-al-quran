@@ -27,20 +27,24 @@ import android.widget.TextView;
 
 import com.rqmbooks.rafiqalquran.logic.Answer;
 import com.rqmbooks.rafiqalquran.logic.AnswerComposer;
+import com.rqmbooks.rafiqalquran.logic.Chapter;
 import com.rqmbooks.rafiqalquran.logic.Dataset;
 import com.rqmbooks.rafiqalquran.logic.Language;
 import com.rqmbooks.rafiqalquran.logic.Notices;
 import com.rqmbooks.rafiqalquran.logic.Passage;
+import com.rqmbooks.rafiqalquran.logic.Verse;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /** The conversational screen. Everything runs against the bundled dataset. */
 public final class MainActivity extends Activity {
+    public static final String EXTRA_ASK = "ask";
     private static final int MIC_REQUEST = 41;
 
     private Dataset dataset;
     private Prefs prefs;
+    private StudyStore store;
     private final List<HistoryCodec.Turn> turns = new ArrayList<>();
     private LinearLayout messages;
     private ScrollView scroll;
@@ -55,10 +59,11 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Ui.init(this);
         prefs = new Prefs(this);
+        store = new StudyStore(this);
         View root = buildRoot();
         setContentView(root, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        root.setMinimumHeight(getResources().getDisplayMetrics().heightPixels);
         new Thread(() -> {
             try {
                 final Dataset loaded = Assets.dataset(this);
@@ -67,11 +72,21 @@ public final class MainActivity extends Activity {
                     dataset = loaded;
                     loadHistory();
                     status.setText("");
+                    handleAskIntent();
                 });
             } catch (final Exception error) {
                 runOnUiThread(() -> status.setText("Dataset error: " + error.getMessage()));
             }
         }).start();
+    }
+
+    /** Saved-search deep link: run the query as soon as the dataset is ready. */
+    private void handleAskIntent() {
+        String ask = getIntent().getStringExtra(EXTRA_ASK);
+        if (ask == null || ask.trim().isEmpty()) return;
+        getIntent().removeExtra(EXTRA_ASK);
+        input.setText(ask);
+        submit();
     }
 
     @Override
@@ -90,31 +105,27 @@ public final class MainActivity extends Activity {
         LinearLayout root = Ui.column(this);
         root.setBackgroundColor(Ui.PAPER);
 
-        LinearLayout topbar = Ui.row(this);
-        topbar.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12));
-        topbar.setBackgroundColor(Ui.INK);
-        topbar.setBackgroundColor(Ui.PAPER);
-
-        LinearLayout titleBox = Ui.column(this);
-        TextView title = Ui.text(this, "RAFIQ AL-QURAN", 16f, Ui.GOLD);
-        title.setTypeface(Typeface.SERIF, Typeface.BOLD);
-        title.setLetterSpacing(0.12f);
-        TextView tagline = Ui.text(this, "AI Assistant - Quran verse search", 11f, Ui.SILVER);
-        titleBox.addView(title);
-        titleBox.addView(tagline);
-        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        topbar.addView(titleBox, titleParams);
-
-        LinearLayout controls = Ui.row(this);
-        TextView smaller = Ui.text(this, "A-", 13f, Ui.SILVER);
-        smaller.setPadding(Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8));
-        smaller.setOnClickListener(view -> changeTextScale(-0.05f));
-        TextView larger = Ui.text(this, "A+", 15f, Ui.SILVER);
-        larger.setPadding(Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8));
-        larger.setOnClickListener(view -> changeTextScale(0.05f));
+        LinearLayout topbar = Ui.bar(this, "RAFIQ AL-QURAN", "Quran-only  \u00B7  offline", null);
+        TextView smaller = Ui.action(this, "A\u2212", () -> changeTextScale(-0.05f));
+        TextView larger = Ui.action(this, "A+", () -> changeTextScale(0.05f));
         languageSpinner = new Spinner(this);
-        ArrayAdapter<String> languages = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item,
-                Language.codes());
+        ArrayAdapter<String> languages = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, Language.codes()) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                view.setTextColor(Ui.GOLD_BRIGHT);
+                view.setTextSize(12f);
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                TextView view = (TextView) super.getDropDownView(position, convertView, parent);
+                view.setTextColor(Ui.INK);
+                view.setBackgroundColor(Ui.CARD);
+                return view;
+            }
+        };
         languageSpinner.setAdapter(languages);
         languageSpinner.setSelection(Math.max(0, Language.codes().indexOf(prefs.language())));
         languageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -126,14 +137,15 @@ public final class MainActivity extends Activity {
             }
             @Override public void onNothingSelected(AdapterView<?> parent) { }
         });
-        TextView menu = Ui.text(this, "\u22EE", 20f, Ui.GOLD);
-        menu.setPadding(Ui.dp(this, 12), Ui.dp(this, 4), Ui.dp(this, 8), Ui.dp(this, 4));
+        TextView menu = Ui.text(this, "\u22EE", 20f, Ui.GOLD_BRIGHT);
+        menu.setPadding(Ui.dp(this, 10), Ui.dp(this, 4), Ui.dp(this, 6), Ui.dp(this, 4));
+        menu.setContentDescription("Menu");
         menu.setOnClickListener(this::showMenu);
-        controls.addView(smaller);
-        controls.addView(larger);
-        controls.addView(languageSpinner);
-        controls.addView(menu);
-        topbar.addView(controls);
+        topbar.addView(smaller);
+        topbar.addView(larger);
+        topbar.addView(languageSpinner);
+        topbar.addView(Ui.themeToggle(this));
+        topbar.addView(menu);
 
         messages = Ui.column(this);
         messages.setPadding(Ui.dp(this, 14), Ui.dp(this, 8), Ui.dp(this, 14), Ui.dp(this, 16));
@@ -145,7 +157,9 @@ public final class MainActivity extends Activity {
         composer.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 12));
         composer.setBackgroundColor(Ui.PAPER);
         input = new EditText(this);
-        input.setHint("Ask about a topic, or give a reference such as 2:255…");
+        input.setHint("Ask about a topic, or give a reference such as 2:255…");
+        input.setTextColor(Ui.INK);
+        input.setHintTextColor(Ui.MUTED);
         input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
         input.setMinLines(1);
         input.setMaxLines(4);
@@ -158,9 +172,8 @@ public final class MainActivity extends Activity {
         mic.setOnClickListener(view -> startListening());
         android.widget.Button send = Ui.button(this, "Send", true);
         send.setOnClickListener(view -> submit());
-        LinearLayout.LayoutParams spacer = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
         actions.addView(mic);
-        actions.addView(new View(this), spacer);
+        actions.addView(Ui.spacer(this));
         actions.addView(send);
         composer.addView(input);
         composer.addView(actions);
@@ -170,15 +183,20 @@ public final class MainActivity extends Activity {
         divider.setBackgroundColor(Ui.GOLD);
         divider.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 1)));
         root.addView(divider);
-        root.addView(messages);
-        root.addView(status);
+
+        LinearLayout scrollBody = Ui.column(this);
+        scrollBody.addView(messages);
+        scrollBody.addView(status);
+        ScrollView outer = new ScrollView(this);
+        outer.setBackgroundColor(Ui.PAPER);
+        outer.setFillViewport(true);
+        outer.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        outer.addView(scrollBody);
+        root.addView(outer);
         root.addView(composer);
         renderEmptyState();
-        ScrollView outer = new ScrollView(this);
-        outer.setFillViewport(true);
-        outer.addView(root);
         scroll = outer;
-        return outer;
+        return root;
     }
 
     private void updatePlaceholder() {
@@ -195,14 +213,18 @@ public final class MainActivity extends Activity {
     private void showMenu(View anchor) {
         PopupMenu menu = new PopupMenu(this, anchor);
         menu.getMenu().add(0, 1, 0, "New conversation");
-        menu.getMenu().add(0, 2, 1, prefs.voiceEnabled() ? "Turn voice off" : "Turn voice on");
-        menu.getMenu().add(0, 9, 1, "Browse surahs");
-        menu.getMenu().add(0, 3, 2, "Sources & licences");
-        menu.getMenu().add(0, 4, 3, "Support the app");
-        menu.getMenu().add(0, 5, 4, "Optional tools");
-        menu.getMenu().add(0, 6, 5, "Report an issue");
-        menu.getMenu().add(0, 7, 6, "About");
-        menu.getMenu().add(0, 8, 7, "Privacy");
+        menu.getMenu().add(0, 10, 1, "Study tools — collections, notes, plans");
+        menu.getMenu().add(0, 9, 2, "Browse surahs");
+        menu.getMenu().add(0, 11, 3, "Verse audio (rights pending)");
+        menu.getMenu().add(0, 2, 4, prefs.voiceEnabled() ? "Turn voice off" : "Turn voice on");
+        menu.getMenu().add(0, 13, 5, Ui.isDark() ? "Switch to light theme" : "Switch to dark theme");
+        menu.getMenu().add(0, 12, 6, "Operator admin");
+        menu.getMenu().add(0, 3, 7, "Sources & licences");
+        menu.getMenu().add(0, 4, 8, "Support the app");
+        menu.getMenu().add(0, 5, 9, "Optional tools");
+        menu.getMenu().add(0, 6, 10, "Report an issue");
+        menu.getMenu().add(0, 7, 11, "About");
+        menu.getMenu().add(0, 8, 12, "Privacy");
         menu.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case 1:
@@ -213,6 +235,12 @@ public final class MainActivity extends Activity {
                     toast(prefs.voiceEnabled() ? "Voice features on" : "Voice features off");
                     return true;
                 case 9: startActivity(new Intent(this, SurahActivity.class)); return true;
+                case 10: startActivity(new Intent(this, StudyActivity.class)); return true;
+                case 11: startActivity(PlayerActivity.intent(this,
+                        store.hasProgress() ? store.lastChapter() : 1,
+                        store.hasProgress() ? store.lastVerseKey() : null)); return true;
+                case 12: startActivity(new Intent(this, AdminActivity.class)); return true;
+                case 13: Ui.toggleTheme(this); return true;
                 case 3: openPage("sources"); return true;
                 case 4: openPage("support"); return true;
                 case 5: openPage("tools"); return true;
@@ -258,6 +286,46 @@ public final class MainActivity extends Activity {
                 submit();
             });
             box.addView(button);
+        }
+
+        android.widget.Button study = Ui.button(this, "Study tools — collections, notes, reading plans", false);
+        study.setLayoutParams(Ui.withTop(this, 6));
+        study.setOnClickListener(view -> startActivity(new Intent(this, StudyActivity.class)));
+        box.addView(study);
+
+        if (store.hasProgress() && dataset != null) {
+            Chapter chapter = dataset.chapter(store.lastChapter());
+            String key = store.lastVerseKey();
+            Verse last = key == null || key.isEmpty() ? null : dataset.verse(key);
+            LinearLayout card = Ui.cardBox(this);
+            card.setLayoutParams(Ui.withTop(this, 22));
+            card.addView(Ui.sectionLabel(this, "Continue reading"));
+            String label = chapter == null ? (last == null ? key : key) : chapter.nameEnglish + "  \u00B7  " + key;
+            TextView big = Ui.text(this, label, 17f, Ui.INK);
+            big.setTypeface(Typeface.SERIF, Typeface.BOLD);
+            big.setPadding(0, Ui.dp(this, 2), 0, Ui.dp(this, 2));
+            card.addView(big);
+            StringBuilder metaLine = new StringBuilder();
+            if (last != null) {
+                try {
+                    metaLine.append(Assets.meta(this).indicator(last.id));
+                    metaLine.append("  \u00B7  ");
+                } catch (Exception ignored) {
+                    // page metadata is optional for this card
+                }
+                metaLine.append("about ").append(Math.max(1, Math.round(last.id * 100f / 6236f))).append("% of the Quran read");
+            } else {
+                metaLine.append("Saved on this device");
+            }
+            card.addView(Ui.text(this, metaLine.toString(), 11f, Ui.MUTED));
+            android.widget.Button resume = Ui.button(this, "Resume reading \u2192", true);
+            LinearLayout.LayoutParams resumeParams = Ui.withTop(this, 10);
+            resume.setLayoutParams(resumeParams);
+            resume.setOnClickListener(view -> startActivity(ReaderActivity.intent(this, store.lastChapter(), store.lastVerseKey())));
+            card.addView(resume);
+            messages.addView(box);
+            messages.addView(card);
+            return;
         }
         messages.addView(box);
     }
@@ -337,8 +405,7 @@ public final class MainActivity extends Activity {
         TextView reference = Ui.label(this, passage.referenceLabel);
         reference.setTextColor(Ui.GOLD);
         head.addView(reference);
-        LinearLayout.LayoutParams spacer = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        head.addView(new View(this), spacer);
+        head.addView(Ui.spacer(this));
         head.addView(Ui.text(this, passage.chapterNameArabic, 13f, Ui.MUTED));
         card.addView(head);
 
@@ -418,8 +485,10 @@ public final class MainActivity extends Activity {
         }
         String question = input.getText().toString().trim();
         if (question.isEmpty()) return;
+        store.addSearch(question);
         input.setText("");
         final String language = prefs.language();
+        if (turns.isEmpty()) messages.removeAllViews();
         turns.add(new HistoryCodec.Turn("user", question, null));
         messages.addView(userBubble(question));
         status.setText("Searching the configured Quran dataset…");

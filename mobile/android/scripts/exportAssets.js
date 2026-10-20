@@ -93,5 +93,17 @@ stats.push(
   )
 );
 
+// Structural mushaf metadata (juz / page / hizb). Generated from the public
+// Quran.com API by mobile/android/scripts/fetchQuranMeta.js and committed under
+// mobile/android/scripts/data/ so every build reproduces the same table.
+const metaSource = path.join(here, "data", "quran-meta.tsv");
+if (!fs.existsSync(metaSource)) {
+  console.error("Missing structural metadata: " + metaSource);
+  console.error("Run: node mobile/android/scripts/fetchQuranMeta.js");
+  process.exit(1);
+}
+const metaLines = fs.readFileSync(metaSource, "utf8").trimEnd().split("\n");
+stats.push(write("quran-meta.tsv", metaLines));
+
 console.log("Exported assets:", stats.map((entry) => `${path.basename(entry.file)} ${Math.round(entry.bytes / 1024)}KB`).join(", "));
 console.log(`Verses: ${verses.length}, chapters: ${chapters.length}, translations: ${translations.length}`);

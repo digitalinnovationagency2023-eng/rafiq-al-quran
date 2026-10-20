@@ -19,7 +19,7 @@ const walk = (dir, suffix, acc = []) => {
   return acc;
 };
 
-const sources = walk(path.join(root, "app", "src", "main", "java", "com", "qurancompanion", "app", "logic"), ".java");
+const sources = walk(path.join(root, "app", "src", "main", "java", "com", "rqmbooks", "rafiqalquran", "logic"), ".java");
 const run = (command, args) => {
   const result = spawnSync(command, args, { cwd: root, stdio: "inherit" });
   if (result.status !== 0) process.exit(result.status || 1);

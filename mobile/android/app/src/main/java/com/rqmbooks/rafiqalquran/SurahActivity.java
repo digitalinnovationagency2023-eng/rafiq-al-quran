@@ -7,79 +7,92 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rqmbooks.rafiqalquran.logic.Chapter;
 import com.rqmbooks.rafiqalquran.logic.Dataset;
-import com.rqmbooks.rafiqalquran.logic.Verse;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/** Surah list plus an offline ayah reader (Milestone A, first slice). */
+/**
+ * Offline surah list (114 chapters) plus the device-local Bookmarks and Reading
+ * history screens. Tapping any row opens the reader at that verse.
+ */
 public final class SurahActivity extends Activity {
     private Prefs prefs;
+    private StudyStore store;
     private Dataset dataset;
     private LinearLayout root;
+    private LinearLayout body;
+    private TextView paneTitle;
+    private TextView paneSubtitle;
     private ListView list;
-    private ScrollView reader;
+    private ScrollView pane;
+    private boolean showingList = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Ui.init(this);
         prefs = new Prefs(this);
-        root = Ui.column(this);
-        root.setBackgroundColor(Ui.PAPER);
-        setContentView(root, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        store = new StudyStore(this);
+        root = Ui.screen(this);
 
-        LinearLayout bar = Ui.row(this);
-        bar.setBackgroundColor(Ui.INK);
-        bar.setPadding(Ui.dp(this, 12), Ui.dp(this, 12), Ui.dp(this, 12), Ui.dp(this, 12));
-        TextView back = Ui.text(this, "\u2190", 20f, Ui.GOLD);
-        back.setPadding(Ui.dp(this, 6), 0, Ui.dp(this, 14), 0);
-        back.setOnClickListener(view -> onBackPressed());
-        TextView title = Ui.text(this, "SURAH LIST", 16f, Ui.GOLD);
-        title.setTypeface(Typeface.SERIF, Typeface.BOLD);
-        title.setLetterSpacing(0.12f);
-        bar.addView(back);
-        bar.addView(title);
-        LinearLayout.LayoutParams flexible = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        bar.addView(new View(this), flexible);
-        TextView bookmarksButton = Ui.label(this, "Bookmarks");
-        bookmarksButton.setPadding(Ui.dp(this, 8), 0, Ui.dp(this, 8), 0);
-        bookmarksButton.setOnClickListener(v -> showBookmarks());
-        TextView historyButton = Ui.label(this, "History");
-        historyButton.setPadding(Ui.dp(this, 8), 0, Ui.dp(this, 8), 0);
-        historyButton.setOnClickListener(v -> showHistory());
-        bar.addView(bookmarksButton);
-        bar.addView(historyButton);
+        LinearLayout bar = Ui.bar(this, "Surah list", "114 surahs  \u00B7  offline", this::finish);
+        bar.addView(Ui.action(this, "Bookmarks", this::showBookmarks));
+        bar.addView(Ui.action(this, "History", this::showHistory));
+        bar.addView(Ui.themeToggle(this));
         root.addView(bar);
+        root.addView(Ui.goldRule(this));
+
+        LinearLayout paneBar = Ui.row(this);
+        paneBar.setBackgroundColor(Ui.PAPER);
+        paneBar.setPadding(Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 6));
+        LinearLayout titleBox = Ui.column(this);
+        paneTitle = Ui.text(this, "THE 114 SURAHS", 11f, Ui.GOLD_DEEP);
+        paneTitle.setTypeface(Typeface.DEFAULT_BOLD);
+        paneTitle.setLetterSpacing(0.14f);
+        paneSubtitle = Ui.text(this, "Tap a surah to read", 11f, Ui.MUTED);
+        titleBox.addView(paneTitle);
+        titleBox.addView(paneSubtitle);
+        paneBar.addView(titleBox);
+        paneBar.addView(Ui.spacer(this));
+        root.addView(paneBar);
+
+        body = Ui.column(this);
+        body.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        root.addView(body);
 
         list = new ListView(this);
         list.setBackgroundColor(Ui.PAPER);
         list.setDividerHeight(1);
+        list.setDivider(new android.graphics.drawable.ColorDrawable(Ui.LINE));
         list.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        root.addView(list);
+        body.addView(list);
 
-        reader = new ScrollView(this);
-        reader.setBackgroundColor(Ui.PAPER);
-        reader.setVisibility(View.GONE);
-        reader.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
-        root.addView(reader);
+        pane = new ScrollView(this);
+        pane.setBackgroundColor(Ui.PAPER);
+        pane.setVisibility(View.GONE);
+        pane.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        body.addView(pane);
+        setContentView(root);
+
+        TextView loading = Ui.text(this, "Loading the bundled Quran dataset\u2026", 13f, Ui.MUTED);
+        loading.setPadding(Ui.dp(this, 16), Ui.dp(this, 24), Ui.dp(this, 16), 0);
+        body.addView(loading);
+        list.setVisibility(View.GONE);
 
         new Thread(() -> {
             final Dataset loaded = Assets.dataset(this);
-            try {
-                Assets.ensureLanguage(this, loaded, prefs.language());
-            } catch (Exception ignored) {
-                // English stays available as the fallback translation.
-            }
             runOnUiThread(() -> {
                 dataset = loaded;
+                body.removeView(loading);
                 showList();
             });
         }).start();
@@ -87,196 +100,242 @@ public final class SurahActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (reader.getVisibility() == View.VISIBLE) {
-            reader.setVisibility(View.GONE);
-            list.setVisibility(View.VISIBLE);
+        if (!showingList) {
+            showList();
             return;
         }
         super.onBackPressed();
     }
 
     private void showList() {
-        reader.setVisibility(View.GONE);
+        showingList = true;
+        paneTitle.setText("THE 114 SURAHS");
+        paneSubtitle.setText("Tap a surah to read");
+        pane.removeAllViews();
+        pane.setVisibility(View.GONE);
         list.setVisibility(View.VISIBLE);
-        List<String> rows = new ArrayList<>();
-        for (int id = 1; id <= 114; id++) {
-            Chapter chapter = dataset.chapter(id);
-            if (chapter == null) continue;
-            rows.add(id + ". " + chapter.nameEnglish + "  \u00B7  " + chapter.nameArabic
-                    + "\n" + chapter.verseCount + " verses" + (chapter.revelation == null ? "" : " \u00B7 " + chapter.revelation));
-        }
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, rows) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                TextView view = (TextView) super.getView(position, convertView, parent);
-                view.setTextColor(Ui.INK);
-                view.setTextSize(14f);
-                view.setPadding(Ui.dp(SurahActivity.this, 14), Ui.dp(SurahActivity.this, 10),
-                        Ui.dp(SurahActivity.this, 14), Ui.dp(SurahActivity.this, 10));
-                return view;
-            }
-        };
-        list.setAdapter(adapter);
-        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                showChapter(position + 1);
-            }
+        refreshAdapter();
+    }
+
+    private void refreshAdapter() {
+        if (dataset == null) return;
+        list.setAdapter(new ChapterAdapter());
+        list.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
+            Chapter chapter = dataset.chapter(position + 1);
+            if (chapter != null) startActivity(ReaderActivity.intent(this, chapter.id, null));
         });
     }
 
-    private void showChapter(int chapterId) {
-        Chapter chapter = dataset.chapter(chapterId);
-        if (chapter == null) return;
-        recordHistory(chapterId);
-        String language = prefs.language();
-        LinearLayout content = Ui.column(this);
-        content.setPadding(Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 24));
+    private final class ChapterAdapter extends BaseAdapter {
+        @Override public int getCount() { return 114; }
+        @Override public Object getItem(int position) { return dataset.chapter(position + 1); }
+        @Override public long getItemId(int position) { return position + 1; }
 
-        TextView heading = Ui.text(this, chapter.nameEnglish + " \u00B7 " + chapter.nameArabic, 20f, Ui.GOLD);
-        heading.setTypeface(Typeface.SERIF, Typeface.BOLD);
-        content.addView(heading);
-        TextView meta = Ui.text(this, chapter.verseCount + " verses \u00B7 " + (chapter.revelation == null ? "" : chapter.revelation),
-                12f, Ui.MUTED);
-        meta.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 10));
-        content.addView(meta);
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            Chapter chapter = dataset.chapter(position + 1);
+            LinearLayout row = Ui.row(parent.getContext());
+            row.setPadding(Ui.dp(SurahActivity.this, 12), Ui.dp(SurahActivity.this, 10),
+                    Ui.dp(SurahActivity.this, 12), Ui.dp(SurahActivity.this, 10));
+            row.setBackgroundColor(Ui.PAPER);
 
-        int shown = 0;
-        for (Verse verse : dataset.chapterVerses(chapterId)) {
-            if (shown++ >= 60) break;
-            TextView reference = Ui.label(this, versionLabel(verse));
-            reference.setTextColor(Ui.GOLD_DEEP);
-            reference.setPadding(0, Ui.dp(this, 14), 0, Ui.dp(this, 2));
-            content.addView(reference);
+            TextView number = Ui.text(SurahActivity.this, String.valueOf(chapter.id), 13f, Ui.GOLD_DEEP);
+            number.setTypeface(Typeface.SERIF, Typeface.BOLD);
+            number.setGravity(Gravity.CENTER);
+            number.setBackground(Ui.rounded(Ui.GOLD_SOFT, Ui.LINE, 6, SurahActivity.this));
+            LinearLayout.LayoutParams numberParams = new LinearLayout.LayoutParams(Ui.dp(SurahActivity.this, 34), Ui.dp(SurahActivity.this, 34));
+            number.setLayoutParams(numberParams);
+            row.addView(number);
 
-            TextView arabic = Ui.text(this, verse.arabic, 22f * prefs.textScale(), Ui.INK);
+            LinearLayout titles = Ui.column(parent.getContext());
+            LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            titleParams.leftMargin = Ui.dp(SurahActivity.this, 10);
+            TextView english = Ui.text(SurahActivity.this, chapter.nameEnglish, 15f, Ui.INK);
+            english.setTypeface(Typeface.DEFAULT_BOLD);
+            TextView arabic = Ui.text(SurahActivity.this, chapter.nameArabic, 15f, Ui.GOLD_DEEP);
             arabic.setTextDirection(View.TEXT_DIRECTION_RTL);
             arabic.setGravity(Gravity.RIGHT);
-            arabic.setLineSpacing(Ui.dp(this, 6), 1.2f);
-            content.addView(arabic);
+            arabic.setTypeface(Typeface.SERIF);
+            titles.addView(english);
+            titles.addView(arabic);
+            row.addView(titles, titleParams);
 
-            String translation = dataset.translationText(language, verse.key);
-            if (translation == null || translation.isEmpty()) translation = dataset.translationText("en", verse.key);
-            if (translation != null && !translation.isEmpty()) {
-                TextView translated = Ui.text(this, translation, 14f * prefs.textScale(), Ui.MUTED);
-                translated.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 6));
-                content.addView(translated);
-            }
-            LinearLayout verseActions = Ui.row(this);
-            verseActions.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 2));
-            final String shareText = versionLabel(verse) + "\n\n" + verse.arabic + "\n\n" + (translation == null ? "" : translation);
-            TextView copy = Ui.label(this, "Copy");
-            copy.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
-            copy.setOnClickListener(v -> {
-                android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Quran verse", shareText));
-                android.widget.Toast.makeText(this, "Verse copied", android.widget.Toast.LENGTH_SHORT).show();
-            });
-            TextView share = Ui.label(this, "Share");
-            share.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
-            share.setOnClickListener(v -> {
-                android.content.Intent send = new android.content.Intent(android.content.Intent.ACTION_SEND);
-                send.setType("text/plain");
-                send.putExtra(android.content.Intent.EXTRA_TEXT, shareText);
-                startActivity(android.content.Intent.createChooser(send, "Share verse"));
-            });
-            final String bookmarkKey = verse.key;
-            final TextView save = Ui.label(this, isBookmarked(bookmarkKey) ? "Saved" : "Save");
-            save.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
-            save.setOnClickListener(v -> {
-                boolean now = toggleBookmark(bookmarkKey);
-                save.setText(now ? "Saved" : "Save");
-                android.widget.Toast.makeText(this, now ? "Verse bookmarked" : "Bookmark removed", android.widget.Toast.LENGTH_SHORT).show();
-            });
-            verseActions.addView(copy);
-            verseActions.addView(share);
-            verseActions.addView(save);
-            content.addView(verseActions);
-            content.addView(Ui.divider(this));
+            LinearLayout meta = Ui.column(parent.getContext());
+            meta.setGravity(Gravity.END);
+            TextView verses = Ui.text(SurahActivity.this, chapter.verseCount + " verses", 11f, Ui.MUTED);
+            verses.setGravity(Gravity.END);
+            TextView revelation = Ui.text(SurahActivity.this, chapter.revelation == null ? "" : chapter.revelation, 9f, Ui.GOLD_DEEP);
+            revelation.setGravity(Gravity.END);
+            revelation.setLetterSpacing(0.1f);
+            meta.addView(verses);
+            meta.addView(revelation);
+            row.addView(meta);
+            return row;
         }
-        if (chapter.verseCount > 60) {
-            content.addView(Ui.text(this, "Showing the first 60 verses of this surah in this build.", 12f, Ui.MUTED));
-        }
-        reader.removeAllViews();
-        reader.addView(content);
-        list.setVisibility(View.GONE);
-        reader.setVisibility(View.VISIBLE);
-        reader.scrollTo(0, 0);
     }
 
-    private android.content.SharedPreferences store() {
-        return getSharedPreferences("rafiq_reader", MODE_PRIVATE);
-    }
-
-    private boolean isBookmarked(String key) {
-        return store().getStringSet("bookmarks", new java.util.HashSet<String>()).contains(key);
-    }
-
-    private boolean toggleBookmark(String key) {
-        java.util.Set<String> set = new java.util.HashSet<String>(store().getStringSet("bookmarks", new java.util.HashSet<String>()));
-        boolean added = set.add(key);
-        if (!added) { set.remove(key); }
-        store().edit().putStringSet("bookmarks", set).apply();
-        return added;
-    }
-
-    private void recordHistory(int chapterId) {
-        String current = store().getString("history", "");
-        StringBuilder next = new StringBuilder(String.valueOf(chapterId));
-        for (String part : current.split(",")) {
-            if (part.isEmpty() || part.equals(String.valueOf(chapterId))) continue;
-            if (next.length() < 60) next.append(',').append(part);
-        }
-        store().edit().putString("history", next.toString()).apply();
-    }
-
-    private void showKeyList(java.util.List<String> keys, java.util.List<String> labels) {
-        list.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, labels) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                TextView view = (TextView) super.getView(position, convertView, parent);
-                view.setTextColor(Ui.INK);
-                view.setTextSize(15f);
-                view.setPadding(Ui.dp(SurahActivity.this, 14), Ui.dp(SurahActivity.this, 12),
-                        Ui.dp(SurahActivity.this, 14), Ui.dp(SurahActivity.this, 12));
-                return view;
-            }
-        });
-        list.setOnItemClickListener((parent, view, position, id) -> {
-            if (keys.isEmpty()) return;
-            String key = keys.get(position);
-            if (key.contains(":")) showChapter(Integer.parseInt(key.split(":")[0]));
-            else showChapter(Integer.parseInt(key));
-        });
-        reader.setVisibility(View.GONE);
-        list.setVisibility(View.VISIBLE);
-    }
-
+    // ------------------------------------------------------------- bookmarks
     private void showBookmarks() {
-        java.util.List<String> keys = new java.util.ArrayList<String>(store().getStringSet("bookmarks", new java.util.HashSet<String>()));
-        java.util.Collections.sort(keys);
-        java.util.List<String> labels = new java.util.ArrayList<String>();
-        for (String key : keys) labels.add(key.replace(':', ' '));
-        if (keys.isEmpty()) labels.add("No bookmarks yet — open a surah and tap Save.");
-        showKeyList(keys, labels);
-    }
-
-    private void showHistory() {
-        String current = store().getString("history", "");
-        java.util.List<String> keys = new java.util.ArrayList<String>();
-        java.util.List<String> labels = new java.util.ArrayList<String>();
-        for (String part : current.split(",")) {
-            if (part.isEmpty()) continue;
-            Chapter chapter = dataset.chapter(Integer.parseInt(part));
-            if (chapter == null) continue;
-            keys.add(part);
-            labels.add(chapter.nameEnglish + "  ·  " + chapter.nameArabic);
+        if (dataset == null) {
+            toast("The dataset is still loading.");
+            return;
         }
-        if (keys.isEmpty()) labels.add("No reading history yet — open a surah.");
-        showKeyList(keys, labels);
+        showingList = false;
+        paneTitle.setText("BOOKMARKS");
+        paneSubtitle.setText(store.bookmarkTotal() + " saved verses across " + store.collections().size() + " collections");
+        list.setVisibility(View.GONE);
+        pane.setVisibility(View.VISIBLE);
+        pane.removeAllViews();
+        LinearLayout content = Ui.column(this);
+        content.setPadding(Ui.dp(this, 14), Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 20));
+
+        TextView back = Ui.action(this, "\u2190 Back to surahs", this::showList);
+        content.addView(back);
+
+        if (store.bookmarkTotal() == 0) {
+            LinearLayout empty = Ui.cardBox(this);
+            LinearLayout.LayoutParams params = Ui.withTop(this, 10);
+            empty.setLayoutParams(params);
+            empty.addView(Ui.sectionLabel(this, "Nothing saved yet"));
+            empty.addView(Ui.text(this, "Open a surah, tap Save on any verse and it will appear here in the collection you choose.", 12f, Ui.MUTED));
+            content.addView(empty);
+        }
+        for (String collection : store.collections()) {
+            List<String> keys = store.bookmarkedKeys(collection);
+            if (keys.isEmpty()) continue;
+            TextView section = Ui.sectionLabel(this, collection + "  \u00B7  " + keys.size());
+            section.setPadding(0, Ui.dp(this, 16), 0, Ui.dp(this, 4));
+            content.addView(section);
+            for (String key : keys) {
+                content.addView(verseRow(key, collection));
+            }
+        }
+        if (store.bookmarkTotal() > 0) {
+            addExportButton(content);
+        }
+        pane.addView(content);
     }
 
-    private String versionLabel(Verse verse) {
-        return verse.chapter.nameEnglish + " " + verse.key;
+    private void addExportButton(LinearLayout content) {
+        android.widget.Button export = Ui.button(this, "Export bookmarks (CSV) via share sheet", false);
+        LinearLayout.LayoutParams params = Ui.withTop(this, 16);
+        export.setLayoutParams(params);
+        export.setOnClickListener(v -> shareBookmarksCsv());
+        content.addView(export);
+    }
+
+    private View verseRow(String key, String collection) {
+        com.rqmbooks.rafiqalquran.logic.Verse verse = dataset.verse(key);
+        LinearLayout card = Ui.cardBox(this);
+        LinearLayout.LayoutParams params = Ui.withTop(this, 6);
+        card.setLayoutParams(params);
+        String reference = verse == null ? key : verse.chapter.nameEnglish + "  " + verse.key;
+        TextView head = Ui.text(this, reference, 13f, Ui.INK);
+        head.setTypeface(Typeface.DEFAULT_BOLD);
+        card.addView(head);
+        String translation = dataset.translationText(prefs.language(), key);
+        if (translation == null || translation.isEmpty()) translation = dataset.translationText("en", key);
+        if (translation != null && !translation.isEmpty()) {
+            TextView preview = Ui.text(this, translation.length() > 120 ? translation.substring(0, 120) + "\u2026" : translation, 11f, Ui.MUTED);
+            preview.setPadding(0, Ui.dp(this, 3), 0, 0);
+            card.addView(preview);
+        }
+        String note = store.note(key);
+        if (!note.isEmpty()) {
+            TextView noteView = Ui.text(this, "Note: " + note, 11f, Ui.GOLD_DEEP);
+            noteView.setPadding(0, Ui.dp(this, 3), 0, 0);
+            card.addView(noteView);
+        }
+        TextView meta = Ui.text(this, collection.toUpperCase(), 9f, Ui.GOLD_DEEP);
+        meta.setLetterSpacing(0.12f);
+        meta.setPadding(0, Ui.dp(this, 4), 0, 0);
+        card.addView(meta);
+        card.setOnClickListener(v -> openVerse(key));
+        return card;
+    }
+
+    private void shareBookmarksCsv() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(com.rqmbooks.rafiqalquran.logic.StudyData.csvHeader("Reference", "Collection", "Note")).append('\n');
+        for (String collection : store.collections()) {
+            for (String key : store.bookmarkedKeys(collection)) {
+                com.rqmbooks.rafiqalquran.logic.Verse verse = dataset.verse(key);
+                String reference = verse == null ? key : verse.chapter.nameEnglish + " " + verse.key;
+                builder.append(com.rqmbooks.rafiqalquran.logic.StudyData.csv(reference, collection, store.note(key))).append('\n');
+            }
+        }
+        android.content.Intent send = new android.content.Intent(android.content.Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(android.content.Intent.EXTRA_SUBJECT, "Rafiq Al-Quran bookmarks (CSV)");
+        send.putExtra(android.content.Intent.EXTRA_TEXT, builder.toString());
+        startActivity(android.content.Intent.createChooser(send, "Share bookmarks"));
+    }
+
+    // --------------------------------------------------------------- history
+    private void showHistory() {
+        if (dataset == null) {
+            toast("The dataset is still loading.");
+            return;
+        }
+        showingList = false;
+        paneTitle.setText("READING HISTORY");
+        paneSubtitle.setText("Most recent chapters you opened");
+        list.setVisibility(View.GONE);
+        pane.setVisibility(View.VISIBLE);
+        pane.removeAllViews();
+        LinearLayout content = Ui.column(this);
+        content.setPadding(Ui.dp(this, 14), Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 20));
+        content.addView(Ui.action(this, "\u2190 Back to surahs", this::showList));
+
+        List<Integer> chapters = store.historyChapters();
+        if (chapters.isEmpty()) {
+            LinearLayout empty = Ui.cardBox(this);
+            LinearLayout.LayoutParams params = Ui.withTop(this, 10);
+            empty.setLayoutParams(params);
+            empty.addView(Ui.sectionLabel(this, "No reading history yet"));
+            empty.addView(Ui.text(this, "Chapters you open in the reader are listed here so you can continue where you left off.", 12f, Ui.MUTED));
+            content.addView(empty);
+        }
+        String lastKey = store.lastVerseKey();
+        for (Integer chapterId : chapters) {
+            Chapter chapter = dataset.chapter(chapterId);
+            if (chapter == null) continue;
+            LinearLayout card = Ui.cardBox(this);
+            LinearLayout.LayoutParams params = Ui.withTop(this, 6);
+            card.setLayoutParams(params);
+            TextView head = Ui.text(this, chapter.nameEnglish + "  \u00B7  " + chapter.nameArabic, 14f, Ui.INK);
+            head.setTypeface(Typeface.SERIF, Typeface.BOLD);
+            card.addView(head);
+            String detail = chapter.verseCount + " verses  \u00B7  " + (chapter.revelation == null ? "" : chapter.revelation);
+            if (chapterId == store.lastChapter() && lastKey != null && lastKey.startsWith(chapterId + ":")) {
+                detail += "  \u00B7  last position " + lastKey;
+            }
+            TextView meta = Ui.text(this, detail, 11f, Ui.MUTED);
+            meta.setPadding(0, Ui.dp(this, 3), 0, 0);
+            card.addView(meta);
+            final int id = chapterId;
+            card.setOnClickListener(v -> startActivity(ReaderActivity.intent(this, id, null)));
+            content.addView(card);
+        }
+        if (!chapters.isEmpty()) {
+            TextView clear = Ui.action(this, "Clear reading history", () -> {
+                store.clearHistory();
+                toast("Reading history cleared");
+                showHistory();
+            });
+            clear.setPadding(0, Ui.dp(this, 14), 0, 0);
+            content.addView(clear);
+        }
+        pane.addView(content);
+    }
+
+    private void openVerse(String key) {
+        if (key == null || !key.contains(":")) return;
+        int chapterId = Integer.parseInt(key.split(":")[0]);
+        startActivity(ReaderActivity.intent(this, chapterId, key));
+    }
+
+    private void toast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 
 import com.rqmbooks.rafiqalquran.logic.Dataset;
 import com.rqmbooks.rafiqalquran.logic.DatasetLoader;
+import com.rqmbooks.rafiqalquran.logic.QuranMeta;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -21,6 +22,7 @@ import java.util.Set;
  */
 public final class Assets {
     private static Dataset cached;
+    private static QuranMeta cachedMeta;
     private static final Set<String> loadedLanguages = new HashSet<>();
 
     private Assets() {}
@@ -65,6 +67,17 @@ public final class Assets {
     private static List<String> read(Context context, String name) throws Exception {
         try (InputStream stream = context.getAssets().open(name)) {
             return DatasetLoader.readLines(stream);
+        }
+    }
+
+    /** Structural juz/page/hizb metadata, loaded once. */
+    public static synchronized QuranMeta meta(Context context) {
+        if (cachedMeta != null) return cachedMeta;
+        try {
+            cachedMeta = QuranMeta.parse(read(context, "quran-meta.tsv"));
+            return cachedMeta;
+        } catch (Exception error) {
+            throw new IllegalStateException("Mushaf page metadata could not be loaded: " + error.getMessage(), error);
         }
     }
 }

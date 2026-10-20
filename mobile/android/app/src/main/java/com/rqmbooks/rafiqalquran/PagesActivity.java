@@ -36,6 +36,7 @@ public final class PagesActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Ui.init(this);
         prefs = new Prefs(this);
         String page = getIntent().getStringExtra("page");
         if (page == null) page = "about";
@@ -86,16 +87,16 @@ public final class PagesActivity extends Activity {
         heading(parent, "About Rafiq Al-Quran",
                 "A free, Quran-focused conversational app. It helps users locate and read verses, with the Arabic text and an identified translation shown separately.");
         section(parent, "What it does",
-                "• Retrieves verses from a validated local Quran dataset and identified translations.\n"
-                + "• Shows the exact Arabic text, the surah and verse reference, and the source metadata for each passage.\n"
-                + "• Lets users request more passages, open a specific reference, and listen to the translation read aloud.\n"
-                + "• Works offline: reading, search and answers use the bundled dataset.");
+                "â€¢ Retrieves verses from a validated local Quran dataset and identified translations.\n"
+                + "â€¢ Shows the exact Arabic text, the surah and verse reference, and the source metadata for each passage.\n"
+                + "â€¢ Lets users request more passages, open a specific reference, and listen to the translation read aloud.\n"
+                + "â€¢ Works offline: reading, search and answers use the bundled dataset.");
         section(parent, "What it does not do",
-                "• It does not use Hadith, Tafsir, external religious websites or a model's own religious knowledge.\n"
-                + "• It does not write or paraphrase Quranic verses.\n"
-                + "• It does not issue fatwas, rulings or authoritative interpretation.\n"
-                + "• It does not claim its search results are exhaustive.\n"
-                + "• It does not present a translation as the Arabic text, or imitated speech as Quranic recitation.");
+                "â€¢ It does not use Hadith, Tafsir, external religious websites or a model's own religious knowledge.\n"
+                + "â€¢ It does not write or paraphrase Quranic verses.\n"
+                + "â€¢ It does not issue fatwas, rulings or authoritative interpretation.\n"
+                + "â€¢ It does not claim its search results are exhaustive.\n"
+                + "â€¢ It does not present a translation as the Arabic text, or imitated speech as Quranic recitation.");
         section(parent, "Limitations",
                 "Retrieval is keyword and concept based over the bundled dataset. It may misunderstand a question, miss relevant verses, or rank a less relevant passage highly. When it cannot identify sufficiently relevant verses it says so explicitly and never concludes that the Quran does not address a topic. Please consult qualified scholars where religious interpretation is required.");
         section(parent, "Contact", "Digital Innovative Agency FZ LLC\nEmail: info@rqmbooks.com\nPhone / WhatsApp: +971 9 501 0254\nWhatsApp chat: https://wa.me/97195010254");
@@ -106,14 +107,14 @@ public final class PagesActivity extends Activity {
     private void renderPrivacy(LinearLayout parent) {
         heading(parent, "Privacy", "What the app stores and what it never does.");
         section(parent, "Stored on this device",
-                "• Your questions and the answers shown, so the conversation can be restored.\n"
-                + "• Interface preferences: language, text size and voice setting.\n"
-                + "• Nothing else. There is no account and no advertising identifier.");
+                "â€¢ Your questions and the answers shown, so the conversation can be restored.\n"
+                + "â€¢ Interface preferences: language, text size and voice setting.\n"
+                + "â€¢ Nothing else. There is no account and no advertising identifier.");
         section(parent, "Never done",
-                "• No raw payment card data is stored; payment is hosted by the provider.\n"
-                + "• Conversation text is never attached to a report without your explicit consent.\n"
-                + "• Nothing is sent to WhatsApp or another third party automatically.\n"
-                + "• The app does not read RQM Books accounting, customer, invoice or payroll data.");
+                "â€¢ No raw payment card data is stored; payment is hosted by the provider.\n"
+                + "â€¢ Conversation text is never attached to a report without your explicit consent.\n"
+                + "â€¢ Nothing is sent to WhatsApp or another third party automatically.\n"
+                + "â€¢ The app does not read RQM Books accounting, customer, invoice or payroll data.");
         section(parent, "Voice features",
                 "Voice input uses the device's speech recognition; audio may be processed by the platform provider. Spoken answers use the device's speech synthesis for the translation and summary only and are never presented as Quranic recitation. Both can be disabled in the menu.");
         section(parent, "Isolation",
@@ -129,13 +130,13 @@ public final class PagesActivity extends Activity {
                 + "Version: " + dataset.provenance().version + "\n"
                 + "Source: " + dataset.provenance().sourceUrl + "\n"
                 + "Imported: " + dataset.provenance().importedAt + "\n"
-                + "Verses: " + dataset.verseCount() + " · Chapters: " + dataset.chapterCount() + "\n"
+                + "Verses: " + dataset.verseCount() + " Â· Chapters: " + dataset.chapterCount() + "\n"
                 + "Checksum SHA-256:\n" + dataset.provenance().checksum);
         StringBuilder translations = new StringBuilder();
         for (Map.Entry<String, TranslationMeta> entry : dataset.translations().entrySet()) {
             TranslationMeta meta = entry.getValue();
-            translations.append("• ").append(entry.getKey().toUpperCase()).append(": ").append(meta.title);
-            if (meta.author != null && !meta.author.isEmpty()) translations.append(" — ").append(meta.author);
+            translations.append("â€¢ ").append(entry.getKey().toUpperCase()).append(": ").append(meta.title);
+            if (meta.author != null && !meta.author.isEmpty()) translations.append(" â€” ").append(meta.author);
             translations.append("\n   Licence status: ").append(meta.licenseStatus).append("\n");
         }
         section(parent, "Translations", translations.toString());
@@ -151,7 +152,7 @@ public final class PagesActivity extends Activity {
 
         LinearLayout form = Ui.column(this);
         form.setPadding(0, Ui.dp(this, 12), 0, 0);
-        final TextView status = Ui.text(this, "Checking donation availability…", 12f, Ui.MUTED);
+        final TextView status = Ui.text(this, "Checking donation availabilityâ€¦", 12f, Ui.MUTED);
         final EditText amount = new EditText(this);
         amount.setHint("Amount in " + "AED" + " (e.g. 25)");
         amount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
@@ -200,7 +201,7 @@ public final class PagesActivity extends Activity {
             status.setText(invalid);
             return;
         }
-        status.setText("Preparing checkout…");
+        status.setText("Preparing checkoutâ€¦");
         new Thread(() -> {
             try {
                 JSONObject body = new JSONObject();
@@ -226,7 +227,7 @@ public final class PagesActivity extends Activity {
     private void renderTools(LinearLayout parent) {
         heading(parent, "Optional tools",
                 "These are optional conveniences. Core reading, verse lookup and the conversational experience are free and never depend on payment.");
-        TextView status = Ui.text(this, "Loading…", 12f, Ui.MUTED);
+        TextView status = Ui.text(this, "Loadingâ€¦", 12f, Ui.MUTED);
         parent.addView(status);
         new Thread(() -> {
             try {
@@ -279,7 +280,7 @@ public final class PagesActivity extends Activity {
                 status.setText("Please describe the issue in at least a few words.");
                 return;
             }
-            status.setText("Sending…");
+            status.setText("Sendingâ€¦");
             new Thread(() -> {
                 try {
                     JSONObject body = new JSONObject();
@@ -311,7 +312,7 @@ public final class PagesActivity extends Activity {
     private String joinReasons(JSONArray reasons) {
         if (reasons == null) return "";
         StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < reasons.length(); i++) builder.append("• ").append(reasons.optString(i)).append('\n');
+        for (int i = 0; i < reasons.length(); i++) builder.append("â€¢ ").append(reasons.optString(i)).append('\n');
         return builder.toString();
     }
 }

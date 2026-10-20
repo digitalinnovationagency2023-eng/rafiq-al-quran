@@ -30,14 +30,19 @@ public final class Api {
     }
 
     public static JSONObject get(Resources resources, String path) throws Exception {
-        return request(resources, "GET", path, null);
+        return request(resources, "GET", path, null, null);
+    }
+
+    /** Token-authenticated GET used only by the in-app operator screen. */
+    public static JSONObject get(Resources resources, String path, String adminToken) throws Exception {
+        return request(resources, "GET", path, null, adminToken);
     }
 
     public static JSONObject post(Resources resources, String path, JSONObject body) throws Exception {
-        return request(resources, "POST", path, body);
+        return request(resources, "POST", path, body, null);
     }
 
-    private static JSONObject request(Resources resources, String method, String path, JSONObject body) throws Exception {
+    private static JSONObject request(Resources resources, String method, String path, JSONObject body, String adminToken) throws Exception {
         String base = baseUrl(resources);
         if (base.isEmpty()) throw new IllegalStateException("Online services are not configured in this build.");
         URL url = new URL(base.replaceAll("/$", "") + path);
@@ -46,6 +51,9 @@ public final class Api {
         connection.setConnectTimeout(12000);
         connection.setReadTimeout(15000);
         connection.setRequestProperty("Accept", "application/json");
+        if (adminToken != null && !adminToken.isEmpty()) {
+            connection.setRequestProperty("x-admin-token", adminToken);
+        }
         if (body != null) {
             connection.setDoOutput(true);
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
