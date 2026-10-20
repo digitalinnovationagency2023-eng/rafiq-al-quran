@@ -3,7 +3,7 @@
 Run on 2026-10-21 (Windows, Node 24, JDK 17, Android SDK 34; emulator AVD `rafiqtest`, Android 14,
 1080×2340). Release **1.0.11** (versionCode 11, versionName 1.0.11).
 
-**Artifacts (1.0.11)** — CI run [https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39502295156](https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39502295156) on commit `b40d416b1b3aabb4cd8dadc88f6600b80d5dc772` (success). APK `dist/rafiq-al-quran-1.0.11.apk`: 3,580,859 bytes, SHA-256 `A5F92DB1C7205D4EF3881620CEC5FE972FFA45F9A7E0AB444FF21B27F28C5FE8`. Unsigned CI AAB: 3,573,454 bytes, SHA-256 `C09956149C193A7CB5DCECA2CA3B23E5AA70EE6B5BF923AAA90480696D5DB015`. Signed upload AAB `dist/rafiq-al-quran-1.0.11-signed.aab`: 3,576,566 bytes, SHA-256 `C64A39DB17869E82FAA62EDB5B60973C88DF981A7F5C1CD914AD9BC196B0DB6F` (jarsigner `jar verified`, upload cert 08:DE:24:53…, bundletool validate exit 0)..
+**Artifacts (1.0.11)** — CI run [https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39503214114](https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39503214114) on commit `557057d01ce08c6702cb760170f5a855cffb0732` (success). APK `dist/rafiq-al-quran-1.0.11.apk`: 3,580,857 bytes, SHA-256 `C3FB6D536014F7E646EB7D01835BE46E2E9D5F6CDEEA87019DA48591E64E9005`. Unsigned CI AAB: 3,573,455 bytes, SHA-256 `8943D5878B738BB8783747A1267C671073F7FE93C7A3643720F8C56CE8067B74`. Signed upload AAB `dist/rafiq-al-quran-1.0.11-signed.aab`: 3,576,568 bytes, SHA-256 `BE998597D7EE7EAA98CB63CBC68550834F90B7A99F3F1A6E20A6531A9E3EDECB` (jarsigner `jar verified`, upload cert 08:DE:24:53…, bundletool validate exit 0)..
 
 ## Server suite — 73 passed, 0 failed
 
@@ -46,7 +46,7 @@ The 67 checks include the per-passage dataset-existence assertions emitted in a 
 - **34 Java sources** compiled; signed (apksigner verify passed) and zipaligned;
 - size **~3.41 MB**; the exact size and SHA-256 of the release artifact are recorded in the release note;
 - bundles `classes.dex`, the seven dataset assets (including `assets/quran-meta.tsv`) and the launcher icon;
-- **Artifacts (1.0.11): CI run 39502295156 on commit b40d416 (success); APK SHA-256 A5F92DB1C7205D4EF3881620CEC5FE972FFA45F9A7E0AB444FF21B27F28C5FE8; signed upload AAB SHA-256 C64A39DB17869E82FAA62EDB5B60973C88DF981A7F5C1CD914AD9BC196B0DB6F (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 C09956149C193A7CB5DCECA2CA3B23E5AA70EE6B5BF923AAA90480696D5DB015**.
+- **Artifacts (1.0.11): CI run 39503214114 on commit 557057d (success); APK SHA-256 C3FB6D536014F7E646EB7D01835BE46E2E9D5F6CDEEA87019DA48591E64E9005; signed upload AAB SHA-256 BE998597D7EE7EAA98CB63CBC68550834F90B7A99F3F1A6E20A6531A9E3EDECB (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 8943D5878B738BB8783747A1267C671073F7FE93C7A3643720F8C56CE8067B74**.
 
 ## APK packaging verification — 20 checks passed
 
@@ -56,7 +56,7 @@ The 67 checks include the per-passage dataset-existence assertions emitted in a 
 Checks: APK exists; signature verifies; package name; launchable activity; RECORD_AUDIO and INTERNET permissions;
 minSdk 24; targetSdk 36; versionCode and versionName match the manifest; `classes.dex`; all seven bundled assets;
 launcher icon packaged; app label "Rafiq Al-Quran". The SHA-256 of the released APK is recorded in the release
-note (**Artifacts (1.0.11): CI run 39502295156 on commit b40d416 (success); APK SHA-256 A5F92DB1C7205D4EF3881620CEC5FE972FFA45F9A7E0AB444FF21B27F28C5FE8; signed upload AAB SHA-256 C64A39DB17869E82FAA62EDB5B60973C88DF981A7F5C1CD914AD9BC196B0DB6F (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 C09956149C193A7CB5DCECA2CA3B23E5AA70EE6B5BF923AAA90480696D5DB015**).
+note (**Artifacts (1.0.11): CI run 39503214114 on commit 557057d (success); APK SHA-256 C3FB6D536014F7E646EB7D01835BE46E2E9D5F6CDEEA87019DA48591E64E9005; signed upload AAB SHA-256 BE998597D7EE7EAA98CB63CBC68550834F90B7A99F3F1A6E20A6531A9E3EDECB (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 8943D5878B738BB8783747A1267C671073F7FE93C7A3643720F8C56CE8067B74**).
 
 ## AAB — CI build for 1.0.11
 
@@ -65,7 +65,7 @@ note (**Artifacts (1.0.11): CI run 39502295156 on commit b40d416 (success); APK 
   [39483479573](https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39483479573),
   success; `bundletool validate` exit 0; local `jarsigner` signing with the upload keystore).
 - For 1.0.11: the CI run URL, signed AAB SHA-256 and validation output are recorded in the release note
-  (**Artifacts (1.0.11): CI run 39502295156 on commit b40d416 (success); APK SHA-256 A5F92DB1C7205D4EF3881620CEC5FE972FFA45F9A7E0AB444FF21B27F28C5FE8; signed upload AAB SHA-256 C64A39DB17869E82FAA62EDB5B60973C88DF981A7F5C1CD914AD9BC196B0DB6F (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 C09956149C193A7CB5DCECA2CA3B23E5AA70EE6B5BF923AAA90480696D5DB015**). The signed AAB must be `jarsigner`
+  (**Artifacts (1.0.11): CI run 39503214114 on commit 557057d (success); APK SHA-256 C3FB6D536014F7E646EB7D01835BE46E2E9D5F6CDEEA87019DA48591E64E9005; signed upload AAB SHA-256 BE998597D7EE7EAA98CB63CBC68550834F90B7A99F3F1A6E20A6531A9E3EDECB (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 8943D5878B738BB8783747A1267C671073F7FE93C7A3643720F8C56CE8067B74**). The signed AAB must be `jarsigner`
   verified ("jar verified" plus the expected self-signed warning) and `bundletool validate` must exit 0 before
   upload, and it must be signed with the same Play upload key as 1.0.9 so Play upload-key continuity is preserved
   (`QURAN_KEYSTORE_PATH`; a generated throwaway key would be rejected).
