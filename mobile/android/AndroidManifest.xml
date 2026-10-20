@@ -33,5 +33,6 @@
             android:name=".PagesActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity android:name=".SurahActivity" android:exported="false" />
     </application>
 </manifest>

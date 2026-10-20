@@ -196,6 +196,7 @@ public final class MainActivity extends Activity {
         PopupMenu menu = new PopupMenu(this, anchor);
         menu.getMenu().add(0, 1, 0, "New conversation");
         menu.getMenu().add(0, 2, 1, prefs.voiceEnabled() ? "Turn voice off" : "Turn voice on");
+        menu.getMenu().add(0, 9, 1, "Browse surahs");
         menu.getMenu().add(0, 3, 2, "Sources & licences");
         menu.getMenu().add(0, 4, 3, "Support the app");
         menu.getMenu().add(0, 5, 4, "Optional tools");
@@ -211,6 +212,7 @@ public final class MainActivity extends Activity {
                     prefs.setVoiceEnabled(!prefs.voiceEnabled());
                     toast(prefs.voiceEnabled() ? "Voice features on" : "Voice features off");
                     return true;
+                case 9: startActivity(new Intent(this, SurahActivity.class)); return true;
                 case 3: openPage("sources"); return true;
                 case 4: openPage("support"); return true;
                 case 5: openPage("tools"); return true;
