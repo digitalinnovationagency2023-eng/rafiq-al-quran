@@ -25,8 +25,10 @@ jobs:
       - name: Android SDK 34 (runner already ships the SDK)
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager --sdk_root="$ANDROID_HOME" --install "platforms;android-34" "build-tools;34.0.0" >/dev/null
+          SDKM="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | head -n 1)"
+          echo "sdkmanager=$SDKM"
+          yes | "$SDKM" --licenses >/dev/null 2>&1 || true
+          "$SDKM" --sdk_root="$ANDROID_HOME" --install "platforms;android-34" "build-tools;34.0.0" >/dev/null
           ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools"
 
       - name: Install dependencies
