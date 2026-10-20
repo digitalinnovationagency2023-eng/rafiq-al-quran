@@ -4,6 +4,14 @@ Operator-only HTTP API used by the in-app admin screen. Every route below is
 disabled by default and protected by a shared operator token. The API is meant
 for operators only; it is not part of the public app experience.
 
+## Getting to the operator screen (app)
+
+The customer app does not show an admin entry. On the operator's own device: open the home screen and tap the
+"RAFIQ AL-QURAN" title **five times quickly** (within four seconds). A short toast confirms the unlock, and
+"Operator admin" then appears in the ⋮ menu for the rest of that app session; restarting the app hides it again.
+The token itself is still required on the screen. It is never bundled with the app and must never be given to
+customers, testers or support staff without a need to read feedback metadata.
+
 ## Recitation and AI status — read this first
 
 - The publisher's recitation rights review for Quran.com verse audio is **recorded (2026-10-21)**, and the 1.0.10
@@ -168,9 +176,10 @@ optional AI endpoints were not part of the recorded live check; after configurin
 
 ## Privacy and security
 
-* The admin screen is operator-only. Do not ship the token (or the admin screen
-  enabled by default) in a public store build; the operator enters the token at
-  runtime and it is kept in local/encrypted storage only.
+* The admin screen is operator-only and **hidden from customers**: the "Operator admin"
+  entry appears in the ⋮ menu only after five quick taps on the "RAFIQ AL-QURAN"
+  title, and only for the current app session. Do not ship the token in a public
+  build; the operator enters it at runtime and it is kept in local storage only.
 * Admin responses can contain personal data (feedback contact details,
   descriptions, consented diagnostics, donation metadata) and security-relevant
   audit history. Handle them under the app privacy policy and do not copy them

@@ -74,6 +74,9 @@ public final class MainActivity extends Activity {
     private TextView attachButton;
     private Attachments.File currentAttachment;
     private boolean aiAvailable;
+    private boolean operatorUnlocked;
+    private int titleTapCount;
+    private long titleTapWindowStart;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -152,6 +155,7 @@ public final class MainActivity extends Activity {
         topbar.addView(languageButton);
         topbar.addView(Ui.themeToggle(this));
         topbar.addView(menu);
+        attachOperatorUnlock(topbar);
 
         messages = Ui.column(this);
         messages.setPadding(Ui.dp(this, 14), Ui.dp(this, 8), Ui.dp(this, 14), Ui.dp(this, 16));
@@ -292,7 +296,7 @@ public final class MainActivity extends Activity {
         menu.getMenu().add(0, 6, 8, "Report an issue");
         menu.getMenu().add(0, 7, 9, "About");
         menu.getMenu().add(0, 8, 10, "Privacy");
-        menu.getMenu().add(0, 12, 11, "Operator admin");
+        if (operatorUnlocked) menu.getMenu().add(0, 12, 11, "Operator admin");
         menu.getMenu().add(0, 4, 12, "Support the app");
         menu.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
@@ -329,6 +333,39 @@ public final class MainActivity extends Activity {
             }
         });
         menu.show();
+    }
+
+    private void attachOperatorUnlock(LinearLayout topbar) {
+        View heading = findText(topbar, "RAFIQ AL-QURAN");
+        if (heading != null) heading.setOnClickListener(view -> registerTitleTap());
+    }
+
+    private View findText(ViewGroup group, String value) {
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View child = group.getChildAt(i);
+            if (child instanceof TextView && value.contentEquals(((TextView) child).getText())) return child;
+            if (child instanceof ViewGroup) {
+                View found = findText((ViewGroup) child, value);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private void registerTitleTap() {
+        long now = System.currentTimeMillis();
+        if (titleTapCount == 0 || now - titleTapWindowStart > 4000L) {
+            titleTapCount = 0;
+            titleTapWindowStart = now;
+        }
+        titleTapCount++;
+        if (titleTapCount >= 5) {
+            titleTapCount = 0;
+            if (!operatorUnlocked) {
+                operatorUnlocked = true;
+                toast("Operator admin unlocked for this session");
+            }
+        }
     }
 
     private void openPage(String page) {

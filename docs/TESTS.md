@@ -108,7 +108,7 @@ Verified in the same pass:
   operator's key; PDFs show the unsupported-type message.
 - **Page fixes.** The Support page no longer shows raw configuration keys or a dead checkout form; the former
   "Optional tools" page now presents the free study tools and states that no plans, subscriptions or add-ons are
-  sold; the operator admin screen explains what it is for; the captured pages render without mojibake
+  sold; the operator admin screen explains what it is for; the Operator admin menu entry is absent in the normal menu and appears after five quick taps on the app title, and the screen then connected with the operator token and rendered live diagnostics (flags, dataset counts); the captured pages render without mojibake
   (source files are UTF-8).
 
 ## Live production API — checked 2026-10-20

@@ -43,7 +43,8 @@ optional AI assistance needs the operator to configure a free key; see below.
   English and now speaks; mojibake in the in-app pages is fixed; the Support page no longer shows raw config keys or
   a dead checkout form; the former "Optional tools" page now presents the free study tools; the operator admin
   screen explains its purpose before use.
-- **Operator-only admin screen**: token-protected and read-only, connected to the app's own live API
+- **Operator-only admin screen**: token-protected and read-only, reached only by tapping the app title five
+  times quickly (hidden from customers, session-only unlock); connected to the app's own live API
   (`https://rqmbooks.com/rafiq-api`); no operator token is bundled with the app.
 - **No billing, subscriptions or donations** in this release — the premium and donation screens show their disabled
   state. **No account, no ads, no analytics**; study data never leaves the device unless the user exports it.

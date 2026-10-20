@@ -25,8 +25,8 @@ cases:
   reference and optional contact detail. Conversation text and diagnostics are sent only if you explicitly tick
   the consent box.
 - **The operator admin screen**, which is operator-only and read-only: it sends the operator token to the app's
-  own API to read service status. It is not part of normal app use, and it does not send your bookmarks, notes,
-  reading history or other study data.
+  own API to read service status. It is hidden from normal use (it appears only after five quick taps on the app
+  title on an operator device), and it does not send your bookmarks, notes, reading history or other study data.
 
 ## Optional AI assistance
 AI assistance is **optional and off by default**. A fresh install works fully locally: Quran reading, search,

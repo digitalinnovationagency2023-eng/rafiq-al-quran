@@ -49,7 +49,8 @@ leaves the device only in these cases:
   reference and optional contact detail. Conversation text and diagnostics are sent only if you explicitly tick
   the consent box.
 - **The operator admin screen**, which is operator-only and read-only: it sends the operator token to the app's
-  own API to read service status. It is not part of normal app use, and it does not send your bookmarks, notes,
+  own API to read service status. It is not part of normal app use, it is hidden from customers (it only appears
+  after five quick taps on the app title, on an operator device), and it does not send your bookmarks, notes,
   reading history or other study data.
 
 **Optional AI assistance.** AI assistance is **optional and off by default**. A fresh install works fully
@@ -198,7 +199,7 @@ Source page: `docs/terms.md` (published for GitHub Pages). Keep this copy and th
 | Account creation? | No account required; all functionality available without login. |
 | Location / contacts / files / audio? | Location and contacts: not collected. Files: only the file the user explicitly picks; text/.docx files are read on the device, images are sent only when optional AI is used. Audio: if voice input is used, microphone audio is processed by the device's speech recogniser and the app never records or uploads it. Recitation: the app streams verse audio from Quran.com and stores none of it. |
 | Purchase history | None — billing, subscriptions and donations are not implemented or enabled in this release. |
-| Operator admin screen | Operator-only and read-only: sends only the operator token to the app's own API to read status data; it does not send user study data and stores nothing from the responses in the app's study data. |
+| Operator admin screen | Operator-only and read-only, hidden from customers behind a five-tap gesture on the app title and shown for the operator session only: sends only the operator token to the app's own API to read status data; it does not send user study data and stores nothing from the responses in the app's study data. |
 
 Declarations: **No ads**, **No news app**, **No government app**, **All functionality available without login**, **Content rating**: Everyone / 3+ (religious reference content, no violence, no user-generated public content).
 
