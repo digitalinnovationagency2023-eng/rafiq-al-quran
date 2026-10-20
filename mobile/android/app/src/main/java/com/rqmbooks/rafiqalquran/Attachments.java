@@ -43,7 +43,7 @@ public final class Attachments {
         public String error;
 
         public String summary() {
-            if (image) return name + " (image" + (readableLocally ? "" : " — needs AI service") + ")";
+            if (image) return name + " (image — AI-assisted reading)";
             if (readableLocally) return name + " (" + text.length() + " characters read)";
             return name;
         }

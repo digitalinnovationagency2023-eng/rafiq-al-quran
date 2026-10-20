@@ -85,7 +85,7 @@ export const config = {
     apiKey: (process.env.AI_API_KEY || "").trim(),
     // The free Gemini tier works through its OpenAI-compatible endpoint, so a
     // model default keeps the feature usable with only AI_PROVIDER/AI_API_KEY.
-    model: (process.env.AI_MODEL || "gemini-2.5-flash").trim(),
+    model: (process.env.AI_MODEL || "gemini-flash-lite-latest").trim(),
     timeoutMs: int(process.env.AI_TIMEOUT_MS, 8000),
     maxMonthlyCalls: Math.max(0, int(process.env.AI_MAX_MONTHLY_CALLS, 0)),
   },

@@ -916,7 +916,14 @@ public final class MainActivity extends Activity {
             return;
         }
         attachmentRow.setVisibility(View.VISIBLE);
-        attachmentLabel.setText("Attached: " + currentAttachment.summary());
+        if (currentAttachment.image) {
+            String mode = aiAvailable && prefs.aiAssistEnabled()
+                    ? "image \u2014 will be read by the AI service"
+                    : "image \u2014 AI service is off";
+            attachmentLabel.setText("Attached: " + currentAttachment.name + " (" + mode + ")");
+        } else {
+            attachmentLabel.setText("Attached: " + currentAttachment.summary());
+        }
     }
 
     private void clearAttachment() {

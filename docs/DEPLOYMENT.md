@@ -42,7 +42,7 @@ in `docs/AI-ASSISTANT.md`.
 |---|---|---|
 | `AI_PROVIDER` | `none` | `none` (disabled) or `openai-compatible` |
 | `AI_BASE_URL` | empty | provider base URL; `/chat/completions` is appended (e.g. `https://generativelanguage.googleapis.com/v1beta/openai`) |
-| `AI_MODEL` | `gemini-2.5-flash` | model name sent to the provider |
+| `AI_MODEL` | `gemini-flash-lite-latest` | model name sent to the provider |
 | `AI_API_KEY` | empty | provider key; **server-side only**, never in the app, never committed, never echoed |
 | `AI_TIMEOUT_MS` | `8000` | per-call timeout; an aborted call returns `504` |
 | `AI_MAX_MONTHLY_CALLS` | `0` | optional hard monthly cap on provider calls (`0` = unlimited). Counted per UTC calendar month in the local database; no prompt or image data is stored |
@@ -61,7 +61,7 @@ needed:
    ```dotenv
    AI_PROVIDER=openai-compatible
    AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-   AI_MODEL=gemini-2.5-flash
+   AI_MODEL=gemini-flash-lite-latest
    AI_API_KEY=<free key from AI Studio - never commit it>
    AI_TIMEOUT_MS=8000
    AI_MAX_MONTHLY_CALLS=0
