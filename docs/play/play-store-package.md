@@ -12,8 +12,8 @@ Publisher: Digital Innovative Agency FZ LLC · info@rqmbooks.com · +971 9 501 0
 | Category | Education |
 | Package name | `com.rqmbooks.rafiqalquran` |
 | Version | versionCode **9** · versionName **1.0.9** |
-| SDK range | minSdk **23** (Android 6.0) · targetSdk **34** (Android 14) |
-| Build toolchain | Android SDK 34 build-tools (`aapt2` / `javac` / `d8` / `zipalign` / `apksigner`), **no Gradle**; **32 Java sources** |
+| SDK range | minSdk **24** (Android 7.0) · targetSdk **36** (Android 16 — Play requirement for new apps since 31 Aug 2026) |
+| Build toolchain | Android SDK 34 build-tools and platform (`compileSdk` 34, `targetSdk` 36), `aapt2` / `javac` / `d8` / `zipalign` / `apksigner`, **no Gradle**; **32 Java sources**. Edge-to-edge insets are handled in `Ui.init()` for Android 15+ |
 | Release APK | `dist/rafiq-al-quran-1.0.9.apk` — 3.40 MB, signed, installable |
 | AAB (unsigned, CI) | `dist/rafiq-al-quran-1.0.9.aab` — GitHub Actions artifact from `.github/workflows/build-aab.yml` (bundletool) |
 | AAB (signed, Play upload) | `dist/rafiq-al-quran-1.0.9-signed.aab` — CI AAB signed locally with `jarsigner` using the upload keystore; `jarsigner -verify` → "jar verified" |
@@ -190,6 +190,7 @@ Emulator QA on AVD `rafiqtest` (Android 14, 1080×2340). All files are in `dist/
 - [ ] Keep the recitation rights gate closed until the Quran.com recitation rights review is recorded; no recitation audio may be streamed or stored before then (`AudioGate.rightsReviewRecorded()` must stay false and the server recitation flag must be off).
 - [ ] Uninstall an earlier install before installing a locally rebuilt APK: each `buildApk.js` run recreates `mobile/android/build/` and its local signing key, so the signature changes. Run `adb uninstall com.rqmbooks.rafiqalquran`, then `adb install`.
 - [ ] Never commit `mobile/android/build/quran-release.keystore`, keystore passwords, `.env`, `ADMIN_TOKEN` or other secrets. Never include the operator token in screenshots, docs or commits.
+- [ ] Keep `targetSdk` at **36** (Android 16) and `minSdk` at **24**: Play rejects new apps below these levels (Automatic protection requires minSdk 24; target API 36 is required for new apps since 31 Aug 2026). The app handles Android 15+ edge-to-edge insets in `Ui.init()`. Ensure the emulator/device QA covers a modern Android version after changing SDK levels.
 - [ ] Confirm the Data Safety answers and the privacy/terms URLs match this sheet before submitting.
 - [ ] Record the artifact SHA-256 values (APK and signed AAB) and keep the uploaded AAB/APK pair together.
 - [ ] Upload the signed AAB to Play Console (internal testing first), then promote.

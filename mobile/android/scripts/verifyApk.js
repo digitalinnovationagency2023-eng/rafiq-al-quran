@@ -54,8 +54,8 @@ check(`package is ${PACKAGE}`, badgingText.includes(`package: name='${PACKAGE}'`
 check("launchable activity present", badgingText.includes(`launchable-activity: name='${PACKAGE}.MainActivity'`));
 check("microphone permission declared", /uses-permission: name='android\.permission\.RECORD_AUDIO'/.test(badgingText));
 check("internet permission declared", /uses-permission: name='android\.permission\.INTERNET'/.test(badgingText));
-check("minimum Android 6 (sdk 23)", /sdkVersion:'23'/.test(badgingText));
-check("targets Android 14 (sdk 34)", /targetSdkVersion:'34'/.test(badgingText));
+check("minimum Android 7.0 (sdk 24)", /sdkVersion:'24'/.test(badgingText));
+check("targets Android 16 (sdk 36)", /targetSdkVersion:'36'/.test(badgingText));
 check("versionCode matches AndroidManifest.xml", Boolean(versionCode) && badgingText.includes(`versionCode='${versionCode}'`), `manifest ${versionCode}`);
 check("versionName matches AndroidManifest.xml", Boolean(versionName) && badgingText.includes(`versionName='${versionName}'`), `manifest ${versionName}`);
 

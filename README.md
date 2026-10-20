@@ -1,6 +1,6 @@
 # Rafiq Al-Quran: AI Assistant
 
-**Status: 1.0.9** — native Android release, versionCode 9, versionName 1.0.9 (Android 6.0+, minSdk 23, targetSdk 34).
+**Status: 1.0.9** — native Android release, versionCode 9, versionName 1.0.9 (Android 7.0+, minSdk 24, targetSdk 36).
 
 A free, Quran-only **native Android app** with an offline Quran reader, study tools and a conversational
 verse-finding assistant, plus an optional API. The complete Quran — all 114 surahs — is bundled with the Arabic text
@@ -29,7 +29,7 @@ the Quran dataset is bundled in the APK, and reading, search and answers work fu
 
 | Path | What it is |
 |---|---|
-| `dist/rafiq-al-quran-1.0.9.apk` | Signed, installable release APK (versionCode 9 / 1.0.9, Android 6.0+, 3.40 MB) |
+| `dist/rafiq-al-quran-1.0.9.apk` | Signed, installable release APK (versionCode 9 / 1.0.9, Android 7.0+, 3.40 MB) |
 | `dist/rafiq-al-quran-1.0.9-signed.aab` | Signed release AAB for Play upload (CI-built, `jarsigner`-signed locally) |
 | `dist/rafiq-al-quran-1.0.9.aab` | Unsigned AAB produced by the GitHub Actions workflow (bundletool) |
 | `dist/screenshot-*.png` | 21 emulator QA screenshots (AVD `rafiqtest`, Android 14, 1080×2340) |

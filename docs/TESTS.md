@@ -40,7 +40,7 @@ from the fixed run.
 `node mobile/android/scripts/buildApk.js` (aapt2 / javac / d8 / zipalign / apksigner; no Gradle)
 
 - package `com.rqmbooks.rafiqalquran`, versionCode **9**, versionName **1.0.9** (aapt2 badging on
-  `dist/rafiq-al-quran-1.0.9.apk`); minSdk 23, targetSdk 34;
+  `dist/rafiq-al-quran-1.0.9.apk`); minSdk 24, targetSdk 36;
 - **32 Java sources** compiled; signed (apksigner verify passed) and zipaligned;
 - size **3.40 MB** (3,560,379 bytes, SHA-256 `43A6231F05066793425C9DC67146ECCF8E444AD4F47BCCA769209EDA11BEA1AB`);
 - bundles `classes.dex`, the dataset assets (including `assets/quran-meta.tsv`) and the launcher icon.
@@ -53,7 +53,7 @@ package regexes `com.rqmbooks.rafiqalquran`, versionCode/versionName compared ag
 manifest versionName).
 
 Checks: APK exists; signature verifies; package name; launchable activity; RECORD_AUDIO and INTERNET permissions;
-minSdk 23; targetSdk 34; versionCode and versionName match the manifest; `classes.dex`; all seven bundled assets;
+minSdk 24; targetSdk 36; versionCode and versionName match the manifest; `classes.dex`; all seven bundled assets;
 launcher icon packaged; app label “Rafiq Al-Quran”. Output: “APK verification passed.”
 
 ## AAB — built by CI, signed locally, installed on the emulator
@@ -70,7 +70,7 @@ launcher icon packaged; app label “Rafiq Al-Quran”. Output: “APK verificat
   (`08DE2453EE306688430E6714D0090B2890EB2C197444882DA8945960D5219D42`); both are the local
   `CN=Quran Companion` upload key.
 - The AAB-derived universal APK was installed on the emulator: `dumpsys package com.rqmbooks.rafiqalquran` reports
-  `versionCode=9 minSdk=23 targetSdk=34`, `versionName=1.0.9`; screenshot `dist/screenshot-from-aab.png`.
+  `versionCode=9 minSdk=24 targetSdk=36`, `versionName=1.0.9`; screenshot `dist/screenshot-from-aab.png`.
 
 ## Emulator QA — AVD `rafiqtest` (Android 14, 1080×2340)
 

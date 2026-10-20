@@ -4,11 +4,14 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -43,23 +46,45 @@ public final class Ui {
 
     private Ui() {}
 
-    /** Applies the stored theme and system bar styling. Call first in onCreate. */
+    /**
+     * Applies the stored theme and system bar styling. Call first in onCreate.
+     *
+     * <p>Apps targeting Android 15+ (API 35+) run edge-to-edge by default, so from
+     * API 30 we draw the window background behind the system bars and inset the
+     * content ourselves (top/bottom bars stay deep black in both themes). Older
+     * releases keep the platform's default "decor fits system windows" behaviour.
+     */
     public static boolean init(Activity activity) {
         useTheme(new Prefs(activity).isDark());
         Window window = activity.getWindow();
-        window.setStatusBarColor(BAR);
-        window.setNavigationBarColor(PAPER);
-        int flags = window.getDecorView().getSystemUiVisibility();
-        if (dark) {
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        View decor = window.getDecorView();
+        window.setBackgroundDrawable(new ColorDrawable(BAR));
+        int flags = decor.getSystemUiVisibility();
+        flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        decor.setSystemUiVisibility(flags);
+        if (Build.VERSION.SDK_INT >= 30) {
+            window.setDecorFitsSystemWindows(false);
+            window.setStatusBarColor(BAR);
+            window.setNavigationBarColor(BAR);
+            decor.setOnApplyWindowInsetsListener((view, insets) -> {
+                android.graphics.Insets bars = insets.getInsets(
+                        WindowInsets.Type.systemBars() | WindowInsets.Type.ime());
+                View content = view.findViewById(android.R.id.content);
+                if (content != null) {
+                    content.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+                }
+                return WindowInsets.CONSUMED;
+            });
+            decor.requestApplyInsets();
         } else {
-            // The header bar is deep black even in the light theme, so status bar
-            // icons stay light; the navigation bar follows the paper background.
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            // No edge-to-edge enforcement before API 30: keep the platform inset
+            // behaviour and only recolour the bars.
+            window.setStatusBarColor(BAR);
+            window.setNavigationBarColor(PAPER);
+            if (!dark) flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            decor.setSystemUiVisibility(flags);
         }
-        window.getDecorView().setSystemUiVisibility(flags);
         return dark;
     }
 

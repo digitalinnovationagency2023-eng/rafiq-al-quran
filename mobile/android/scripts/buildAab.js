@@ -65,8 +65,8 @@ run("Link proto-format resources", aapt2, [
   "--java", path.join(outDir, "gen"),
   "--auto-add-overlay",
   "--proto-format",
-  "--min-sdk-version", "23",
-  "--target-sdk-version", "34",
+  "--min-sdk-version", "24",
+  "--target-sdk-version", "36",
   path.join(outDir, "res.zip"),
 ]);
 
@@ -81,7 +81,7 @@ run("Compile Java", "javac", [
 run("Dex", "java", [
   "-cp", path.join(buildTools, "lib", "d8.jar"),
   "com.android.tools.r8.D8",
-  "--lib", androidJar, "--min-api", "23",
+  "--lib", androidJar, "--min-api", "24",
   "--output", path.join(outDir, "dex"),
   ...walk(path.join(outDir, "classes"), ".class"),
 ]);

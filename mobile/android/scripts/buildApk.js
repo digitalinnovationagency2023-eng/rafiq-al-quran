@@ -77,8 +77,8 @@ run("Link resources and manifest (aapt2)", exe("aapt2"), [
   "-A", path.join(root, "app", "src", "main", "assets"),
   "--java", path.join(build, "gen"),
   "--auto-add-overlay",
-  "--min-sdk-version", "23",
-  "--target-sdk-version", "34",
+  "--min-sdk-version", "24",
+  "--target-sdk-version", "36",
   path.join(build, "apk", "compiled.zip"),
 ]);
 
@@ -102,7 +102,7 @@ run("Convert bytecode to dex (d8)", "java", [
   "-cp", path.join(buildTools, "lib", "d8.jar"),
   "com.android.tools.r8.D8",
   "--lib", androidJar,
-  "--min-api", "23",
+  "--min-api", "24",
   "--output", path.join(build, "dex"),
   ...classes,
 ]);
@@ -122,8 +122,16 @@ run("Align the APK (zipalign)", exe("zipalign"), [
 ]);
 
 // 6. Sign ------------------------------------------------------------------
+// A stable release/upload key can be supplied through QURAN_KEYSTORE_PATH so
+// rebuilding the APK does not change its signature (and so it matches the key
+// used to sign the Play upload AAB). Without it a throwaway key is generated.
 const keystore = path.join(build, "quran-release.keystore");
 const storePass = process.env.QURAN_KEYSTORE_PASSWORD || "quran-companion";
+const persistentKeystore = process.env.QURAN_KEYSTORE_PATH || "";
+if (persistentKeystore && fs.existsSync(persistentKeystore)) {
+  fs.copyFileSync(persistentKeystore, keystore);
+  console.log(`   Using the persistent signing key: ${persistentKeystore}`);
+}
 if (!fs.existsSync(keystore)) {
   run("Create a release keystore (keytool)", "keytool", [
     "-genkeypair",
