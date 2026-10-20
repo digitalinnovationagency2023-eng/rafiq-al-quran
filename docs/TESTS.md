@@ -59,11 +59,11 @@ launcher icon packaged; app label “Rafiq Al-Quran”. Output: “APK verificat
 ## AAB — built by CI, signed locally, installed on the emulator
 
 - `.github/workflows/build-aab.yml` (aapt2/javac/d8 plus bundletool; no Gradle) — GitHub Actions run
-  [39447188748](https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39447188748),
-  commit `63c332e1cee08340cc94bbbbf64d060032ce6e5e`: success.
+  [39480456879](https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39480456879),
+  commit `88d2629bd474ab77574fc48be2a47f17cb83c204`: success.
   Unsigned artifact: `dist/rafiq-al-quran-1.0.9.aab`.
 - Signed locally with `jarsigner` using the upload keystore → `dist/rafiq-al-quran-1.0.9-signed.aab`
-  (3,555,626 bytes, SHA-256 `67F27D9EBB2D75CC03FD9169848C5B0D9E2DB76757132402076996A56854EF44`).
+  (3,555,625 bytes, SHA-256 `300C0CD3C9A017B323A40C00476CF3BBEC45C558FA71770C1E8DA65EB2478D1D`).
   `jarsigner -verify` → “jar verified” (exit 0; self-signed certificate warning expected, no timestamp);
   `bundletool validate` → exit 0.
 - The AAB signer certificate SHA-256 matches the APK signer certificate

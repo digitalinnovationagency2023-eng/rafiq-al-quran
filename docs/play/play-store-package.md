@@ -20,7 +20,7 @@ Publisher: Digital Innovative Agency FZ LLC · info@rqmbooks.com · +971 9 501 0
 | Signing key | Local upload keystore `mobile/android/build/quran-release.keystore` — gitignored, **never committed** |
 | SHA-256 | APK `43A6231F05066793425C9DC67146ECCF8E444AD4F47BCCA769209EDA11BEA1AB` · signed AAB `67F27D9EBB2D75CC03FD9169848C5B0D9E2DB76757132402076996A56854EF44` |
 | Version history | versionCode was **1** on the earlier local build. No build has ever been uploaded to Google Play; this is the first upload candidate (versionCode 9). |
-| CI verification | GitHub Actions "Build release AAB" run **39447188748** on commit `63c332e1cee08340cc94bbbbf64d060032ce6e5e` — success; AAB validated with `bundletool validate` (exit 0). `jarsigner -verify` reports the expected self-signed certificate warning. |
+| CI verification | GitHub Actions "Build release AAB" run **39480456879** on commit `88d2629bd474ab77574fc48be2a47f17cb83c204` — success; AAB validated with `bundletool validate` (exit 0). `jarsigner -verify` reports the expected self-signed certificate warning. |
 
 ---
 
