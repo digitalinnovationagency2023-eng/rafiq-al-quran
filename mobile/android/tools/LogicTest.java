@@ -154,6 +154,25 @@ public final class LogicTest {
                 offTopic != null && offTopic.kind == Conversation.Kind.OFFTOPIC);
         check("advice questions are routed to Quran retrieval",
                 Conversation.classify("What does the Quran say about patience?") == null);
+        Conversation.Reply bookmarkHelp = Conversation.classify("How do I bookmark a verse?");
+        check("feature help answers bookmarks",
+                bookmarkHelp != null && bookmarkHelp.kind == Conversation.Kind.HELP
+                        && bookmarkHelp.text.toLowerCase().contains("save"));
+        Conversation.Reply recitationHelp = Conversation.classify("How do I listen to recitation?");
+        check("feature help answers recitation",
+                recitationHelp != null && recitationHelp.kind == Conversation.Kind.HELP
+                        && recitationHelp.text.toLowerCase().contains("quran.com"));
+        Conversation.Reply languageHelp = Conversation.classify("Where can I change the language?");
+        check("feature help answers language",
+                languageHelp != null && languageHelp.kind == Conversation.Kind.HELP);
+        Conversation.Reply aiHelp = Conversation.classify("How does the AI work?");
+        check("feature help answers AI",
+                aiHelp != null && aiHelp.kind == Conversation.Kind.HELP
+                        && aiHelp.text.toLowerCase().contains("never"));
+        Conversation.Reply helpOverview = Conversation.classify("help");
+        check("feature help offers an overview", helpOverview != null && helpOverview.kind == Conversation.Kind.HELP);
+        check("retrieval questions still bypass feature help",
+                Conversation.classify("What does the Quran say about mercy?") == null);
         check("overlong messages are not treated as small talk",
                 Conversation.classify(new String(new char[800]).replace('\0', 'x')) == null);
         check("guidance names scholars, Hadith and Fiqh study",

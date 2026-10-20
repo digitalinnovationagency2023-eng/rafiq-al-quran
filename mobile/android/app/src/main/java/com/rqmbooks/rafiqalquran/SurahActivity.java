@@ -170,6 +170,14 @@ public final class SurahActivity extends Activity {
             meta.addView(verses);
             meta.addView(revelation);
             row.addView(meta);
+
+            TextView listen = Ui.action(SurahActivity.this, "\u25B7 Listen",
+                    () -> startActivity(PlayerActivity.intent(SurahActivity.this, chapter.id, null)));
+            listen.setContentDescription("Listen to " + chapter.nameEnglish + " recitation from Quran.com");
+            LinearLayout.LayoutParams listenParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            listenParams.leftMargin = Ui.dp(SurahActivity.this, 8);
+            row.addView(listen, listenParams);
             return row;
         }
     }

@@ -23,7 +23,7 @@ Run on 2026-10-21 (Windows, Node 24, JDK 17, Android SDK 34; emulator AVD `rafiq
 | **AI assistance (new)** | 15 tests in `server/test/assistant.test.js`: 503 and status while unconfigured; configured status never exposes key/model/base URL; 400 validation before any provider call; 413 for a > 5 MB decoded attachment and for a request body above the 8 MB parser limit; per-IP 429 with `retry-after`; fixed JSON contract with Markdown fences stripped and the provider called with the Bearer key/model; image request carries an `image_url` part and non-Latin OCR text is preserved; Arabic-script replies, verse references, long quotations and religious wording are dropped (`reply: null`); reply/search-term caps; generic 502 for provider errors and 504 on timeout with no upstream detail or key leaked; optional monthly cap; inherited CORS preflight and Helmet headers |
 | Isolation | no RQM/XINVOX references in sources, own database path, rate limiter behaviour |
 
-## Native app logic — 61 passed, 0 failed
+## Native app logic — 67 passed, 0 failed
 
 `node mobile/android/scripts/runLogicTests.js` (Java, real bundled assets) — was 49 checks in 1.0.9.
 
@@ -33,9 +33,9 @@ Run on 2026-10-21 (Windows, Node 24, JDK 17, Android SDK 34; emulator AVD `rafiq
 | Structural mushaf metadata | `QuranMeta` parses all 6236 rows; 1:1 = Juz 1 / Page 1; 2:255 = Juz 3 / Page 42; 114:6 = Juz 30 / Page 604; exact indicator text "Juz 3  ·  Page 42"; page numbers never regress |
 | Study-tools codec | collection names sanitised, empty name → General, case-insensitive de-duplication, length bound; note trim/bound; progress percentages and exact "3 of 38  ·  8%" text; RFC 4180 CSV quoting; Juz 30 preset = surahs 78–114 and full preset = 114; numeric verse-key ordering and validation; next-chapter skips completed chapters and returns 0 when done; plan chapter list round-trips |
 | **Recitation rights and attribution (updated)** | `AudioGate.rightsReviewRecorded()` is true for this build (rights review recorded 2026-10-21); `playbackAllowedInThisBuild()` is true; the gate still requires both the recorded review and the server flag (`playbackAllowed(false, true)` is false); attribution contains "Quran.com" and the decision text contains "rights review recorded" |
-| **Conversation layer (new)** | greeting gets a reply that names the Quran; Islamic greeting recognised; thanks gets a short reply; a fatwa/ruling request is refused and points to scholars; off-topic questions are handled gracefully; advice questions are routed to Quran retrieval (not answered conversationally); overlong messages are not treated as small talk; guidance names scholars, Hadith and Fiqh study and disclaims responsibility; the attachment fallback names the AI service; the AI consent text states that the AI never supplies Quran text |
+| **Conversation and feature help (new)** | greeting gets a reply that names the Quran; Islamic greeting recognised; thanks gets a short reply; a fatwa/ruling request is refused and points to scholars; off-topic questions are handled gracefully; advice questions are routed to Quran retrieval (not answered conversationally); overlong messages are not treated as small talk; guidance names scholars, Hadith and Fiqh study and disclaims responsibility; the attachment fallback names the AI service; the AI consent text states that the AI never supplies Quran text; feature-help questions about bookmarks, recitation, language and AI return app instructions without religious content; a bare “help” returns the overview; normal Quran questions still bypass feature help and go to retrieval |
 
-The 61 checks include the per-passage dataset-existence assertions emitted in a loop over the returned passages.
+The 67 checks include the per-passage dataset-existence assertions emitted in a loop over the returned passages.
 
 ## APK build — 1.0.10
 

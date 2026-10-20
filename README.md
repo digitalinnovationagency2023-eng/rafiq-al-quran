@@ -30,6 +30,8 @@ optional AI assistance needs the operator to configure a free key; see below.
   plus a **"Where to look next"** card (qualified scholar/local imam, Hadith and Fiqh study with a qualified
   teacher, general reference for non-Quran questions, explicit no-responsibility statement). Ruling, fatwa and
   tafsir requests are refused and pointed to scholars.
+- **In-app feature help**: ask how to use the app — “how do I bookmark a verse?”, “how do I listen to recitation?”, “change the language”, “attach a file”, “privacy”, “is there a paid plan?” — and the local conversation layer answers with step-by-step instructions. It needs no AI service and writes no religious content, so feature questions never become fatwas.
+- **Listen in Browse surahs**: every surah row now has a “▷ Listen” action that opens the Quran.com recitation player at that surah's first verse.
 - **Optional AI assistance** (server `/api/assistant`): **off by default**. The operator can enable a free-tier
   Google AI Studio / Gemini key; it is used only for short neutral small-talk replies, search-word suggestions and
   OCR of an attached screenshot — never for Quran text or interpretation. There is a one-time consent notice, a
@@ -133,7 +135,7 @@ repository.
 | Suite | Command | Result |
 |---|---|---|
 | Server data, retrieval, API, donations, safety, admin auth, AI assistance | `npm run test -w server` | 73 passed (58 baseline + 15 assistant) |
-| Native app core logic against real bundled assets (incl. conversation and recitation rights) | `node mobile/android/scripts/runLogicTests.js` | 61 passed |
+| Native app core logic against real bundled assets (incl. conversation and recitation rights) | `node mobile/android/scripts/runLogicTests.js` | 67 passed (includes feature-help checks) |
 | APK packaging check | `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.10.apk` | 20/20 checks passed (signature, manifest, versionCode/Name, minSdk 24/targetSdk 36, bundled assets incl. `quran-meta.tsv`, icon) |
 | Release artifacts | CI AAB workflow + local `jarsigner`/`bundletool validate` | **Artifacts (1.0.10): CI run 39498315274 on commit c2deeba (success); APK SHA-256 C2FF8DE972E821F56B0D135B6229E5276668739521A565DA8EFC360C6FEC7EF4; signed upload AAB SHA-256 FF814F30D8954D5752D048F0CE3B4A5754909D64A20F323F2348AEEF8475CCC7 (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 368920A490AD1CF958C5580D2705D3A0ACFE0FF8B7F0C8FE452AB708D8A2A5C8** |
 | Emulator QA | 1.0.10 round-2 captures in `dist/` (home + attach, language dialog, conversation, recitation player, text attachment, TTS/answer, support, admin) | flows verified; see `docs/TESTS.md` |

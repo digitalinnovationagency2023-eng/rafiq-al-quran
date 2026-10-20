@@ -19,7 +19,7 @@ import java.util.Locale;
  * class; the only scripture shown by the app comes from the validated dataset.
  */
 public final class Conversation {
-    public enum Kind { SALAM, GREETING, THANKS, FAREWELL, IDENTITY, CAPABILITIES, HOW_ARE_YOU, OFFTOPIC, RULING_REQUEST, ATTACHMENT_HELP }
+    public enum Kind { SALAM, GREETING, THANKS, FAREWELL, IDENTITY, CAPABILITIES, HOW_ARE_YOU, OFFTOPIC, RULING_REQUEST, ATTACHMENT_HELP, HELP }
 
     /** A conversational reply, ready to display. */
     public static final class Reply {
@@ -122,7 +122,9 @@ public final class Conversation {
             return new Reply(Kind.CAPABILITIES,
                     "I can search the Quran for a topic (for example patience or mercy), open any verse "
                             + "reference such as 2:255, read all 114 surahs offline, and let you bookmark, "
-                            + "write notes, save searches and follow reading plans.",
+                            + "write notes, save searches and follow reading plans. You can also ask how to use "
+                            + "any feature \u2014 for example \u201Chow do I bookmark a verse\u201D or "
+                            + "\u201Chow do I listen to recitation\u201D.",
                     "You can also attach a text file, or an image when AI reading is enabled, and I'll look for matching verses.");
         }
         if (containsAny(text, RULING_PHRASES)) {
@@ -137,6 +139,8 @@ public final class Conversation {
                             + "interpretation — but I can find verses about a topic if you ask in that way.",
                     "For general questions outside the Quran, a general reference will serve you better.");
         }
+        String help = helpFor(text);
+        if (help != null) return new Reply(Kind.HELP, help, null);
         return null;
     }
 
@@ -182,6 +186,98 @@ public final class Conversation {
                 + "The AI never supplies Quran text — verses always come from the app's validated dataset. "
                 + "The app does not store your question or attachment on the server. You can turn AI "
                 + "assistance off in the menu at any time.";
+    }
+
+    /**
+     * In-app feature help. This is deliberately local and deterministic: it
+     * describes how to use the app and never gives religious content, so asking
+     * "how do I ..." cannot produce a fatwa or an interpretation.
+     */
+    private static String helpFor(String text) {
+        boolean asksHow = containsAny(text, Arrays.asList(
+                "help", "how do i", "how can i", "how to", "where is", "where do i", "where can i",
+                "what is this app", "features", "guide", "instructions", "what can i do here"));
+        if (containsAny(text, Arrays.asList("recitation", "recite", "reciter", "verse audio", "quran audio",
+                "listen to quran", "play quran", "listen"))) {
+            return "You can listen to Quran recitation inside the app:\n"
+                    + "\u2022 \u22EE menu \u2192 \u201CVerse audio \u2014 Quran.com recitation\u201D\n"
+                    + "\u2022 Browse surahs \u2192 tap \u201C\u25B7 Listen\u201D on any surah\n"
+                    + "\u2022 Or open a verse and tap \u201CRecitation \u2014 Quran.com\u201D\n"
+                    + "Choose a reciter, then play/pause, replay, seek or move verse by verse; it auto-advances. "
+                    + "Audio streams from Quran.com (internet needed) and is never saved on the device. To hear "
+                    + "an answer read aloud, tap Listen on the answer card (device text-to-speech).";
+        }
+        if (containsAny(text, Arrays.asList("bookmark", "save verse", "saved verse", "note", "saved search",
+                "reading plan", "study tool", "study tools", "collection", "export", "side-by-side",
+                "compare translation"))) {
+            return "Study tools are free and stored on this device:\n"
+                    + "\u2022 Open a surah and tap Save on a verse to bookmark it into a collection.\n"
+                    + "\u2022 \u22EE menu \u2192 \u201CStudy tools \u2014 collections, notes, plans\u201D gives bookmark "
+                    + "collections, personal notes, saved searches, reading plans with progress, side-by-side "
+                    + "comparison and export.\n"
+                    + "\u2022 The Browse surahs screen also has Bookmarks and History shortcuts in its top bar.";
+        }
+        if (containsAny(text, Arrays.asList("language", "dark mode", "light mode", "theme", "text size",
+                "font size", "arabic font", "interface"))) {
+            return "Top bar controls: tap the language code (for example en \u25BE) to choose from ten large "
+                    + "language rows; A\u2212 and A+ change the reading text size; the moon/sun button switches "
+                    + "dark and light theme. The same controls appear on most screens.";
+        }
+        if (containsAny(text, Arrays.asList("attach", "attachment", "upload", "docx", "pdf", "screenshot",
+                "image", "file"))) {
+            return "Tap \uD83D\uDCCE ATTACH in the composer. Text, .md and .docx files are read on this device "
+                    + "and used to search the Quran. Images can be read only when optional AI assistance is "
+                    + "enabled. PDF attachments are not supported yet. You can send a message with only an "
+                    + "attachment and no typed question.";
+        }
+        if (containsAny(text, Arrays.asList("ai", "artificial intelligence", "ai assistance", "ai conversation",
+                "chatbot", "gemini"))) {
+            return "AI assistance is optional and free to the customer. \u22EE menu \u2192 \u201CAI conversation\u201D "
+                    + "turns it on or off; the first use shows a one-time consent notice. It is used only for "
+                    + "short chat replies and reading attached screenshots \u2014 it never supplies Quran text or "
+                    + "interpretation. Limit: 30 AI requests per day on this device (plus free-tier server "
+                    + "limits). Without it the app works fully offline and images cannot be read.";
+        }
+        if (containsAny(text, Arrays.asList("privacy", "my data", "data stored", "tracking", "personal data"))) {
+            return "Your questions, bookmarks, notes, reading history and reading plans are stored on this "
+                    + "device only. There is no account and no ads, and the app never reads RQM Books accounting "
+                    + "data. Open \u22EE menu \u2192 Privacy for the full policy, including what the optional AI and "
+                    + "feedback features send.";
+        }
+        if (containsAny(text, Arrays.asList("report", "feedback", "bug", "complaint", "suggest a feature"))) {
+            return "\u22EE menu \u2192 \u201CReport an issue\u201D sends a bug report, translation concern, "
+                    + "missing-verse note or suggestion. Diagnostics and a contact detail are included only if "
+                    + "you tick or enter them. Reports go to the app's own support API, never to WhatsApp "
+                    + "automatically.";
+        }
+        if (containsAny(text, Arrays.asList("support", "donate", "donation", "subscription", "paid", "price",
+                "premium", "free"))) {
+            return "The app is free: reading, search, conversation, recitation and all study tools have no paid "
+                    + "plan, subscription or add-on. \u22EE menu \u2192 \u201CSupport the app\u201D explains voluntary "
+                    + "ways to help; donation collection is currently disabled, so no checkout form is shown.";
+        }
+        if (containsAny(text, Arrays.asList("voice", "microphone", "mic", "text to speech", "tts", "dictate",
+                "speak"))) {
+            return "Tap the microphone (Voice) button to dictate a question; voice input uses the device's "
+                    + "speech recognition. On an answer, tap Listen to hear the translation and summary through "
+                    + "the device's text-to-speech \u2014 it is never presented as Quranic recitation. Voice "
+                    + "features can be turned off in the menu.";
+        }
+        if (containsAny(text, Arrays.asList("search", "find verse", "find a verse", "look up a verse",
+                "search the quran", "verse reference"))) {
+            return "Type a topic (for example patience) or a verse reference such as 2:255 in the composer and "
+                    + "tap Send. Answers show the Arabic verse, an identified translation, the surah:verse "
+                    + "reference and the dataset source. Use More verses for the next matches, Listen to hear "
+                    + "it read aloud, or New conversation to start over.";
+        }
+        if (!asksHow) return null;
+        return "I can help you use the app. Try asking:\n"
+                + "\u2022 \u201Chow do I bookmark a verse\u201D\n"
+                + "\u2022 \u201Chow do I listen to recitation\u201D\n"
+                + "\u2022 \u201Chow do I change the language\u201D\n"
+                + "\u2022 \u201Chow do I attach a file\u201D\n"
+                + "\u2022 \u201Cis there a paid plan\u201D or \u201Cprivacy\u201D\n"
+                + "I can also search the Quran for any topic or a reference such as 2:255.";
     }
 
     private static String normalize(String value) {

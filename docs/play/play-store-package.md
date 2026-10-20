@@ -224,10 +224,12 @@ Conversation
 - A local conversational layer answers greetings, thanks, questions about the app and simple small talk without writing religious content of its own.
 - Questions about the Quran go to the app's own verse search; when no verse is confident, the app shows its exact fallback message and a "Where to look next" card (consult a qualified scholar or local imam; study Hadith and Fiqh with a qualified teacher; use a general reference for non-Quran topics).
 - Requests for rulings, fatwas or tafsir are politely refused and pointed to qualified scholars. The app never presents AI output as Quranic text or interpretation.
+- Ask how to use the app: “how do I bookmark a verse?”, “how do I listen to recitation?”, “where do I change the language?”, “how do I attach a file?”, “is there a paid plan?” — answered locally with steps, with no AI service needed.
 
 Recitation
 - Quran.com verse recitation is available: play, pause, replay, seek, previous/next verse and automatic advance to the next verse.
 - Audio streams verse by verse from Quran.com's public CDN over HTTPS, with the reciter name and the attribution "Source: Quran.com". Nothing is downloaded, cached or stored on the device; an internet connection is required.
+- In Browse surahs, tap “Listen” on any surah row to open the recitation player at that surah's first verse.
 - Reciters: Mishary Rashid Alafasy, Abdul Basit Abdus Samad (Murattal) and Muhammad Siddiq Al-Minshawi (Murattal). The recitation rights review for this source is recorded (21 October 2026).
 
 Attachments and optional AI assistance
@@ -278,6 +280,9 @@ All files are in `dist/` and are 1080×2340 PNGs captured on emulator AVD `rafiq
 | `qa-r2-home.png` | Home screen: composer with Voice and 📎 ATTACH actions, example questions, continue-reading card (Al-Fatihah 1:6, Juz 1 · Page 1) |
 | `screenshot-qa-r2-language.png` | Full-width "Interface language" dialog with 10 large rows (English name — native name — code), English selected |
 | `screenshot-qa-r2-conversation.png` | Local conversation: "Hello" → neutral greeting reply, with the notice that conversation replies contain no Quranic text or interpretation |
+| `screenshot-qa-r2-help-reply.png` | In-app feature help: “How do I bookmark a verse?” → step-by-step instructions, no religious content |
+| `screenshot-qa-r2-surah-listen.png` | Browse surahs with a “▷ Listen” action on every surah row |
+| `screenshot-qa-r2-surah-listen-player.png` | Tapping Listen opens the Quran.com recitation player at the surah's first verse |
 | `screenshot-qa-r2-player.png` | Verse audio, Al-Fatihah 1:6: "Playing — Source: Quran.com", 0:04 / 0:05, Pause/Replay/Stop, reciter Mishary Rashid Alafasy, and a Source & rights card ("Review recorded 2026-10-21") |
 | `screenshot-qa-r2-attached.png` | Attachment chip in the composer: "Attached: rafiq-test.txt (144 characters read)" with a Remove action; the text is read on the device before the question is sent |
 | `screenshot-qa-r2-attachment-answer.png` | Answer retrieved from the attached text: Al-Baqarah 2:177 with translation and "Recitation — Quran.com" action |
