@@ -1,0 +1,58 @@
+name: Build release AAB
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "mobile/android/**"
+      - ".github/workflows/build-aab.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 34
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Import the Quran dataset
+        run: npm run import:quran -w server
+
+      - name: Export app assets
+        run: node mobile/android/scripts/exportAssets.js
+
+      - name: Download bundletool (executable jar)
+        run: |
+          curl -sSL -o "$RUNNER_TEMP/bundletool.jar" \
+            https://github.com/google/bundletool/releases/download/1.18.0/bundletool-all-1.18.0.jar
+          java -jar "$RUNNER_TEMP/bundletool.jar" version
+
+      - name: Build the AAB
+        env:
+          BUNDLETOOL_JAR: ${{ runner.temp }}/bundletool.jar
+          AAB_OUTPUT: ${{ github.workspace }}/dist/rafiq-al-quran.aab
+        run: node mobile/android/scripts/buildAab.js
+
+      - name: Upload the AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: rafiq-al-quran-aab
+          path: dist/rafiq-al-quran.aab
+          if-no-files-found: error
