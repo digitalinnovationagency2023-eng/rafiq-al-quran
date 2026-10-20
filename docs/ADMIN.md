@@ -14,7 +14,7 @@ customers, testers or support staff without a need to read feedback metadata.
 
 ## Recitation and AI status — read this first
 
-- The publisher's recitation rights review for Quran.com verse audio is **recorded (2026-10-21)**, and the 1.0.10
+- The publisher's recitation rights review for Quran.com verse audio is **recorded (2026-10-21)**, and the 1.0.11
   app streams recitation **client-side** from Quran.com's public CDN with the attribution "Source: Quran.com". The
   client player does not call this API.
 - The server-side recitation settings are independent and unchanged: `RECITATION_ENABLED` defaults to `false`, the
@@ -154,7 +154,7 @@ Checked from an operator workstation over public HTTPS
 `503` cannot occur while a token is configured; it is covered by automated
 tests (`server/test/admin.test.js`).
 
-**1.0.10 note (rights decision recorded 2026-10-21).** The live check above predates the 1.0.10 release. On that
+**1.0.11 note (rights decision recorded 2026-10-21).** The live check above predates the 1.0.11 release. On that
 release the app enables client-side Quran.com recitation (see the status note at the top), while this server-side
 summary and the reciter rows keep their seeded values: `flags.recitationEnabled` is `false`, reciters stay
 UNVERIFIED/disabled, and `GET /api/recitations/:verseKey` answers 403. That is expected, not a regression. The

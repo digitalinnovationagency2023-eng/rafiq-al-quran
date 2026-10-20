@@ -24,7 +24,7 @@ Every external capability is off unless configured. Feature switches for this re
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `RECITATION_ENABLED` | `false` | server-side `/api/recitations` route only. The 1.0.10 app streams Quran.com audio **client-side** and does not need this flag; keep it off unless the server recitation route is separately reviewed and a verified reciter row exists |
+| `RECITATION_ENABLED` | `false` | server-side `/api/recitations` route only. The 1.0.11 app streams Quran.com audio **client-side** and does not need this flag; keep it off unless the server recitation route is separately reviewed and a verified reciter row exists |
 | `AI_PROVIDER` … `RATE_LIMIT_ASSISTANT_MAX` | see below | optional AI assistance (off by default) |
 | `DONATIONS_*`, `STRIPE_*`, `PREMIUM_*` | disabled | billing, subscriptions and donations are **not** enabled in this release |
 | `WHATSAPP_*` | configured number only | feedback channel; never forwards reports automatically |
@@ -119,9 +119,9 @@ Notes:
    as an update. Generate a fresh keystore with
    `keytool -genkeypair -keystore upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000` only when
    starting a new app identity.
-5. Copy the built APK to `dist/rafiq-al-quran-1.0.10.apk`, verify it with
-   `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.10.apk` (**20 checks passed**), and install for
-   testing: `adb install -r dist/rafiq-al-quran-1.0.10.apk`. If a build used a throwaway key (no persistent upload
+5. Copy the built APK to `dist/rafiq-al-quran-1.0.11.apk`, verify it with
+   `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.11.apk` (**20 checks passed**), and install for
+   testing: `adb install -r dist/rafiq-al-quran-1.0.11.apk`. If a build used a throwaway key (no persistent upload
    keystore found), uninstall the earlier install first (`adb uninstall com.rqmbooks.rafiqalquran`) because the
    throwaway signature will not match.
 

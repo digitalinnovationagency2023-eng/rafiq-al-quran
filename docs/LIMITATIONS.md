@@ -51,7 +51,7 @@ Reported honestly; nothing here is claimed as solved.
    rejected with a message.
 10. **Android only.** iOS was not built (no macOS toolchain here). The client is Java/Android SDK; there is no
     React Native/Flutter parity build.
-11. **Device testing is emulator-only.** The 1.0.10 build was installed and exercised on one emulator (AVD
+11. **Device testing is emulator-only.** The 1.0.11 build was installed and exercised on one emulator (AVD
     `rafiqtest`, Android 14, 1080×2340) and captured as screenshots in `dist/`; there was no physical-device run
     and no automated instrumentation/UI suite. Recitation streaming/auto-next and TTS synthesis were verified on
     the emulator; speech recognition/microphone input and a real-device audio/TTS pass still need to be done.

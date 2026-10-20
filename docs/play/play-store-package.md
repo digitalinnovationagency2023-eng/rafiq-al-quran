@@ -4,23 +4,23 @@ Publisher: Digital Innovative Agency FZ LLC · info@rqmbooks.com · +971 9 501 0
 
 ---
 
-## Release metadata — shipped build 1.0.10
+## Release metadata — shipped build 1.0.11
 
 | Field | Value |
 |---|---|
 | App name | Rafiq Al-Quran: AI Assistant |
 | Category | Education |
 | Package name | `com.rqmbooks.rafiqalquran` |
-| Version | versionCode **10** · versionName **1.0.10** |
+| Version | versionCode **10** · versionName **1.0.11** |
 | SDK range | minSdk **24** (Android 7.0) · targetSdk **36** (Android 16 — Play requirement for new apps since 31 Aug 2026) |
 | Build toolchain | Android SDK 34 build-tools and platform (`compileSdk` 34, `targetSdk` 36), `aapt2` / `javac` / `d8` / `zipalign` / `apksigner`, **no Gradle**; **34 Java sources**. Edge-to-edge insets are handled in `Ui.init()` for Android 15+ |
-| Release APK | `dist/rafiq-al-quran-1.0.10.apk` — signed, installable, **~3.41 MB**; versionCode 10 / versionName 1.0.10 (verified with `aapt2 dump badging`). Exact size and SHA-256 are recorded in the release note |
-| AAB (unsigned, CI) | `dist/rafiq-al-quran-1.0.10.aab` — GitHub Actions artifact from `.github/workflows/build-aab.yml` (bundletool, no Gradle); produced by the 1.0.10 CI build, run URL and SHA-256 in the release note |
-| AAB (signed, Play upload) | `dist/rafiq-al-quran-1.0.10-signed.aab` — CI AAB signed locally with `jarsigner` using the upload keystore; `jarsigner -verify` must report "jar verified" plus the expected self-signed certificate warning |
-| Signing key | Play upload keystore kept **outside the repository** (default `%USERPROFILE%\.secrets\quran-release.keystore`, supplied to `buildApk.js` via `QURAN_KEYSTORE_PATH`); the copy under `mobile/android/build/` is gitignored and **never committed**. Sign the 1.0.10 AAB with the same upload key as 1.0.9 to preserve Play upload-key continuity |
-| Artifacts (1.0.10) | CI run **39502295156** on commit `b40d416` (success). APK `dist/rafiq-al-quran-1.0.10.apk` 3,580,859 bytes, SHA-256 `A5F92DB1C7205D4EF3881620CEC5FE972FFA45F9A7E0AB444FF21B27F28C5FE8`; unsigned CI AAB 3,573,454 bytes, SHA-256 `C09956149C193A7CB5DCECA2CA3B23E5AA70EE6B5BF923AAA90480696D5DB015`; signed upload AAB `dist/rafiq-al-quran-1.0.10-signed.aab` 3,576,566 bytes, SHA-256 `C64A39DB17869E82FAA62EDB5B60973C88DF981A7F5C1CD914AD9BC196B0DB6F` (jarsigner verified, upload cert 08:DE:24:53…, bundletool validate exit 0) |
-| Version history | 1.0.9 (versionCode 9) was uploaded to **internal testing**. 1.0.10 (versionCode 10) is the next upload candidate; the versionCode is greater than every versionCode previously uploaded. |
-| CI verification | GitHub Actions workflow "Build release AAB" (`.github/workflows/build-aab.yml`) builds the AAB with bundletool and validates it with `bundletool validate`; the 1.0.10 run URL and validation output are recorded in the release note. (The previous 1.0.9 run was 39483479573, success.) |
+| Release APK | `dist/rafiq-al-quran-1.0.11.apk` — signed, installable, **~3.41 MB**; versionCode 11 / versionName 1.0.11 (verified with `aapt2 dump badging`). Exact size and SHA-256 are recorded in the release note |
+| AAB (unsigned, CI) | `dist/rafiq-al-quran-1.0.11.aab` — GitHub Actions artifact from `.github/workflows/build-aab.yml` (bundletool, no Gradle); produced by the 1.0.11 CI build, run URL and SHA-256 in the release note |
+| AAB (signed, Play upload) | `dist/rafiq-al-quran-1.0.11-signed.aab` — CI AAB signed locally with `jarsigner` using the upload keystore; `jarsigner -verify` must report "jar verified" plus the expected self-signed certificate warning |
+| Signing key | Play upload keystore kept **outside the repository** (default `%USERPROFILE%\.secrets\quran-release.keystore`, supplied to `buildApk.js` via `QURAN_KEYSTORE_PATH`); the copy under `mobile/android/build/` is gitignored and **never committed**. Sign the 1.0.11 AAB with the same upload key as 1.0.9 to preserve Play upload-key continuity |
+| Artifacts (1.0.11) | CI run **39502295156** on commit `b40d416` (success). APK `dist/rafiq-al-quran-1.0.11.apk` 3,580,859 bytes, SHA-256 `A5F92DB1C7205D4EF3881620CEC5FE972FFA45F9A7E0AB444FF21B27F28C5FE8`; unsigned CI AAB 3,573,454 bytes, SHA-256 `C09956149C193A7CB5DCECA2CA3B23E5AA70EE6B5BF923AAA90480696D5DB015`; signed upload AAB `dist/rafiq-al-quran-1.0.11-signed.aab` 3,576,566 bytes, SHA-256 `C64A39DB17869E82FAA62EDB5B60973C88DF981A7F5C1CD914AD9BC196B0DB6F` (jarsigner verified, upload cert 08:DE:24:53…, bundletool validate exit 0) |
+| Version history | 1.0.9 (versionCode 9) was uploaded to **internal testing**. 1.0.11 (versionCode 11) is the next upload candidate; the versionCode is greater than every versionCode previously uploaded. |
+| CI verification | GitHub Actions workflow "Build release AAB" (`.github/workflows/build-aab.yml`) builds the AAB with bundletool and validates it with `bundletool validate`; the 1.0.11 run URL and validation output are recorded in the release note. (The previous 1.0.9 run was 39483479573, success.) |
 
 ---
 
@@ -258,12 +258,12 @@ Publisher: Digital Innovative Agency FZ LLC · info@rqmbooks.com · +971 9 501 0
 | Icon master | 1024×1024 PNG | DONE — `play-assets/play-icon-1024-master.png` (source for the icon exports) |
 | Feature graphic | 1024×500 PNG | DONE — `play-assets/feature-graphic-1024x500.png` (1024×500, fully opaque) |
 | Launcher icon | in-app icon | DONE — `mobile/android/res/drawable-xxhdpi/ic_launcher.png` (432×432 raster, referenced by `@drawable/ic_launcher`; no adaptive-icon XML in this build) |
-| Phone screenshots | ≥2 (Play accepts 2–8), phone aspect | DONE — 1.0.10 round-2 emulator captures in `dist/` (1080×2340, AVD `rafiqtest`, Android 14) plus earlier screens with no visual change; recommended Play set in §6 |
+| Phone screenshots | ≥2 (Play accepts 2–8), phone aspect | DONE — 1.0.11 round-2 emulator captures in `dist/` (1080×2340, AVD `rafiqtest`, Android 14) plus earlier screens with no visual change; recommended Play set in §6 |
 | Tablet screenshots | optional, recommended | NOT CAPTURED — phone only |
 | Privacy policy URL | public HTTPS | repo `docs/privacy.md` (GitHub Pages); confirm the live URL before submitting |
 | Terms URL | public HTTPS | repo `docs/terms.md` (GitHub Pages); confirm the live URL before submitting |
-| Signed AAB | bundletool, upload key | PENDING CI — `dist/rafiq-al-quran-1.0.10-signed.aab` (CI-built, `jarsigner`-signed locally with the upload keystore; hash/run in the release note) |
-| Installable APK | signed, sideload | DONE locally — `mobile/android/build/quran-companion.apk` (~3.41 MB, versionCode 10); release copy `dist/rafiq-al-quran-1.0.10.apk` with exact size and SHA-256 in the release note |
+| Signed AAB | bundletool, upload key | PENDING CI — `dist/rafiq-al-quran-1.0.11-signed.aab` (CI-built, `jarsigner`-signed locally with the upload keystore; hash/run in the release note) |
+| Installable APK | signed, sideload | DONE locally — `mobile/android/build/quran-companion.apk` (~3.41 MB, versionCode 11); release copy `dist/rafiq-al-quran-1.0.11.apk` with exact size and SHA-256 in the release note |
 | Data Safety form | answers in §3 | paste into Play Console |
 | Content rating | questionnaire | answers in §3 |
 
@@ -273,7 +273,7 @@ Publisher: Digital Innovative Agency FZ LLC · info@rqmbooks.com · +971 9 501 0
 
 All files are in `dist/` and are 1080×2340 PNGs captured on emulator AVD `rafiqtest` (Android 14).
 
-### 1.0.10 QA captures (this round)
+### 1.0.11 QA captures (this round)
 
 | File | Shows |
 |---|---|
@@ -296,14 +296,14 @@ All files are in `dist/` and are 1080×2340 PNGs captured on emulator AVD `rafiq
 `qa-r2-home.png`, `screenshot-qa-r2-language.png`, `screenshot-qa-r2-conversation.png`,
 `screenshot-qa-r2-player.png`, `screenshot-qa-r2-attached.png`,
 `screenshot-qa-r2-attachment-answer.png`, `screenshot-qa-r2-tts.png` — 7 captures. If an 8th is wanted, use
-`screenshot-surahs.png` (surah list; the screen is unchanged in 1.0.10) and re-capture on the 1.0.10 build if
+`screenshot-surahs.png` (surah list; the screen is unchanged in 1.0.11) and re-capture on the 1.0.11 build if
 convenient. **Do not upload `screenshot-player-gated.png` or `screenshot-player-controls.png`** — they show the
 previous rights-pending player from 1.0.9 and are superseded by `screenshot-qa-r2-player.png`.
 
-### Earlier captures retained in `dist/` (1.0.9 QA — re-capture before using in the 1.0.10 listing)
+### Earlier captures retained in `dist/` (1.0.9 QA — re-capture before using in the 1.0.11 listing)
 
 These were captured on the 1.0.9 build and kept for reference. Most show screens that are unchanged or only lightly
-changed in 1.0.10, but the answer/passage cards gained a "Recitation — Quran.com" action and the reader's "Listen"
+changed in 1.0.11, but the answer/passage cards gained a "Recitation — Quran.com" action and the reader's "Listen"
 action now opens the recitation player, so re-capture anything you intend to submit.
 
 `screenshot-home.png`, `screenshot-home-dark.png`, `screenshot-answer.png`, `screenshot-surahs.png`,
@@ -313,17 +313,17 @@ action now opens the recitation player, so re-capture anything you intend to sub
 `screenshot-saved-search-run.png`, `screenshot-admin-data.png`, `screenshot-share-sheet.png`,
 `screenshot-share-sheet-notes.png`, `screenshot-from-aab.png`. Also retained: `qa-e2e-home.png`,
 `screenshot-qa-e2e-keyboard.png`. The two 1.0.9 player captures (`screenshot-player-gated.png`,
-`screenshot-player-controls.png`) are kept for history only; they do not reflect the shipped 1.0.10 behaviour.
+`screenshot-player-controls.png`) are kept for history only; they do not reflect the shipped 1.0.11 behaviour.
 
 ---
 
 ## 7. Release checklist
 
-- [ ] Confirm `AndroidManifest.xml` versionCode is greater than every versionCode previously uploaded — current **10** (versionCode 9 was uploaded to internal testing) — and versionName matches the release: **1.0.10**.
+- [ ] Confirm `AndroidManifest.xml` versionCode is greater than every versionCode previously uploaded — current **10** (versionCode 9 was uploaded to internal testing) — and versionName matches the release: **1.0.11**.
 - [ ] Rebuild assets with `node mobile/android/scripts/exportAssets.js` (this copies `quran-meta.tsv` into the app assets).
-- [ ] Build the APK with `node mobile/android/scripts/buildApk.js`, then copy/rename it to `dist/rafiq-al-quran-1.0.10.apk` and record its SHA-256 in the release note.
-- [ ] Verify the installable APK: `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.10.apk` → **20 checks passed**.
-- [ ] Build the AAB from a clean committed tree: GitHub Actions `.github/workflows/build-aab.yml` → download the unsigned artifact → sign locally with `jarsigner` using the upload keystore → `jarsigner -verify` (expect "jar verified" plus the self-signed warning) → `bundletool validate`. Record the CI run URL and artifact SHA-256 values in the release note (**Artifacts (1.0.10): CI run 39502295156 on commit b40d416 (success); APK SHA-256 A5F92DB1C7205D4EF3881620CEC5FE972FFA45F9A7E0AB444FF21B27F28C5FE8; signed upload AAB SHA-256 C64A39DB17869E82FAA62EDB5B60973C88DF981A7F5C1CD914AD9BC196B0DB6F (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 C09956149C193A7CB5DCECA2CA3B23E5AA70EE6B5BF923AAA90480696D5DB015**).
+- [ ] Build the APK with `node mobile/android/scripts/buildApk.js`, then copy/rename it to `dist/rafiq-al-quran-1.0.11.apk` and record its SHA-256 in the release note.
+- [ ] Verify the installable APK: `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.11.apk` → **20 checks passed**.
+- [ ] Build the AAB from a clean committed tree: GitHub Actions `.github/workflows/build-aab.yml` → download the unsigned artifact → sign locally with `jarsigner` using the upload keystore → `jarsigner -verify` (expect "jar verified" plus the self-signed warning) → `bundletool validate`. Record the CI run URL and artifact SHA-256 values in the release note (**Artifacts (1.0.11): CI run 39502295156 on commit b40d416 (success); APK SHA-256 A5F92DB1C7205D4EF3881620CEC5FE972FFA45F9A7E0AB444FF21B27F28C5FE8; signed upload AAB SHA-256 C64A39DB17869E82FAA62EDB5B60973C88DF981A7F5C1CD914AD9BC196B0DB6F (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 C09956149C193A7CB5DCECA2CA3B23E5AA70EE6B5BF923AAA90480696D5DB015**).
 - [ ] **AI assistance is optional and only for conversation/OCR; never for Quran text; the key lives only in the server `.env`; keep limits on** (`RATE_LIMIT_ASSISTANT_MAX`, optional `AI_MAX_MONTHLY_CALLS`, app 30 calls/day cap). Verify `/api/assistant/status` after `pm2 restart` (see `docs/DEPLOYMENT.md`), and confirm `TRUST_PROXY=true` on the live server so per-client limiting is correct.
 - [ ] **Recitation streams from Quran.com with attribution; rights decision recorded 2026-10-21.** Keep the "Source: Quran.com" attribution visible in the player, keep audio unstored (no download/cache), and keep the server's `RECITATION_ENABLED` switch and unverified reciter rows independent of the client player (the app streams directly from the CDN; see `docs/ADMIN.md`).
 - [ ] Keep billing, subscriptions and donation processing disabled in this release (server feature flags off; the app shows disabled states).
