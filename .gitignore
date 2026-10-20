@@ -22,3 +22,4 @@ Thumbs.db
 # Signing material must never be committed
 *.keystore
 *.jks
+secrets/

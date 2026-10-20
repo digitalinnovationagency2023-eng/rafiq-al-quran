@@ -4,5 +4,5 @@
     <!-- Set this to the Quran Companion API origin (for example https://api.your-domain.com)
          to enable optional online services: feedback reports and donation checkout.
          Leave empty for a fully offline build. -->
-    <string name="api_base_url"></string>
+    <string name="api_base_url">https://rqmbooks.com/rafiq-api</string>
 </resources>
