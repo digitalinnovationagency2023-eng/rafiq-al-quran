@@ -151,6 +151,36 @@ public final class SurahActivity extends Activity {
                 translated.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 6));
                 content.addView(translated);
             }
+            LinearLayout verseActions = Ui.row(this);
+            verseActions.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 2));
+            final String shareText = versionLabel(verse) + "\n\n" + verse.arabic + "\n\n" + (translation == null ? "" : translation);
+            TextView copy = Ui.label(this, "Copy");
+            copy.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
+            copy.setOnClickListener(v -> {
+                android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Quran verse", shareText));
+                android.widget.Toast.makeText(this, "Verse copied", android.widget.Toast.LENGTH_SHORT).show();
+            });
+            TextView share = Ui.label(this, "Share");
+            share.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
+            share.setOnClickListener(v -> {
+                android.content.Intent send = new android.content.Intent(android.content.Intent.ACTION_SEND);
+                send.setType("text/plain");
+                send.putExtra(android.content.Intent.EXTRA_TEXT, shareText);
+                startActivity(android.content.Intent.createChooser(send, "Share verse"));
+            });
+            final String bookmarkKey = verse.key;
+            final TextView save = Ui.label(this, isBookmarked(bookmarkKey) ? "Saved" : "Save");
+            save.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
+            save.setOnClickListener(v -> {
+                boolean now = toggleBookmark(bookmarkKey);
+                save.setText(now ? "Saved" : "Save");
+                android.widget.Toast.makeText(this, now ? "Verse bookmarked" : "Bookmark removed", android.widget.Toast.LENGTH_SHORT).show();
+            });
+            verseActions.addView(copy);
+            verseActions.addView(share);
+            verseActions.addView(save);
+            content.addView(verseActions);
             content.addView(Ui.divider(this));
         }
         if (chapter.verseCount > 60) {
@@ -161,6 +191,22 @@ public final class SurahActivity extends Activity {
         list.setVisibility(View.GONE);
         reader.setVisibility(View.VISIBLE);
         reader.scrollTo(0, 0);
+    }
+
+    private android.content.SharedPreferences store() {
+        return getSharedPreferences("rafiq_reader", MODE_PRIVATE);
+    }
+
+    private boolean isBookmarked(String key) {
+        return store().getStringSet("bookmarks", new java.util.HashSet<String>()).contains(key);
+    }
+
+    private boolean toggleBookmark(String key) {
+        java.util.Set<String> set = new java.util.HashSet<String>(store().getStringSet("bookmarks", new java.util.HashSet<String>()));
+        boolean added = set.add(key);
+        if (!added) { set.remove(key); }
+        store().edit().putStringSet("bookmarks", set).apply();
+        return added;
     }
 
     private String versionLabel(Verse verse) {
