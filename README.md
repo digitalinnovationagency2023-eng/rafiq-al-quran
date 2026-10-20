@@ -134,7 +134,7 @@ repository.
 | Server data, retrieval, API, donations, safety, admin auth, AI assistance | `npm run test -w server` | 73 passed (58 baseline + 15 assistant) |
 | Native app core logic against real bundled assets (incl. conversation and recitation rights) | `node mobile/android/scripts/runLogicTests.js` | 61 passed |
 | APK packaging check | `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.10.apk` | 20/20 checks passed (signature, manifest, versionCode/Name, minSdk 24/targetSdk 36, bundled assets incl. `quran-meta.tsv`, icon) |
-| Release artifacts | CI AAB workflow + local `jarsigner`/`bundletool validate` | **Artifacts (1.0.10): CI run 39495623703 on commit b5a0491 (success); APK SHA-256 8CF5ADC0DF0166CE0C4E73FBF571E492D6552CA0D8C5A20E3AF18CA0ED1E9C01; signed upload AAB SHA-256 F2D56E7569847E423B0606D36F9B534CDECB6BAD6869B64DB6596BFA5FF15897 (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 A2B9393B4D3753D1542E4C576A4628259FF4F65640F9606ECBA1043FF78920A8** |
+| Release artifacts | CI AAB workflow + local `jarsigner`/`bundletool validate` | **Artifacts (1.0.10): CI run 39498315274 on commit c2deeba (success); APK SHA-256 C2FF8DE972E821F56B0D135B6229E5276668739521A565DA8EFC360C6FEC7EF4; signed upload AAB SHA-256 FF814F30D8954D5752D048F0CE3B4A5754909D64A20F323F2348AEEF8475CCC7 (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 368920A490AD1CF958C5580D2705D3A0ACFE0FF8B7F0C8FE452AB708D8A2A5C8** |
 | Emulator QA | 1.0.10 round-2 captures in `dist/` (home + attach, language dialog, conversation, recitation player, text attachment, TTS/answer, support, admin) | flows verified; see `docs/TESTS.md` |
 
 ## Guarantees encoded in the code and tests
