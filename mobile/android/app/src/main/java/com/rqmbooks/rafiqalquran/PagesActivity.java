@@ -6,30 +6,34 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rqmbooks.rafiqalquran.logic.Dataset;
-import com.rqmbooks.rafiqalquran.logic.Language;
-import com.rqmbooks.rafiqalquran.logic.Notices;
+import com.rqmbooks.rafiqalquran.logic.DonationRules;
 import com.rqmbooks.rafiqalquran.logic.TranslationMeta;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-/** Static information pages and the optional online forms. */
+/**
+ * Static information pages plus the optional online forms.
+ *
+ * <p>The pages are user-facing: no build configuration, environment variable or
+ * raw server response is ever shown. Optional online services are only rendered
+ * when the server reports that they are actually live; otherwise the page shows
+ * a short plain-language statement and no form.
+ */
 public final class PagesActivity extends Activity {
     private Prefs prefs;
 
@@ -70,6 +74,11 @@ public final class PagesActivity extends Activity {
     }
 
     private void section(LinearLayout parent, String title, String body) {
+        infoCard(parent, title, body);
+    }
+
+    /** Silver hairline card matching the rest of the app. */
+    private LinearLayout cardShell(LinearLayout parent, String title) {
         LinearLayout card = Ui.column(this);
         card.setBackground(Ui.rounded(Ui.PAPER, Ui.LINE, 14, this));
         card.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
@@ -77,26 +86,31 @@ public final class PagesActivity extends Activity {
         TextView heading = Ui.text(this, title, 16f, Ui.INK);
         heading.setTypeface(Typeface.DEFAULT_BOLD);
         card.addView(heading);
+        parent.addView(card);
+        return card;
+    }
+
+    private void infoCard(LinearLayout parent, String title, String body) {
+        LinearLayout card = cardShell(parent, title);
         TextView text = Ui.text(this, body, 13f, Ui.MUTED);
         text.setPadding(0, Ui.dp(this, 6), 0, 0);
         card.addView(text);
-        parent.addView(card);
     }
 
     private void renderAbout(LinearLayout parent) {
         heading(parent, "About Rafiq Al-Quran",
                 "A free, Quran-focused conversational app. It helps users locate and read verses, with the Arabic text and an identified translation shown separately.");
         section(parent, "What it does",
-                "â€¢ Retrieves verses from a validated local Quran dataset and identified translations.\n"
-                + "â€¢ Shows the exact Arabic text, the surah and verse reference, and the source metadata for each passage.\n"
-                + "â€¢ Lets users request more passages, open a specific reference, and listen to the translation read aloud.\n"
-                + "â€¢ Works offline: reading, search and answers use the bundled dataset.");
+                "• Retrieves verses from a validated local Quran dataset and identified translations.\n"
+                + "• Shows the exact Arabic text, the surah and verse reference, and the source metadata for each passage.\n"
+                + "• Lets users request more passages, open a specific reference, and listen to the translation read aloud.\n"
+                + "• Works offline: reading, search and answers use the bundled dataset.");
         section(parent, "What it does not do",
-                "â€¢ It does not use Hadith, Tafsir, external religious websites or a model's own religious knowledge.\n"
-                + "â€¢ It does not write or paraphrase Quranic verses.\n"
-                + "â€¢ It does not issue fatwas, rulings or authoritative interpretation.\n"
-                + "â€¢ It does not claim its search results are exhaustive.\n"
-                + "â€¢ It does not present a translation as the Arabic text, or imitated speech as Quranic recitation.");
+                "• It does not use Hadith, Tafsir, external religious websites or a model's own religious knowledge.\n"
+                + "• It does not write or paraphrase Quranic verses.\n"
+                + "• It does not issue fatwas, rulings or authoritative interpretation.\n"
+                + "• It does not claim its search results are exhaustive.\n"
+                + "• It does not present a translation as the Arabic text, or imitated speech as Quranic recitation.");
         section(parent, "Limitations",
                 "Retrieval is keyword and concept based over the bundled dataset. It may misunderstand a question, miss relevant verses, or rank a less relevant passage highly. When it cannot identify sufficiently relevant verses it says so explicitly and never concludes that the Quran does not address a topic. Please consult qualified scholars where religious interpretation is required.");
         section(parent, "Contact", "Digital Innovative Agency FZ LLC\nEmail: info@rqmbooks.com\nPhone / WhatsApp: +971 9 501 0254\nWhatsApp chat: https://wa.me/97195010254");
@@ -107,14 +121,15 @@ public final class PagesActivity extends Activity {
     private void renderPrivacy(LinearLayout parent) {
         heading(parent, "Privacy", "What the app stores and what it never does.");
         section(parent, "Stored on this device",
-                "â€¢ Your questions and the answers shown, so the conversation can be restored.\n"
-                + "â€¢ Interface preferences: language, text size and voice setting.\n"
-                + "â€¢ Nothing else. There is no account and no advertising identifier.");
+                "• Your questions and the answers shown, so the conversation can be restored.\n"
+                + "• Interface preferences: language, text size and voice setting.\n"
+                + "• Study data you create: bookmark collections, personal notes, saved searches and reading plans.\n"
+                + "• Nothing else. There is no account and no advertising identifier.");
         section(parent, "Never done",
-                "â€¢ No raw payment card data is stored; payment is hosted by the provider.\n"
-                + "â€¢ Conversation text is never attached to a report without your explicit consent.\n"
-                + "â€¢ Nothing is sent to WhatsApp or another third party automatically.\n"
-                + "â€¢ The app does not read RQM Books accounting, customer, invoice or payroll data.");
+                "• No raw payment card data is stored; payment is hosted by the provider.\n"
+                + "• Conversation text is never attached to a report without your explicit consent.\n"
+                + "• Nothing is sent to WhatsApp or another third party automatically.\n"
+                + "• The app does not read RQM Books accounting, customer, invoice or payroll data.");
         section(parent, "Voice features",
                 "Voice input uses the device's speech recognition; audio may be processed by the platform provider. Spoken answers use the device's speech synthesis for the translation and summary only and are never presented as Quranic recitation. Both can be disabled in the menu.");
         section(parent, "Isolation",
@@ -130,13 +145,13 @@ public final class PagesActivity extends Activity {
                 + "Version: " + dataset.provenance().version + "\n"
                 + "Source: " + dataset.provenance().sourceUrl + "\n"
                 + "Imported: " + dataset.provenance().importedAt + "\n"
-                + "Verses: " + dataset.verseCount() + " Â· Chapters: " + dataset.chapterCount() + "\n"
+                + "Verses: " + dataset.verseCount() + " · Chapters: " + dataset.chapterCount() + "\n"
                 + "Checksum SHA-256:\n" + dataset.provenance().checksum);
         StringBuilder translations = new StringBuilder();
         for (Map.Entry<String, TranslationMeta> entry : dataset.translations().entrySet()) {
             TranslationMeta meta = entry.getValue();
-            translations.append("â€¢ ").append(entry.getKey().toUpperCase()).append(": ").append(meta.title);
-            if (meta.author != null && !meta.author.isEmpty()) translations.append(" â€” ").append(meta.author);
+            translations.append("• ").append(entry.getKey().toUpperCase()).append(": ").append(meta.title);
+            if (meta.author != null && !meta.author.isEmpty()) translations.append(" — ").append(meta.author);
             translations.append("\n   Licence status: ").append(meta.licenseStatus).append("\n");
         }
         section(parent, "Translations", translations.toString());
@@ -145,49 +160,102 @@ public final class PagesActivity extends Activity {
         section(parent, "Required notices", "English and Arabic: verified wording.\nOther languages: the English notice is shown and marked as pending review.");
     }
 
+    // ----------------------------------------------------------------- support
     private void renderSupport(LinearLayout parent) {
         heading(parent, "Support the app",
-                "Help keep this free Quran-focused app reliable and improving. Voluntary contributions may support maintenance, accessibility, extra language support, better search and verified recitation access.");
-        section(parent, "Voluntary only", "Donating is entirely optional and never affects access to reading, search or the conversational experience. No religious reward is promised and no charitable or tax-deductible status is claimed.");
+                "Rafiq Al-Quran is free to read, search and use. There is no account, and nothing on this page is required to use the app.");
+        section(parent, "Voluntary only",
+                "Donating is entirely optional and never affects access to reading, search or the conversational experience. No religious reward is promised and no charitable or tax-deductible status is claimed.");
 
-        LinearLayout form = Ui.column(this);
-        form.setPadding(0, Ui.dp(this, 12), 0, 0);
-        final TextView status = Ui.text(this, "Checking donation availabilityâ€¦", 12f, Ui.MUTED);
-        final EditText amount = new EditText(this);
-        amount.setHint("Amount in " + "AED" + " (e.g. 25)");
-        amount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        final CheckBox recurring = new CheckBox(this);
-        recurring.setText("Make this a monthly donation");
-        recurring.setVisibility(View.GONE);
-        android.widget.Button donate = Ui.button(this, "Continue to secure checkout", true);
-        donate.setEnabled(false);
-        donate.setOnClickListener(view -> submitDonation(amount, recurring, status));
-        form.addView(status);
-        form.addView(amount);
-        form.addView(recurring);
-        form.addView(donate);
-        parent.addView(form);
+        // The donation form is only ever built when the server confirms that
+        // collection is live. When it is not, this page shows plain copy only.
+        final LinearLayout donations = Ui.column(this);
+        donations.setPadding(0, Ui.dp(this, 12), 0, 0);
+        parent.addView(donations);
+        donations.addView(Ui.text(this, "Checking donation availability…", 12f, Ui.MUTED));
 
         new Thread(() -> {
             try {
                 JSONObject config = Api.get(getResources(), "/api/donations/config");
                 final boolean live = config.optBoolean("live");
-                final String message = live
-                        ? "Donation collection is enabled. You will be taken to the payment provider's secure checkout."
-                        : "Donation collection is not enabled in this deployment. No payment is requested.\n"
-                        + joinReasons(config.optJSONArray("blockedReasons"));
+                final boolean recurringEnabled = config.optBoolean("recurringEnabled");
+                final String currency = config.optString("currency", "AED").toUpperCase();
+                final int minMinor = config.optInt("minAmountMinor", DonationRules.MIN_MINOR);
+                final int maxMinor = config.optInt("maxAmountMinor", DonationRules.MAX_MINOR);
                 runOnUiThread(() -> {
-                    status.setText(message);
-                    donate.setEnabled(live);
-                    recurring.setVisibility(config.optBoolean("recurringEnabled") ? View.VISIBLE : View.GONE);
+                    donations.removeAllViews();
+                    if (live) renderDonationForm(donations, currency, minMinor, maxMinor, recurringEnabled);
+                    else renderDonationsDisabled(donations);
                 });
             } catch (Exception error) {
-                runOnUiThread(() -> status.setText("Online services are not configured in this build, so donation collection is unavailable. No payment is requested."));
+                runOnUiThread(() -> {
+                    donations.removeAllViews();
+                    infoCard(donations, "Donation collection is unavailable",
+                            "Donations are not enabled in this release. No payment is requested.");
+                });
             }
         }).start();
+
+        section(parent, "Other ways to help",
+                "You can support the app by sharing it with others and sending feedback.");
+        LinearLayout actions = Ui.row(this);
+        actions.setPadding(0, Ui.dp(this, 8), 0, 0);
+        Button share = Ui.button(this, "Share the app", false);
+        share.setOnClickListener(view -> shareApp());
+        Button feedback = Ui.button(this, "Send feedback", true);
+        feedback.setOnClickListener(view -> openReport());
+        LinearLayout.LayoutParams feedbackParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        feedbackParams.leftMargin = Ui.dp(this, 8);
+        actions.addView(share);
+        actions.addView(feedback, feedbackParams);
+        parent.addView(actions);
+
+        TextView footnote = Ui.text(this,
+                "No purchase is offered in this app. Reading, search and the study tools stay free.",
+                11f, Ui.MUTED);
+        footnote.setPadding(0, Ui.dp(this, 18), 0, 0);
+        parent.addView(footnote);
     }
 
-    private void submitDonation(EditText amount, CheckBox recurring, TextView status) {
+    private void renderDonationsDisabled(LinearLayout parent) {
+        infoCard(parent, "Donations are not enabled in this release",
+                "No payment is requested. No checkout form is shown, and the app never collects card details.");
+    }
+
+    private void renderDonationForm(LinearLayout parent, String currency, int minMinor, int maxMinor, boolean recurringEnabled) {
+        LinearLayout card = cardShell(parent, "Make a voluntary donation");
+        TextView description = Ui.text(this,
+                "Donation collection is enabled. You will be taken to the payment provider's secure checkout; "
+                        + "card details are entered on the provider's page, never in this app.",
+                13f, Ui.MUTED);
+        description.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 8));
+        card.addView(description);
+
+        final EditText amount = new EditText(this);
+        amount.setHint("Amount in " + currency + " (for example " + Math.max(1, minMinor / 100) + ")");
+        amount.setTextColor(Ui.INK);
+        amount.setHintTextColor(Ui.MUTED);
+        amount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        card.addView(amount);
+
+        final CheckBox recurring = new CheckBox(this);
+        recurring.setText("Make this a monthly donation");
+        recurring.setTextColor(Ui.INK);
+        recurring.setVisibility(recurringEnabled ? View.VISIBLE : View.GONE);
+        card.addView(recurring);
+
+        final TextView status = Ui.text(this, "", 12f, Ui.MUTED);
+        status.setPadding(0, Ui.dp(this, 6), 0, 0);
+
+        Button donate = Ui.button(this, "Continue to secure checkout", true);
+        donate.setOnClickListener(view -> submitDonation(amount, recurring, status, currency, minMinor, maxMinor));
+        card.addView(donate, Ui.withTop(this, 8));
+        card.addView(status);
+    }
+
+    private void submitDonation(EditText amount, CheckBox recurring, TextView status,
+                                String currency, int minMinor, int maxMinor) {
         String raw = amount.getText().toString().trim();
         int minor;
         try {
@@ -196,17 +264,25 @@ public final class PagesActivity extends Activity {
             status.setText("Enter a valid amount.");
             return;
         }
-        String invalid = com.rqmbooks.rafiqalquran.logic.DonationRules.validate(minor, "AED");
+        if (minor < minMinor) {
+            status.setText("Enter at least " + (minMinor / 100) + " " + currency + ".");
+            return;
+        }
+        if (minor > maxMinor) {
+            status.setText("Enter at most " + (maxMinor / 100) + " " + currency + ".");
+            return;
+        }
+        String invalid = DonationRules.validate(minor, currency);
         if (invalid != null) {
             status.setText(invalid);
             return;
         }
-        status.setText("Preparing checkoutâ€¦");
+        status.setText("Preparing checkout…");
         new Thread(() -> {
             try {
                 JSONObject body = new JSONObject();
                 body.put("amountMinor", minor);
-                body.put("currency", "AED");
+                body.put("currency", currency);
                 body.put("recurring", recurring.isChecked());
                 JSONObject response = Api.post(getResources(), "/api/donations/checkout", body);
                 final String url = response.optString("checkoutUrl", "");
@@ -219,42 +295,41 @@ public final class PagesActivity extends Activity {
                     }
                 });
             } catch (Exception error) {
-                runOnUiThread(() -> status.setText("Checkout could not be started: " + error.getMessage()));
+                runOnUiThread(() -> status.setText(
+                        "Checkout could not be started. No payment has been requested."));
             }
         }).start();
     }
 
+    // ------------------------------------------------------------- study tools
     private void renderTools(LinearLayout parent) {
-        heading(parent, "Optional tools",
-                "These are optional conveniences. Core reading, verse lookup and the conversational experience are free and never depend on payment.");
-        TextView status = Ui.text(this, "Loadingâ€¦", 12f, Ui.MUTED);
-        parent.addView(status);
-        new Thread(() -> {
-            try {
-                JSONObject response = Api.get(getResources(), "/api/premium/features");
-                final boolean enabled = response.optBoolean("enabled");
-                final JSONArray features = Api.array(response, "features");
-                runOnUiThread(() -> {
-                    if (!enabled) {
-                        status.setText("Paid tools are not enabled in this deployment. Nothing here changes the Quranic text, its translation sources, or the accuracy of an answer.");
-                    } else {
-                        status.setText("Choose a tool to continue to the provider's secure checkout.");
-                    }
-                    for (int i = 0; i < features.length(); i++) {
-                        JSONObject feature = features.optJSONObject(i);
-                        if (feature == null) continue;
-                        section(parent, feature.optString("name"),
-                                feature.optString("description") + "\nPrice: " + feature.optString("currency") + " "
-                                        + (feature.optInt("priceMinor") / 100.0) + " / " + feature.optString("billing")
-                                        + (enabled ? "" : "\nNot available in this deployment."));
-                    }
-                });
-            } catch (Exception error) {
-                runOnUiThread(() -> status.setText("Online services are not configured in this build. Optional tools are unavailable; core features remain free."));
-            }
-        }).start();
+        heading(parent, "Study tools are included free",
+                "Every study tool is included at no cost. Reading the Quran, search and these tools never require an account or a payment.");
+        section(parent, "What is included",
+                "• Bookmark collections: group saved verses into named collections.\n"
+                + "• Personal notes: attach a private note to any verse.\n"
+                + "• Saved searches: keep the searches you run and repeat them later.\n"
+                + "• Reading plans: follow a plan and track your progress.\n"
+                + "• Cross-language comparison: read the Arabic and a translation side by side in the reader.\n"
+                + "• Export: share bookmarks and notes as CSV or plain text through the share sheet.");
+        section(parent, "Stored on this device",
+                "Collections, notes, saved searches and reading plans are stored on this device only. Reading the Quran remains free and offline.");
+
+        Button open = Ui.button(this, "Open study tools", true);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.topMargin = Ui.dp(this, 18);
+        open.setOnClickListener(view -> startActivity(new Intent(this, StudyActivity.class)));
+        parent.addView(open, params);
+
+        TextView footnote = Ui.text(this,
+                "No plans, subscriptions or add-ons are sold in this app.",
+                11f, Ui.MUTED);
+        footnote.setPadding(0, Ui.dp(this, 14), 0, 0);
+        parent.addView(footnote);
     }
 
+    // -------------------------------------------------------- report an issue
     private void renderReport(LinearLayout parent) {
         heading(parent, "Report an issue",
                 "Tell us about a missing verse, a wrong reference, a translation display problem, an accessibility issue or a bug. Reports are reviewed before anything is treated as a correction.");
@@ -264,23 +339,37 @@ public final class PagesActivity extends Activity {
         category.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, labels));
         final EditText description = new EditText(this);
         description.setHint("What happened?");
+        description.setTextColor(Ui.INK);
+        description.setHintTextColor(Ui.MUTED);
         description.setMinLines(3);
         description.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         final EditText verse = new EditText(this);
         verse.setHint("Verse reference (optional), e.g. 2:255");
+        verse.setTextColor(Ui.INK);
+        verse.setHintTextColor(Ui.MUTED);
         final EditText contact = new EditText(this);
         contact.setHint("Contact detail (optional)");
+        contact.setTextColor(Ui.INK);
+        contact.setHintTextColor(Ui.MUTED);
         final CheckBox consent = new CheckBox(this);
-        consent.setText("Include the question text and basic diagnostics with this report");
-        final TextView status = Ui.text(this, "Reports are stored in the app's own database and are never forwarded automatically. Set the server URL at build time to submit online.", 11f, Ui.MUTED);
-        android.widget.Button submit = Ui.button(this, "Send report", true);
+        consent.setText("Include basic diagnostics (interface language and platform) with this report");
+        consent.setTextColor(Ui.INK);
+        final TextView status = Ui.text(this,
+                "Reports are reviewed before anything is treated as a correction. Nothing is sent to WhatsApp or another third party automatically.",
+                11f, Ui.MUTED);
+        final Button submit = Ui.button(this, "Send report", true);
         submit.setOnClickListener(view -> {
             String text = description.getText().toString().trim();
             if (text.length() < 5) {
                 status.setText("Please describe the issue in at least a few words.");
                 return;
             }
-            status.setText("Sendingâ€¦");
+            if (text.length() > 4000) {
+                status.setText("Please keep the description under 4000 characters.");
+                return;
+            }
+            submit.setEnabled(false);
+            status.setText("Sending…");
             new Thread(() -> {
                 try {
                     JSONObject body = new JSONObject();
@@ -290,10 +379,24 @@ public final class PagesActivity extends Activity {
                     if (!verse.getText().toString().trim().isEmpty()) body.put("verseReference", verse.getText().toString().trim());
                     if (!contact.getText().toString().trim().isEmpty()) body.put("contact", contact.getText().toString().trim());
                     body.put("consent", consent.isChecked());
+                    if (consent.isChecked()) {
+                        JSONObject diagnostics = new JSONObject();
+                        diagnostics.put("platform", "android");
+                        diagnostics.put("language", prefs.language());
+                        body.put("diagnostics", diagnostics);
+                    }
                     JSONObject response = Api.post(getResources(), "/api/feedback", body);
-                    runOnUiThread(() -> status.setText(response.optString("message", "Report recorded.")));
+                    final String message = response.optString("message",
+                            "Thank you. Your report has been recorded for review.");
+                    runOnUiThread(() -> {
+                        status.setText(message);
+                        submit.setEnabled(true);
+                    });
                 } catch (Exception error) {
-                    runOnUiThread(() -> status.setText("The report could not be sent: " + error.getMessage()));
+                    runOnUiThread(() -> {
+                        status.setText("The report could not be sent. Check your connection and try again.");
+                        submit.setEnabled(true);
+                    });
                 }
             }).start();
         });
@@ -304,15 +407,27 @@ public final class PagesActivity extends Activity {
         form.addView(verse);
         form.addView(contact);
         form.addView(consent);
-        form.addView(submit);
+        form.addView(submit, Ui.withTop(this, 8));
         form.addView(status);
         parent.addView(form);
     }
 
-    private String joinReasons(JSONArray reasons) {
-        if (reasons == null) return "";
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < reasons.length(); i++) builder.append("â€¢ ").append(reasons.optString(i)).append('\n');
-        return builder.toString();
+    // ----------------------------------------------------------------- actions
+    private void shareApp() {
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(Intent.EXTRA_SUBJECT, "Rafiq Al-Quran");
+        send.putExtra(Intent.EXTRA_TEXT,
+                "Rafiq Al-Quran is a free app for reading and searching the Quran, with the Arabic text "
+                        + "and identified translations. It works offline.");
+        try {
+            startActivity(Intent.createChooser(send, "Share Rafiq Al-Quran"));
+        } catch (Exception error) {
+            Toast.makeText(this, "No app is available to share with.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void openReport() {
+        startActivity(new Intent(this, PagesActivity.class).putExtra("page", "report"));
     }
 }

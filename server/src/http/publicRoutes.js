@@ -13,6 +13,7 @@ import { applyPremiumEvent, createPremiumCheckout, hasEntitlement, listEntitleme
 import { detectIntent, detectLanguage, interpretWithModel, parseReference } from "../services/query.js";
 import { getVerseByKey, search, translationFor } from "../services/retrieval.js";
 import { ensureSession } from "../services/session.js";
+import { createAssistantRoutes } from "./assistantRoutes.js";
 
 export const FEEDBACK_CATEGORIES = [
   { key: "missing_verse", label: "Potentially missing relevant verses" },
@@ -74,6 +75,11 @@ const recordAiCall = (db) => {
 export const createPublicRoutes = ({ db, index }) => {
   const router = express.Router();
   seedPremiumFeatures(db);
+
+  // Optional AI chat/OCR layer. Disabled (503) unless an OpenAI-compatible
+  // provider is configured; it can only produce intent metadata, a neutral
+  // small-talk reply, ASCII search terms and OCR text — never religious content.
+  router.use("/assistant", createAssistantRoutes({ db }));
 
   router.get("/health", (req, res) => {
     res.json({

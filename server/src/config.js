@@ -49,6 +49,9 @@ export const config = {
     max: int(process.env.RATE_LIMIT_MAX, 60),
     askMax: int(process.env.RATE_LIMIT_ASK_MAX, 20),
     feedbackMax: int(process.env.RATE_LIMIT_FEEDBACK_MAX, 10),
+    // AI assistance is more expensive per call, so it gets its own allowance
+    // over a 10-minute window (per client IP; see middleware/rateLimit.js).
+    assistantMax: int(process.env.RATE_LIMIT_ASSISTANT_MAX, 20),
   },
 
   retrieval: {
@@ -77,12 +80,14 @@ export const config = {
     // Optional. Used only to interpret the question into search terms and an
     // intent. It never supplies religious text: every quoted verse and every
     // translation shown comes from the local, validated dataset.
-    provider: process.env.AI_PROVIDER || "none", // none | openai-compatible
-    baseUrl: process.env.AI_BASE_URL || "",
-    apiKey: process.env.AI_API_KEY || "",
-    model: process.env.AI_MODEL || "",
+    provider: String(process.env.AI_PROVIDER || "none").trim().toLowerCase(), // none | openai-compatible
+    baseUrl: (process.env.AI_BASE_URL || "").trim(),
+    apiKey: (process.env.AI_API_KEY || "").trim(),
+    // The free Gemini tier works through its OpenAI-compatible endpoint, so a
+    // model default keeps the feature usable with only AI_PROVIDER/AI_API_KEY.
+    model: (process.env.AI_MODEL || "gemini-2.5-flash").trim(),
     timeoutMs: int(process.env.AI_TIMEOUT_MS, 8000),
-    maxMonthlyCalls: int(process.env.AI_MAX_MONTHLY_CALLS, 0),
+    maxMonthlyCalls: Math.max(0, int(process.env.AI_MAX_MONTHLY_CALLS, 0)),
   },
 
   donations: {

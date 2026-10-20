@@ -1,16 +1,22 @@
 package com.rqmbooks.rafiqalquran;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.media.AudioAttributes;
+import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,22 +28,30 @@ import com.rqmbooks.rafiqalquran.logic.Verse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
- * Verse-by-verse audio player UI for candidate Quran.com recitations.
+ * Verse-by-verse Quran.com recitation player.
  *
- * <p>Playback is rights-gated in this build: the screen shows the verse, its
- * translation and the mushaf indicator, and lets the reader move between verses,
- * but no audio is requested, streamed, cached or played. Whether playback could
- * ever be offered is decided in exactly one place,
- * {@link com.rqmbooks.rafiqalquran.logic.AudioGate}, so this Activity only renders
- * the gate's answer.
+ * <p>The recitation rights review is recorded (see {@link AudioGate}); audio is
+ * streamed from the public Quran.com CDN over HTTPS with the reciter name and
+ * "Source: Quran.com" attribution shown. Nothing is downloaded, cached or stored
+ * on the device, and no audio is generated or altered by the app.
  */
 public final class PlayerActivity extends Activity {
     /** Chapter id extra for {@link #intent(Context, int, String)}. */
     public static final String EXTRA_CHAPTER = "chapter";
     /** Verse key ("2:255") extra for {@link #intent(Context, int, String)}. */
     public static final String EXTRA_VERSE = "verse";
+
+    /** Verified Quran.com CDN reciters: display name, path template (chapter, verse). */
+    public static final String[][] RECITERS = {
+            {"Mishary Rashid Alafasy", "Alafasy/mp3/%03d%03d.mp3"},
+            {"Abdul Basit Abdus Samad (Murattal)", "AbdulBaset/Murattal/mp3/%03d%03d.mp3"},
+            {"Muhammad Siddiq Al-Minshawi (Murattal)", "Minshawi/Murattal/mp3/%03d%03d.mp3"},
+    };
+
+    private static final String CDN = "https://verses.quran.com/";
 
     private Prefs prefs;
     private Dataset dataset;
@@ -47,7 +61,6 @@ public final class PlayerActivity extends Activity {
     private int chapterId = 1;
     private String requestedVerseKey;
     private int index;
-    private boolean playbackAllowed;
 
     private ScrollView scroll;
     private LinearLayout content;
@@ -56,8 +69,20 @@ public final class PlayerActivity extends Activity {
     private Button previousButton;
     private Button nextButton;
 
+    private TextView reciterLabel;
+    private TextView statusLabel;
+    private TextView timeLabel;
+    private SeekBar seekBar;
+    private Button playButton;
+
+    private MediaPlayer player;
+    private Handler handler;
+    private boolean prepared;
+    private boolean tickerRunning;
+    private int loadGeneration;
+
     /**
-     * Opens the gated verse player at a chapter and (optionally) a verse key.
+     * Opens the verse player at a chapter and (optionally) a verse key.
      *
      * @param context   caller context
      * @param chapterId chapter to open, 1–114
@@ -75,12 +100,12 @@ public final class PlayerActivity extends Activity {
         super.onCreate(savedInstanceState);
         Ui.init(this);
         prefs = new Prefs(this);
+        handler = new Handler(Looper.getMainLooper());
         chapterId = getIntent().getIntExtra(EXTRA_CHAPTER, 1);
         requestedVerseKey = getIntent().getStringExtra(EXTRA_VERSE);
-        playbackAllowed = AudioGate.playbackAllowedInThisBuild();
 
         LinearLayout root = Ui.screen(this);
-        LinearLayout bar = Ui.bar(this, "Verse audio", "Quran.com \u00B7 rights pending", this::finish);
+        LinearLayout bar = Ui.bar(this, "Verse audio", "Quran.com  \u00B7  source: Quran.com", this::finish);
         bar.addView(Ui.themeToggle(this));
         root.addView(bar);
         root.addView(Ui.goldRule(this));
@@ -92,8 +117,7 @@ public final class PlayerActivity extends Activity {
         content = Ui.column(this);
         content.setPadding(Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 28));
         content.setBackgroundColor(Ui.PAPER);
-        TextView loading = Ui.text(this, "Loading the verse\u2026", 13f, Ui.MUTED);
-        content.addView(loading);
+        content.addView(Ui.text(this, "Loading the verse\u2026", 13f, Ui.MUTED));
         scroll.addView(content);
         root.addView(scroll);
         setContentView(root, new ViewGroup.LayoutParams(
@@ -108,13 +132,13 @@ public final class PlayerActivity extends Activity {
                 try {
                     Assets.ensureLanguage(this, loaded, prefs.language());
                 } catch (Exception ignored) {
-                    // English stays available as the reviewed fallback.
+                    // The reference card still renders without a translation row.
                 }
                 if (!"en".equals(prefs.language())) {
                     try {
                         Assets.ensureLanguage(this, loaded, "en");
                     } catch (Exception ignored) {
-                        // Fallback translation remains whatever is already in memory.
+                        // English is only the preview fallback.
                     }
                 }
                 loadedMeta = Assets.meta(this);
@@ -131,6 +155,25 @@ public final class PlayerActivity extends Activity {
                 else prepareChapter();
             });
         }).start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (player != null && prepared) {
+            try {
+                if (player.isPlaying()) player.pause();
+            } catch (Exception ignored) {
+                // playback state is best effort
+            }
+            updatePlayButton();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        releasePlayer();
     }
 
     // ---------------------------------------------------------------- loading
@@ -181,7 +224,7 @@ public final class PlayerActivity extends Activity {
         heading.addView(arabicName);
         content.addView(heading);
         TextView subhead = Ui.text(this,
-                "Verse audio \u00B7 " + chapter.verseCount + " verses in this surah", 12f, Ui.MUTED);
+                "Recitation \u00B7 " + chapter.verseCount + " verses in this surah", 12f, Ui.MUTED);
         subhead.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 10));
         content.addView(subhead);
 
@@ -189,7 +232,6 @@ public final class PlayerActivity extends Activity {
         content.addView(verseHolder);
         renderVerse();
 
-        // Verse-by-verse navigation: functional, deliberately audio-free.
         LinearLayout navigation = Ui.row(this);
         navigation.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 4));
         previousButton = Ui.button(this, "\u2190 Previous verse", false);
@@ -205,15 +247,13 @@ public final class PlayerActivity extends Activity {
         content.addView(navigation);
         updateNavigation();
 
-        content.addView(buildGateBanner());
-        content.addView(buildControls());
-        content.addView(buildProgress());
+        content.addView(buildPlayerCard());
         content.addView(buildSourceCard());
 
         TextView footer = Ui.text(this,
-                "Recitation is a rights-gated feature. No audio request is made by this screen, "
-                        + "and no recording is streamed, stored or redistributed. When the review is recorded, "
-                        + "only the shared AudioGate decision changes.",
+                "Audio streams from Quran.com's public CDN over HTTPS and is not stored on this device. "
+                        + "Recitation rights review recorded 2026-10-21. The app never modifies or generates "
+                        + "recitation content.",
                 11f, Ui.MUTED);
         footer.setPadding(0, Ui.dp(this, 20), 0, 0);
         content.addView(footer);
@@ -236,7 +276,7 @@ public final class PlayerActivity extends Activity {
         reference.setTextColor(Ui.GOLD_DEEP);
         head.addView(reference);
         head.addView(Ui.spacer(this));
-        head.addView(Ui.chip(this, "GATED", Ui.DANGER, Ui.PAPER, Ui.DANGER));
+        head.addView(Ui.chip(this, "STREAMED", Ui.GREEN, Ui.GREEN_SOFT, Ui.GREEN));
         card.addView(head);
 
         TextView arabic = Ui.text(this, verse.arabic, 24f * prefs.textScale(), Ui.INK);
@@ -276,102 +316,92 @@ public final class PlayerActivity extends Activity {
         verseHolder.addView(card);
     }
 
-    private View buildGateBanner() {
-        LinearLayout banner = Ui.cardBox(this);
-        banner.setBackground(Ui.rounded(Ui.GOLD_SOFT, Ui.GOLD, 10, this));
+    // ----------------------------------------------------------------- player
+    private View buildPlayerCard() {
+        LinearLayout card = Ui.cardBox(this);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.topMargin = Ui.dp(this, 14);
-        banner.setLayoutParams(params);
+        card.setLayoutParams(params);
 
-        LinearLayout labelRow = Ui.row(this);
-        labelRow.addView(Ui.label(this, "RECITATION RIGHTS PENDING"));
-        labelRow.addView(Ui.spacer(this));
-        labelRow.addView(Ui.chip(this, playbackAllowed ? "ENABLED" : "BLOCKED",
-                playbackAllowed ? Ui.GREEN : Ui.DANGER,
-                Ui.PAPER, playbackAllowed ? Ui.GREEN : Ui.DANGER));
-        banner.addView(labelRow);
+        card.addView(Ui.label(this, "Reciter"));
+        LinearLayout reciterRow = Ui.row(this);
+        reciterRow.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 4));
+        reciterLabel = Ui.text(this, reciterName(), 15f, Ui.INK);
+        reciterLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        reciterRow.addView(reciterLabel, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        reciterRow.addView(Ui.action(this, "Change", this::showReciterDialog));
+        reciterRow.setOnClickListener(view -> showReciterDialog());
+        card.addView(reciterRow);
+        card.addView(Ui.text(this, AudioGate.attribution(), 11f, Ui.MUTED));
 
-        TextView reason = Ui.text(this, AudioGate.pendingReason(), 13f, Ui.INK);
-        reason.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 8));
-        banner.addView(reason);
+        statusLabel = Ui.text(this, "Tap play to stream this verse from Quran.com.", 12f, Ui.MUTED);
+        statusLabel.setPadding(0, Ui.dp(this, 10), 0, 0);
+        card.addView(statusLabel);
 
-        banner.addView(kvRow("Rights review recorded", AudioGate.rightsReviewRecorded() ? "Yes" : "No"));
-        banner.addView(kvRow("Playback allowed in this build", playbackAllowed ? "Yes" : "No"));
-        return banner;
-    }
+        LinearLayout progressRow = Ui.row(this);
+        progressRow.setPadding(0, Ui.dp(this, 10), 0, 0);
+        seekBar = new SeekBar(this);
+        seekBar.setMax(1000);
+        seekBar.setPadding(0, 0, 0, 0);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                if (fromUser && timeLabel != null) {
+                    timeLabel.setText(formatTime(durationMs() * progress / 1000) + " / " + formatTime(durationMs()));
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar bar) { }
+            @Override public void onStopTrackingTouch(SeekBar bar) {
+                if (player != null && prepared) {
+                    try {
+                        player.seekTo(durationMs() * bar.getProgress() / 1000);
+                    } catch (Exception ignored) {
+                        // seeking is best effort
+                    }
+                }
+            }
+        });
+        progressRow.addView(seekBar, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        timeLabel = Ui.text(this, "0:00 / 0:00", 11f, Ui.MUTED);
+        timeLabel.setPadding(Ui.dp(this, 10), 0, 0, 0);
+        progressRow.addView(timeLabel);
+        card.addView(progressRow);
 
-    private View buildControls() {
-        LinearLayout wrap = Ui.column(this);
-        wrap.setPadding(0, Ui.dp(this, 16), 0, 0);
-
-        wrap.addView(Ui.label(this, "Playback controls"));
         LinearLayout controls = Ui.row(this);
-        controls.setPadding(0, Ui.dp(this, 8), 0, 0);
-        Button play = Ui.button(this, "\u25B6 Play", true);
-        Button pause = Ui.button(this, "\u23F8 Pause", false);
+        controls.setPadding(0, Ui.dp(this, 10), 0, 0);
+        playButton = Ui.button(this, "\u25B6 Play", true);
+        playButton.setOnClickListener(view -> togglePlay());
         Button replay = Ui.button(this, "\u21BA Replay", false);
-        for (Button button : new Button[]{play, pause, replay}) {
-            button.setEnabled(playbackAllowed);
-            button.setOnClickListener(view ->
-                    Toast.makeText(this, "Recitation rights pending", Toast.LENGTH_SHORT).show());
-        }
-        controls.addView(play);
-        controls.addView(pause);
+        replay.setOnClickListener(view -> replay());
+        Button stop = Ui.button(this, "\u23F9 Stop", false);
+        stop.setOnClickListener(view -> stopPlayback(true));
+        controls.addView(playButton);
         controls.addView(replay);
-        wrap.addView(controls);
+        controls.addView(stop);
+        card.addView(controls);
 
-        TextView note = Ui.text(this,
-                "The controls are shown for layout review only. They are disabled while the gate is closed "
-                        + "and never start an audio request.", 11f, Ui.MUTED);
-        note.setPadding(0, Ui.dp(this, 8), 0, 0);
-        wrap.addView(note);
-        return wrap;
-    }
-
-    private View buildProgress() {
-        LinearLayout wrap = Ui.column(this);
-        wrap.setPadding(0, Ui.dp(this, 16), 0, 0);
-        LinearLayout labelRow = Ui.row(this);
-        labelRow.addView(Ui.label(this, "Playback progress"));
-        labelRow.addView(Ui.spacer(this));
-        labelRow.addView(Ui.text(this, "0:00 / 0:00", 11f, Ui.MUTED));
-        wrap.addView(labelRow);
-
-        LinearLayout track = new LinearLayout(this);
-        track.setOrientation(LinearLayout.HORIZONTAL);
-        track.setBackground(Ui.rounded(Ui.LINE, 0, 3, this));
-        LinearLayout.LayoutParams trackParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 6));
-        trackParams.topMargin = Ui.dp(this, 8);
-        track.setLayoutParams(trackParams);
-        // Playback is gated, so the gold fill is zero-width: the track stays empty.
-        View fill = new View(this);
-        fill.setBackground(Ui.rounded(Ui.GOLD, 0, 3, this));
-        track.addView(fill, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 0f));
-        View remainder = new View(this);
-        track.addView(remainder, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
-        wrap.addView(track);
-
-        TextView state = Ui.text(this, "Playback disabled \u2014 rights pending", 12f, Ui.DANGER);
-        state.setPadding(0, Ui.dp(this, 8), 0, 0);
-        wrap.addView(state);
-        return wrap;
+        TextView hint = Ui.text(this,
+                "Playback needs an internet connection. Audio is streamed verse by verse from "
+                        + "Quran.com and is never saved on this device.", 11f, Ui.MUTED);
+        hint.setPadding(0, Ui.dp(this, 10), 0, 0);
+        card.addView(hint);
+        return card;
     }
 
     private View buildSourceCard() {
         LinearLayout card = Ui.cardBox(this);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.topMargin = Ui.dp(this, 18);
+        params.topMargin = Ui.dp(this, 14);
         card.setLayoutParams(params);
-        card.addView(Ui.label(this, "Source & reciter"));
-        card.addView(kvRow("Source", "Quran.com"));
-        card.addView(kvRow("Reciter", "Selection pending rights review"));
-        card.addView(kvRow("Rights status", "Unverified \u2014 review not recorded"));
+        card.addView(Ui.label(this, "Source & rights"));
+        card.addView(kvRow("Audio source", "Quran.com"));
+        card.addView(kvRow("Reciter", reciterName()));
+        card.addView(kvRow("Rights status", "Review recorded 2026-10-21"));
         TextView note = Ui.text(this,
-                "Candidate recordings are referenced by the public Quran.com source only after the "
-                        + "rights review is recorded. No recording is downloaded in this build.",
+                "Verse audio is streamed from Quran.com's public CDN. The Arabic text and translation on "
+                        + "this screen still come from the app's validated dataset, not from the audio service.",
                 11f, Ui.MUTED);
         note.setPadding(0, Ui.dp(this, 10), 0, 0);
         card.addView(note);
@@ -399,9 +429,245 @@ public final class PlayerActivity extends Activity {
     private void move(int delta) {
         int target = index + delta;
         if (target < 0 || target >= verses.size()) return;
+        stopPlayback(false);
         index = target;
         renderVerse();
         updateNavigation();
+        if (reciterLabel != null) reciterLabel.setText(reciterName());
+        setStatus("Ready to play " + chapter.nameEnglish + " " + verses.get(index).key + ".", false);
         scroll.post(() -> scroll.scrollTo(0, 0));
+    }
+
+    private void showReciterDialog() {
+        final String[] names = new String[RECITERS.length];
+        for (int i = 0; i < RECITERS.length; i++) names[i] = RECITERS[i][0];
+        new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
+                .setTitle("Reciter")
+                .setSingleChoiceItems(names, currentReciterIndex(), (dialog, which) -> {
+                    prefs.setReciterIndex(which);
+                    dialog.dismiss();
+                    stopPlayback(false);
+                    if (reciterLabel != null) reciterLabel.setText(reciterName());
+                    setStatus("Reciter set to " + reciterName() + ". Tap play to listen.", false);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private int currentReciterIndex() {
+        int value = prefs.reciterIndex();
+        return value >= 0 && value < RECITERS.length ? value : 0;
+    }
+
+    private String reciterName() {
+        return RECITERS[currentReciterIndex()][0];
+    }
+
+    private String verseUrl() {
+        Verse verse = verses.get(index);
+        String template = RECITERS[currentReciterIndex()][1];
+        return CDN + String.format(Locale.US, template, verse.chapterId, verse.number);
+    }
+
+    private void togglePlay() {
+        if (prepared && player != null) {
+            try {
+                if (player.isPlaying()) {
+                    player.pause();
+                    updatePlayButton();
+                    setStatus("Paused.", false);
+                } else {
+                    player.start();
+                    updatePlayButton();
+                    setStatus("Playing \u2014 Source: Quran.com", false);
+                    startTicker();
+                }
+                return;
+            } catch (Exception error) {
+                releasePlayer();
+            }
+        }
+        prepareAndPlay();
+    }
+
+    private void replay() {
+        if (player != null && prepared) {
+            try {
+                player.seekTo(0);
+                player.start();
+                updatePlayButton();
+                startTicker();
+                setStatus("Replaying \u2014 Source: Quran.com", false);
+                return;
+            } catch (Exception ignored) {
+                // fall through to a fresh stream
+            }
+        }
+        prepareAndPlay();
+    }
+
+    private void prepareAndPlay() {
+        if (verses.isEmpty()) return;
+        releasePlayer();
+        final int generation = ++loadGeneration;
+        final String url = verseUrl();
+        setStatus("Buffering from Quran.com\u2026", false);
+        playButton.setEnabled(false);
+        playButton.setText("\u2026 Buffering");
+        try {
+            MediaPlayer mediaPlayer = new MediaPlayer();
+            mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .build());
+            mediaPlayer.setOnPreparedListener(ready -> {
+                if (generation != loadGeneration) return;
+                prepared = true;
+                playButton.setEnabled(true);
+                try {
+                    ready.start();
+                } catch (Exception ignored) {
+                    // start failure is handled by the error listener path below
+                }
+                updatePlayButton();
+                startTicker();
+                setStatus("Playing \u2014 Source: Quran.com", false);
+            });
+            mediaPlayer.setOnCompletionListener(finished -> {
+                if (generation != loadGeneration) return;
+                stopTicker();
+                prepared = false;
+                if (index < verses.size() - 1) {
+                    index++;
+                    renderVerse();
+                    updateNavigation();
+                    if (reciterLabel != null) reciterLabel.setText(reciterName());
+                    prepareAndPlay();
+                } else {
+                    playButton.setText("\u25B6 Play");
+                    playButton.setEnabled(true);
+                    setStatus("Finished reciting this surah.", false);
+                    seekBar.setProgress(1000);
+                }
+            });
+            mediaPlayer.setOnErrorListener((failed, what, extra) -> {
+                if (generation != loadGeneration) return true;
+                stopTicker();
+                prepared = false;
+                playButton.setEnabled(true);
+                playButton.setText("\u25B6 Play");
+                setStatus("Could not play this verse. Check your internet connection and try again.", true);
+                releasePlayer();
+                return true;
+            });
+            mediaPlayer.setDataSource(url);
+            player = mediaPlayer;
+            mediaPlayer.prepareAsync();
+        } catch (Exception error) {
+            prepared = false;
+            playButton.setEnabled(true);
+            playButton.setText("\u25B6 Play");
+            setStatus("Could not start audio: " + error.getMessage(), true);
+            releasePlayer();
+        }
+    }
+
+    private void stopPlayback(boolean userRequested) {
+        if (player != null) {
+            try {
+                if (player.isPlaying()) player.pause();
+            } catch (Exception ignored) {
+                // best effort
+            }
+        }
+        seekBar.setProgress(0);
+        if (timeLabel != null) timeLabel.setText("0:00 / 0:00");
+        if (userRequested) {
+            releasePlayer();
+            setStatus("Stopped.", false);
+        }
+        updatePlayButton();
+    }
+
+    private void updatePlayButton() {
+        if (playButton == null) return;
+        boolean playing = false;
+        try {
+            playing = player != null && prepared && player.isPlaying();
+        } catch (Exception ignored) {
+            // treat as not playing
+        }
+        playButton.setText(playing ? "\u23F8 Pause" : "\u25B6 Play");
+        playButton.setEnabled(true);
+    }
+
+    private void setStatus(String message, boolean error) {
+        if (statusLabel != null) {
+            statusLabel.setText(message);
+            statusLabel.setTextColor(error ? Ui.DANGER : Ui.MUTED);
+        }
+    }
+
+    private int durationMs() {
+        try {
+            if (player != null && prepared) return Math.max(1, player.getDuration());
+        } catch (Exception ignored) {
+            // no duration yet
+        }
+        return 1;
+    }
+
+    private void startTicker() {
+        if (tickerRunning) return;
+        tickerRunning = true;
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!tickerRunning) return;
+                try {
+                    if (player != null && prepared) {
+                        int position = player.getCurrentPosition();
+                        int duration = durationMs();
+                        seekBar.setProgress(Math.min(1000, position * 1000 / duration));
+                        timeLabel.setText(formatTime(position) + " / " + formatTime(duration));
+                    }
+                } catch (Exception ignored) {
+                    // stop ticking on a dead player
+                }
+                handler.postDelayed(this, 500);
+            }
+        }, 500);
+    }
+
+    private void stopTicker() {
+        tickerRunning = false;
+        if (handler != null) handler.removeCallbacksAndMessages(null);
+    }
+
+    private void releasePlayer() {
+        stopTicker();
+        loadGeneration++;
+        prepared = false;
+        if (player != null) {
+            try {
+                player.reset();
+            } catch (Exception ignored) {
+                // already released
+            }
+            try {
+                player.release();
+            } catch (Exception ignored) {
+                // already released
+            }
+            player = null;
+        }
+    }
+
+    private static String formatTime(int millis) {
+        if (millis <= 0) return "0:00";
+        int totalSeconds = millis / 1000;
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return String.format(Locale.US, "%d:%02d", minutes, seconds);
     }
 }

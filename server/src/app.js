@@ -36,6 +36,10 @@ export const createApp = ({ db, index }) => {
     })
   );
   app.use(cookieParser());
+  // POST /api/assistant may carry a base64 screen capture, so it is parsed with
+  // its own 8 MB limit before the default parser; body-parser skips the body a
+  // second time because it is already parsed. Every other route keeps 128 KB.
+  app.use("/api/assistant", express.json({ limit: "8mb" }));
   app.use(express.json({ limit: "128kb" }));
 
   // Every request gets a signed anonymous session id; the cookie is HttpOnly.

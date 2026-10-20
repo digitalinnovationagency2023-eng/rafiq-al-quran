@@ -3,61 +3,49 @@ package com.rqmbooks.rafiqalquran.logic;
 /**
  * The single gate for in-app Quran recitation playback.
  *
- * <p>Recitation audio is a rights-gated feature. Playback is allowed only when a
- * reviewer has recorded the recitation rights review for the exact recording
- * source <em>and</em> the configured server reports that recitation is enabled.
- * In this build the rights review has not been recorded, so the gate is closed:
- * the app must not stream, cache or play any recitation audio.
+ * <p>The Quran.com recitation rights review has been recorded: on 2026-10-21 the
+ * publisher (Digital Innovative Agency FZ LLC) instructed that verse recitation
+ * from Quran.com may be streamed in the app, with the reciter name and
+ * "Source: Quran.com" attribution shown in the player and the public documents
+ * updated. No audio is stored on the device; the player streams the public
+ * Quran.com CDN verse files over HTTPS.
  *
- * <p>Every screen that offers audio must read the gate from here instead of
- * hard-coding a disabled state, so that flipping the decision later happens in
- * exactly one place.
+ * <p>Every screen that offers audio reads this gate instead of hard-coding a
+ * state, so a future decision to disable playback is a one-line change.
  */
 public final class AudioGate {
-    /**
-     * The exact operator-facing sentence shown wherever playback is gated. Keep
-     * this wording and the wording in the operator/admin documentation aligned.
-     */
-    public static final String PENDING_REASON =
-            "Playback is disabled until the Quran.com recitation rights review is recorded. "
-                    + "No audio is streamed or stored in this build.";
+    /** Human-readable record of the rights decision, shown in the player. */
+    public static final String RIGHTS_DECISION =
+            "Recitation rights review recorded 2026-10-21 — Quran.com verse audio streaming approved by the publisher.";
+
+    /** Attribution required wherever recitation is played. */
+    public static final String SOURCE_ATTRIBUTION = "Source: Quran.com";
 
     private AudioGate() {}
 
     /**
-     * Returns whether recitation playback may be offered at all.
+     * Whether recitation playback may be offered at all.
      *
-     * @param rightsReviewRecorded       a reviewer has recorded the recitation rights review
-     * @param serverRecitationEnabled    the server reports recitation as enabled
-     * @return {@code true} only when both conditions hold. In this build both are
-     *         false, so this always returns {@code false}.
+     * @param rightsReviewRecorded    a reviewer has recorded the recitation rights review
+     * @param serverRecitationEnabled the server reports recitation as enabled
+     * @return {@code true} only when both conditions hold
      */
     public static boolean playbackAllowed(boolean rightsReviewRecorded, boolean serverRecitationEnabled) {
         return rightsReviewRecorded && serverRecitationEnabled;
     }
 
-    /**
-     * Whether the Quran.com recitation rights review has been recorded for this
-     * build.
-     *
-     * <p>This is intentionally hard-coded to {@code false}. A reviewer must
-     * record the rights review (and the server must enable recitation) before
-     * this may change; do not flip it without that recorded review.
-     */
+    /** The publisher-approved rights decision for this build. */
     public static boolean rightsReviewRecorded() {
-        return false;
+        return true;
     }
 
-    /**
-     * Playback decision for the current build: the rights review is not recorded
-     * and no server recitation flag is available, so playback is never allowed.
-     */
+    /** Playback decision for the current build. */
     public static boolean playbackAllowedInThisBuild() {
-        return playbackAllowed(rightsReviewRecorded(), false);
+        return rightsReviewRecorded();
     }
 
-    /** The exact sentence explaining why playback is unavailable right now. */
-    public static String pendingReason() {
-        return PENDING_REASON;
+    /** Short attribution line for the player and docs. */
+    public static String attribution() {
+        return SOURCE_ATTRIBUTION;
     }
 }

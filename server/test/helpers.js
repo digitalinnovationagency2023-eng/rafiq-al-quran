@@ -26,7 +26,15 @@ export const prepareTestDb = () => {
   process.env.DONATIONS_ENABLED = "false";
   process.env.PREMIUM_ENABLED = "false";
   process.env.RECITATION_ENABLED = "false";
+  // AI assistance is optional and must stay off during the shared suites; the
+  // assistant tests configure the provider in-process against a local mock.
   process.env.AI_PROVIDER = "none";
+  process.env.AI_BASE_URL = "";
+  process.env.AI_API_KEY = "";
+  process.env.AI_MODEL = "";
+  process.env.AI_TIMEOUT_MS = "8000";
+  process.env.AI_MAX_MONTHLY_CALLS = "0";
+  process.env.RATE_LIMIT_ASSISTANT_MAX = "20";
   return target;
 };
 

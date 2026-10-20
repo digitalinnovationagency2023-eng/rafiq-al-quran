@@ -4,8 +4,10 @@ import { config } from "../config.js";
 
 const buckets = new Map();
 
-export const rateLimit = ({ max = config.rateLimit.max, windowMs = config.rateLimit.windowMs } = {}) => (req, res, next) => {
-  const key = `${req.ip || "unknown"}:${req.sessionId || "anon"}:${req.path}`;
+// `key` lets a route choose its own partition (e.g. per client IP for the
+// native app, which does not carry the anonymous session cookie).
+export const rateLimit = ({ max = config.rateLimit.max, windowMs = config.rateLimit.windowMs, key: keyFor } = {}) => (req, res, next) => {
+  const key = keyFor ? keyFor(req) : `${req.ip || "unknown"}:${req.sessionId || "anon"}:${req.path}`;
   const now = Date.now();
   const bucket = buckets.get(key) || { count: 0, resetAt: now + windowMs };
   if (now > bucket.resetAt) {

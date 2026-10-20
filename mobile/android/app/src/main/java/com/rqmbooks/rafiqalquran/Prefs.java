@@ -44,4 +44,24 @@ public final class Prefs {
     /** Operator token for the in-app admin screen; stored locally only. */
     public String adminToken() { return prefs.getString("adminToken", ""); }
     public void setAdminToken(String value) { prefs.edit().putString("adminToken", value == null ? "" : value).apply(); }
+
+    // ------------------------------------------------------- recitation audio
+    /** Index into the player's reciter list chosen by the user. */
+    public int reciterIndex() { return prefs.getInt("reciterIndex", 0); }
+    public void setReciterIndex(int value) { prefs.edit().putInt("reciterIndex", Math.max(0, value)).apply(); }
+
+    // ---------------------------------------------------------- AI assistance
+    /** Optional online AI assistance used only for natural chat and attachments. */
+    public boolean aiAssistEnabled() { return prefs.getBoolean("aiAssist", true); }
+    public void setAiAssistEnabled(boolean value) { prefs.edit().putBoolean("aiAssist", value).apply(); }
+
+    public boolean aiConsentShown() { return prefs.getBoolean("aiConsentShown", false); }
+    public void setAiConsentShown(boolean value) { prefs.edit().putBoolean("aiConsentShown", value).apply(); }
+
+    /** Local daily allowance so the optional free AI tier cannot be exhausted. */
+    public int aiCallsToday() { return prefs.getInt("aiCallsToday", 0); }
+    public void setAiCallsToday(int value) { prefs.edit().putInt("aiCallsToday", Math.max(0, value)).apply(); }
+
+    public String aiDay() { return prefs.getString("aiDay", ""); }
+    public void setAiDay(String value) { prefs.edit().putString("aiDay", value == null ? "" : value).apply(); }
 }

@@ -1,0 +1,54 @@
+// Public routes for the optional AI assistance layer. Mounted by the public
+// router under /api/assistant, so it inherits the app-level helmet, CORS,
+// cookie and JSON parsing middleware exactly like every other public route.
+import express from "express";
+import { config } from "../config.js";
+import { asyncHandler, HttpError } from "../middleware/errors.js";
+import { rateLimit } from "../middleware/rateLimit.js";
+import {
+  ASSISTANT_RATE_WINDOW_MS,
+  BUDGET_EXHAUSTED_MESSAGE,
+  NOT_ENABLED_MESSAGE,
+  assistantBudgetAvailable,
+  assistantStatus,
+  isAssistantConfigured,
+  recordAssistantCall,
+  runAssistant,
+  validateAssistantRequest,
+} from "../services/assistant.js";
+
+// The app is a native client and does not send cookies, so the assistant's
+// allowance is keyed by client IP rather than by the anonymous session id.
+const perIpKey = (req) => `assistant:${req.ip || "unknown"}`;
+
+export const createAssistantRoutes = ({ db }) => {
+  const router = express.Router();
+
+  // Cheap discovery endpoint so the app can decide whether to offer the AI
+  // layer at all. It never reveals the provider, model, URL or key.
+  router.get("/status", (req, res) => {
+    res.json(assistantStatus());
+  });
+
+  router.post(
+    "/",
+    rateLimit({ max: config.rateLimit.assistantMax, windowMs: ASSISTANT_RATE_WINDOW_MS, key: perIpKey }),
+    asyncHandler(async (req, res) => {
+      // Disabled is a deployment-wide state: answer 503 before reading the body
+      // so the app gets a stable signal to fall back to its local rules. It is
+      // an expected condition, not a server error, so it is not logged.
+      if (!isAssistantConfigured()) {
+        return res.status(503).json({ error: NOT_ENABLED_MESSAGE });
+      }
+
+      const request = validateAssistantRequest(req.body);
+      if (!assistantBudgetAvailable(db)) throw new HttpError(429, BUDGET_EXHAUSTED_MESSAGE);
+
+      const result = await runAssistant(request);
+      recordAssistantCall(db);
+      res.json({ enabled: true, ...result });
+    })
+  );
+
+  return router;
+};

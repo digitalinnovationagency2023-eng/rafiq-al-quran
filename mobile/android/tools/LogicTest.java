@@ -1,6 +1,7 @@
 import com.rqmbooks.rafiqalquran.logic.Answer;
 import com.rqmbooks.rafiqalquran.logic.AnswerComposer;
 import com.rqmbooks.rafiqalquran.logic.AudioGate;
+import com.rqmbooks.rafiqalquran.logic.Conversation;
 import com.rqmbooks.rafiqalquran.logic.Dataset;
 import com.rqmbooks.rafiqalquran.logic.DatasetLoader;
 import com.rqmbooks.rafiqalquran.logic.DonationRules;
@@ -126,16 +127,44 @@ public final class LogicTest {
                 StudyData.joinChapters(Arrays.asList(2, 5, 114)).equals("2,5,114")
                         && StudyData.parseChapters("2,5,114").equals(Arrays.asList(2, 5, 114)));
 
-        // ------------------------------------------- rights-gated recitation
-        check("recitation playback is gated off in this build",
-                !AudioGate.playbackAllowedInThisBuild() && !AudioGate.rightsReviewRecorded());
-        check("recitation gate requires both rights review and server flag",
-                !AudioGate.playbackAllowed(false, true) && !AudioGate.playbackAllowed(true, false)
-                        && AudioGate.playbackAllowed(true, true));
-        check("recitation gate states the reason and source",
-                AudioGate.pendingReason().contains("rights review")
-                        && AudioGate.pendingReason().contains("Quran.com")
-                        && AudioGate.pendingReason().contains("No audio is streamed"));
+        // ------------------------------------------------- recorded recitation
+        check("recitation rights review is recorded for this build", AudioGate.rightsReviewRecorded());
+        check("recitation playback is enabled in this build", AudioGate.playbackAllowedInThisBuild());
+        check("recitation gate still requires both conditions",
+                !AudioGate.playbackAllowed(false, true) && AudioGate.playbackAllowed(true, true));
+        check("recitation attribution names Quran.com",
+                AudioGate.attribution().contains("Quran.com")
+                        && AudioGate.RIGHTS_DECISION.contains("rights review recorded"));
+
+        // -------------------------------------------------- conversation layer
+        Conversation.Reply salute = Conversation.classify("Hello!");
+        check("greeting gets a conversational reply",
+                salute != null && salute.kind == Conversation.Kind.GREETING
+                        && salute.text.toLowerCase().contains("quran"));
+        Conversation.Reply salam = Conversation.classify("Assalamu alaikum");
+        check("Islamic greeting is recognised", salam != null && salam.kind == Conversation.Kind.SALAM);
+        Conversation.Reply thanks = Conversation.classify("Thank you so much");
+        check("thanks gets a short reply", thanks != null && thanks.kind == Conversation.Kind.THANKS);
+        Conversation.Reply ruling = Conversation.classify("Is it haram to listen to music? Give me a fatwa");
+        check("ruling request refuses to interpret and points to scholars",
+                ruling != null && ruling.kind == Conversation.Kind.RULING_REQUEST
+                        && ruling.text.toLowerCase().contains("scholar"));
+        Conversation.Reply offTopic = Conversation.classify("What is the weather today?");
+        check("off-topic question is handled gracefully",
+                offTopic != null && offTopic.kind == Conversation.Kind.OFFTOPIC);
+        check("advice questions are routed to Quran retrieval",
+                Conversation.classify("What does the Quran say about patience?") == null);
+        check("overlong messages are not treated as small talk",
+                Conversation.classify(new String(new char[800]).replace('\0', 'x')) == null);
+        check("guidance names scholars, Hadith and Fiqh study",
+                Conversation.guidance().stream().anyMatch(line -> line.toLowerCase().contains("scholar"))
+                        && Conversation.guidance().stream().anyMatch(line -> line.toLowerCase().contains("hadith")));
+        check("guidance disclaims responsibility",
+                Conversation.guidance().stream().anyMatch(line -> line.toLowerCase().contains("no responsibility")));
+        check("attachment fallback mentions the AI service",
+                Conversation.attachmentUnavailable().toLowerCase().contains("ai service"));
+        check("AI consent text says verses never come from the AI",
+                Conversation.aiConsentMessage().contains("never supplies Quran text"));
 
         System.out.println();
         System.out.println("Logic tests: " + passed + " passed, " + failures.size() + " failed");

@@ -39,7 +39,7 @@ public final class AdminActivity extends Activity {
         prefs = new Prefs(this);
 
         LinearLayout root = Ui.screen(this);
-        LinearLayout bar = Ui.bar(this, "Operator", "Admin API", this::finish);
+        LinearLayout bar = Ui.bar(this, "Operator", "Read-only diagnostics", this::finish);
         bar.addView(Ui.themeToggle(this));
         root.addView(bar);
         root.addView(Ui.goldRule(this));
@@ -52,7 +52,29 @@ public final class AdminActivity extends Activity {
         content.setPadding(Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 28));
         content.setBackgroundColor(Ui.PAPER);
 
-        content.addView(Ui.label(this, "Operator token"));
+        // Purpose explanation first: this screen is operator-only and read-only,
+        // and the token is never bundled with the app.
+        LinearLayout intro = Ui.cardBox(this);
+        intro.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        intro.addView(Ui.sectionLabel(this, "What this screen is for"));
+        TextView introBody = Ui.text(this,
+                "• Operator-only, read-only diagnostics for the Rafiq API. It shows service status: "
+                        + "dataset counts, feature flags, the latest feedback reports, the audit log and "
+                        + "recitation rights status.\n"
+                        + "• It never changes records and never shows user data beyond report metadata "
+                        + "(no contact details from feedback).\n"
+                        + "• It needs the ADMIN_TOKEN configured on the Rafiq API server by the operator. "
+                        + "Ask the operator for the x-admin-token value; it is never bundled with the app.\n"
+                        + "• The token is stored on this device only and can be removed with Forget token.",
+                12f, Ui.MUTED);
+        introBody.setPadding(0, Ui.dp(this, 8), 0, 0);
+        intro.addView(introBody);
+        content.addView(intro);
+
+        TextView tokenLabel = Ui.label(this, "Operator token");
+        tokenLabel.setPadding(0, Ui.dp(this, 18), 0, 0);
+        content.addView(tokenLabel);
         tokenInput = new EditText(this);
         tokenInput.setHint("x-admin-token");
         tokenInput.setTextColor(Ui.INK);
@@ -69,6 +91,12 @@ public final class AdminActivity extends Activity {
         tokenInput.setLayoutParams(tokenParams);
         content.addView(tokenInput);
 
+        TextView tokenHint = Ui.text(this,
+                "Ask the operator for the x-admin-token value; it is never bundled with the app.",
+                11f, Ui.MUTED);
+        tokenHint.setPadding(0, Ui.dp(this, 6), 0, 0);
+        content.addView(tokenHint);
+
         LinearLayout actions = Ui.row(this);
         actions.setPadding(0, Ui.dp(this, 10), 0, 0);
         Button connect = Ui.button(this, "Connect", true);
@@ -82,12 +110,12 @@ public final class AdminActivity extends Activity {
         actions.addView(forget, forgetParams);
         content.addView(actions);
 
-        statusText = Ui.text(this, "", 12f, Ui.INK);
+        statusText = Ui.text(this, "Not connected yet. Enter the operator token and choose Connect.", 12f, Ui.INK);
         statusText.setPadding(0, Ui.dp(this, 10), 0, 0);
         content.addView(statusText);
 
         TextView note = Ui.text(this,
-                "Operator-only. Token is stored on this device only. Requests are read-only and use the "
+                "The token is stored on this device only. Requests are read-only and use the "
                         + "configured data API; the token is never logged or shown after connecting.",
                 11f, Ui.MUTED);
         note.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 4));

@@ -39,17 +39,35 @@ public final class Api {
     }
 
     public static JSONObject post(Resources resources, String path, JSONObject body) throws Exception {
-        return request(resources, "POST", path, body, null);
+        return request(resources, "POST", path, body, null, 15000);
+    }
+
+    /** Optional assistant status check (does not send any user text). */
+    public static JSONObject assistantStatus(Resources resources) throws Exception {
+        return request(resources, "GET", "/api/assistant/status", null, null, 8000);
+    }
+
+    /**
+     * Optional AI assistance: the model only returns a short chat reply, search
+     * terms and/or OCR text for an attached image. Quran text is never requested
+     * from, or accepted from, the model.
+     */
+    public static JSONObject assistant(Resources resources, JSONObject body) throws Exception {
+        return request(resources, "POST", "/api/assistant", body, null, 45000);
     }
 
     private static JSONObject request(Resources resources, String method, String path, JSONObject body, String adminToken) throws Exception {
+        return request(resources, method, path, body, adminToken, 15000);
+    }
+
+    private static JSONObject request(Resources resources, String method, String path, JSONObject body, String adminToken, int readTimeoutMs) throws Exception {
         String base = baseUrl(resources);
         if (base.isEmpty()) throw new IllegalStateException("Online services are not configured in this build.");
         URL url = new URL(base.replaceAll("/$", "") + path);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod(method);
         connection.setConnectTimeout(12000);
-        connection.setReadTimeout(15000);
+        connection.setReadTimeout(readTimeoutMs);
         connection.setRequestProperty("Accept", "application/json");
         if (adminToken != null && !adminToken.isEmpty()) {
             connection.setRequestProperty("x-admin-token", adminToken);

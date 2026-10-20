@@ -82,7 +82,7 @@ public final class ReaderActivity extends Activity {
         root.addView(bar);
         root.addView(Ui.goldRule(this));
 
-        info = Ui.text(this, "Loading the mushafâ€¦", 11f, Ui.MUTED);
+        info = Ui.text(this, "Loading the mushaf…", 11f, Ui.MUTED);
         info.setBackgroundColor(Ui.GOLD_SOFT);
         info.setPadding(Ui.dp(this, 14), Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 6));
         root.addView(info);
