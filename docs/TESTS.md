@@ -1,115 +1,128 @@
 # Measured test results
 
-Run on 2026-10-20 (Windows, Node 24, JDK 17, Android SDK 34; emulator AVD `rafiqtest`, Android 14, 1080×2340).
+Run on 2026-10-21 (Windows, Node 24, JDK 17, Android SDK 34; emulator AVD `rafiqtest`, Android 14,
+1080×2340). Release **1.0.10** (versionCode 10, versionName 1.0.10).
 
-## Server suite — 58 passed, 0 failed
+**Artifacts (1.0.10): SHA-256 / CI run — updated in the release note** after the CI build.
 
-`npm test -w server`
+## Server suite — 73 passed, 0 failed
+
+`npm test -w server` (the 58-check baseline plus 15 new assistant tests).
 
 | Area | Checks |
 |---|---|
 | Dataset integrity | 114 chapters, 6236 verses, per-chapter counts, unique well-formed keys, diacritics preserved, no placeholders |
 | Translation integrity | 9 translations × 6236 complete rows, no markup, explicit and unverified licence status |
 | Provenance | source URL, SHA-256 checksum and import time recorded |
-| Retrieval | curates English topics, Arabic with article/diacritics, unrelated query returns no results, reference parsing, language detection for 7 sampled languages, “more” intent |
-| Answer safety | every passage matches the dataset exactly, exact English/Arabic notices, exact fallback wording, no “does not mention” claim, unreviewed languages marked pending |
-| API | health/meta/chapters/verses/sources, ask + follow-up, validation errors, feedback consent stripping, admin auth, conversation scoping and deletion |
+| Retrieval | curates English topics, Arabic with article/diacritics, unrelated query returns no results, reference parsing, language detection for 7 sampled languages, "more" intent |
+| Answer safety | every passage matches the dataset exactly, exact English/Arabic notices, exact fallback wording, no "does not mention" claim, unreviewed languages marked pending |
+| API | health/meta/chapters/verses/sources, ask + follow-up, validation errors, feedback consent stripping, admin auth, conversation scoping and deletion (recitation endpoints stay disabled while the server flag is off) |
 | Donations | amount bounds/currency, disabled state records pending without provider calls, recurring refusal, signature verification (valid/forged/stale), idempotent events, no card columns |
 | Premium | disabled state, feature list, entitlement false, checkout refused |
-| Admin auth (new) | 5 tests in `server/test/admin.test.js`: 503 when `ADMIN_TOKEN` is unset; 401 for missing, empty, wrong and wrong-length tokens; 200 plus response shape for every read-only endpoint with the correct token; an authorised feedback update lands in the audit log; the token is never echoed in a response body |
+| Admin auth | 5 tests in `server/test/admin.test.js`: 503 when `ADMIN_TOKEN` is unset; 401 for missing, empty, wrong and wrong-length tokens; 200 plus response shape for every read-only endpoint with the correct token; an authorised feedback update lands in the audit log; the token is never echoed in a response body |
+| **AI assistance (new)** | 15 tests in `server/test/assistant.test.js`: 503 and status while unconfigured; configured status never exposes key/model/base URL; 400 validation before any provider call; 413 for a > 5 MB decoded attachment and for a request body above the 8 MB parser limit; per-IP 429 with `retry-after`; fixed JSON contract with Markdown fences stripped and the provider called with the Bearer key/model; image request carries an `image_url` part and non-Latin OCR text is preserved; Arabic-script replies, verse references, long quotations and religious wording are dropped (`reply: null`); reply/search-term caps; generic 502 for provider errors and 504 on timeout with no upstream detail or key leaked; optional monthly cap; inherited CORS preflight and Helmet headers |
 | Isolation | no RQM/XINVOX references in sources, own database path, rate limiter behaviour |
 
-## Native app logic — 49 passed, 0 failed
+## Native app logic — 61 passed, 0 failed
 
-`node mobile/android/scripts/runLogicTests.js` (Java, real bundled assets) — was 25 checks before this release.
+`node mobile/android/scripts/runLogicTests.js` (Java, real bundled assets) — was 49 checks in 1.0.9.
 
 | Area | Checks |
 |---|---|
-| Existing core | dataset counts (114 chapters / 6236 verses / 9 translations), provenance checksum, Uthmani basmala, 2:255 present, English and Arabic topic answers, exact notices, translation kept separate from Arabic, Arabic interface falls back to English labelled, explicit reference, exact fallback, no repeated verses on “more”, donation validation |
-| Structural mushaf metadata (new) | `QuranMeta` parses all 6236 rows; 1:1 = Juz 1 / Page 1; 2:255 = Juz 3 / Page 42; 114:6 = Juz 30 / Page 604; exact indicator text “Juz 3  ·  Page 42”; page numbers never regress |
-| Study-tools codec (new) | collection names sanitised, empty name → General, case-insensitive de-duplication, length bound; note trim/bound; progress percentages and exact “3 of 38  ·  8%” text; RFC 4180 CSV quoting; Juz 30 preset = surahs 78–114 and full preset = 114; numeric verse-key ordering and validation; next-chapter skips completed chapters and returns 0 when done; plan chapter list round-trips |
-| Rights gate (new) | `AudioGate` playback is off in this build; the gate requires both a recorded rights review and the server flag; the pending-reason wording names Quran.com and states that no audio is streamed |
+| Existing core | dataset counts (114 chapters / 6236 verses / 9 translations), provenance checksum, Uthmani basmala, 2:255 present, English and Arabic topic answers, exact notices, translation kept separate from Arabic, Arabic interface falls back to English labelled, explicit reference, exact fallback, no repeated verses on "more", donation validation |
+| Structural mushaf metadata | `QuranMeta` parses all 6236 rows; 1:1 = Juz 1 / Page 1; 2:255 = Juz 3 / Page 42; 114:6 = Juz 30 / Page 604; exact indicator text "Juz 3  ·  Page 42"; page numbers never regress |
+| Study-tools codec | collection names sanitised, empty name → General, case-insensitive de-duplication, length bound; note trim/bound; progress percentages and exact "3 of 38  ·  8%" text; RFC 4180 CSV quoting; Juz 30 preset = surahs 78–114 and full preset = 114; numeric verse-key ordering and validation; next-chapter skips completed chapters and returns 0 when done; plan chapter list round-trips |
+| **Recitation rights and attribution (updated)** | `AudioGate.rightsReviewRecorded()` is true for this build (rights review recorded 2026-10-21); `playbackAllowedInThisBuild()` is true; the gate still requires both the recorded review and the server flag (`playbackAllowed(false, true)` is false); attribution contains "Quran.com" and the decision text contains "rights review recorded" |
+| **Conversation layer (new)** | greeting gets a reply that names the Quran; Islamic greeting recognised; thanks gets a short reply; a fatwa/ruling request is refused and points to scholars; off-topic questions are handled gracefully; advice questions are routed to Quran retrieval (not answered conversationally); overlong messages are not treated as small talk; guidance names scholars, Hadith and Fiqh study and disclaims responsibility; the attachment fallback names the AI service; the AI consent text states that the AI never supplies Quran text |
 
-Note: `runLogicTests.js` previously walked the pre-rename package path
-`app/src/main/java/com/qurancompanion/app/logic`, which does not exist, so the script could not compile the app
-logic. It now walks `com/rqmbooks/rafiqalquran/logic` — fixed in commit `63c332e` — and the 49 checks above are
-from the fixed run.
+The 61 checks include the per-passage dataset-existence assertions emitted in a loop over the returned passages.
 
-## APK build — 1.0.9
+## APK build — 1.0.10
 
 `node mobile/android/scripts/buildApk.js` (aapt2 / javac / d8 / zipalign / apksigner; no Gradle)
 
-- package `com.rqmbooks.rafiqalquran`, versionCode **9**, versionName **1.0.9** (aapt2 badging on
-  `dist/rafiq-al-quran-1.0.9.apk`); minSdk 24, targetSdk 36;
-- **32 Java sources** compiled; signed (apksigner verify passed) and zipaligned;
-- size **3.40 MB** (3,560,378 bytes, SHA-256 `845E133AFF68D8D30EA49B2A2E0AA9BFA74F0895B0988A50D86FFDE6830F2104`);
-- bundles `classes.dex`, the dataset assets (including `assets/quran-meta.tsv`) and the launcher icon.
+- package `com.rqmbooks.rafiqalquran`, versionCode **10**, versionName **1.0.10** (`aapt2 dump badging` on
+  `mobile/android/build/quran-companion.apk`); minSdk **24**, targetSdk **36**, compileSdk 34;
+- **34 Java sources** compiled; signed (apksigner verify passed) and zipaligned;
+- size **~3.41 MB**; the exact size and SHA-256 of the release artifact are recorded in the release note;
+- bundles `classes.dex`, the seven dataset assets (including `assets/quran-meta.tsv`) and the launcher icon;
+- **Artifacts (1.0.10): SHA-256 / CI run — updated in the release note**.
 
 ## APK packaging verification — 20 checks passed
 
-`node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.9.apk` (the script was fixed in this round:
-package regexes `com.rqmbooks.rafiqalquran`, versionCode/versionName compared against `AndroidManifest.xml`,
-`quran-meta.tsv` added to the bundled-asset list, launcher-icon check, and the default APK path resolved from the
-manifest versionName).
+`node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.10.apk` → **20 checks passed**
+("APK verification passed."), including the minSdk **24** and targetSdk **36** checks.
 
 Checks: APK exists; signature verifies; package name; launchable activity; RECORD_AUDIO and INTERNET permissions;
 minSdk 24; targetSdk 36; versionCode and versionName match the manifest; `classes.dex`; all seven bundled assets;
-launcher icon packaged; app label “Rafiq Al-Quran”. Output: “APK verification passed.”
+launcher icon packaged; app label "Rafiq Al-Quran". The SHA-256 of the released APK is recorded in the release
+note (**Artifacts (1.0.10): SHA-256 / CI run — updated in the release note**).
 
-## AAB — built by CI, signed locally, installed on the emulator
+## AAB — CI build for 1.0.10
 
-- `.github/workflows/build-aab.yml` (aapt2/javac/d8 plus bundletool; no Gradle) — GitHub Actions run
+- `.github/workflows/build-aab.yml` (aapt2/javac/d8 plus bundletool; no Gradle). The same workflow produced the
+  validated 1.0.9 AAB (GitHub Actions run
   [39483479573](https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39483479573),
-  commit `9350aee1d238a1bd9d81ee382987712689d60f64`: success.
-  Unsigned artifact: `dist/rafiq-al-quran-1.0.9.aab`.
-- Signed locally with `jarsigner` using the upload keystore → `dist/rafiq-al-quran-1.0.9-signed.aab`
-  (3,556,176 bytes, SHA-256 `0D100D4A826BDB9E8B1AB7FB9F431BAA8F466EA197A2D04E7765B8E6AE6780D3`).
-  `jarsigner -verify` → “jar verified” (exit 0; self-signed certificate warning expected, no timestamp);
-  `bundletool validate` → exit 0.
-- The AAB signer certificate SHA-256 matches the APK signer certificate
-  (`08DE2453EE306688430E6714D0090B2890EB2C197444882DA8945960D5219D42`); both are the local
-  `CN=Quran Companion` upload key.
-- The AAB-derived universal APK was installed on the emulator: `dumpsys package com.rqmbooks.rafiqalquran` reports
-  `versionCode=9 minSdk=24 targetSdk=36`, `versionName=1.0.9`; screenshot `dist/screenshot-from-aab.png`.
+  success; `bundletool validate` exit 0; local `jarsigner` signing with the upload keystore).
+- For 1.0.10: the CI run URL, signed AAB SHA-256 and validation output are recorded in the release note
+  (**Artifacts (1.0.10): SHA-256 / CI run — updated in the release note**). The signed AAB must be `jarsigner`
+  verified ("jar verified" plus the expected self-signed warning) and `bundletool validate` must exit 0 before
+  upload, and it must be signed with the same Play upload key as 1.0.9 so Play upload-key continuity is preserved
+  (`QURAN_KEYSTORE_PATH`; a generated throwaway key would be rejected).
 
 ## Emulator QA — AVD `rafiqtest` (Android 14, 1080×2340)
 
-1.0.9 installed from the build (versionCode 9 / versionName 1.0.9). Screenshots in `dist/`:
+1.0.10 installed from the local build (versionCode 10 / versionName 1.0.10). Round-2 captures in `dist/`:
 
 | Screenshot | Verified |
 |---|---|
-| `screenshot-home.png` | Home (light) loads: composer, example questions, study-tools entry |
-| `screenshot-home-dark.png` | Dark theme applied across the home screen |
-| `screenshot-answer.png` | “patience” question → Al-Baqarah 2:45 with the required notice |
-| `screenshot-surahs.png` | Surah list — all 114 surahs, offline |
-| `screenshot-reader.png` | Al-Baqarah reader with the Juz/Page indicator |
-| `screenshot-reader-actions.png` | Per-verse actions (copy, share, save, note, listen) |
-| `screenshot-reader-note.png` | Personal note stored/shown in the reader |
-| `screenshot-reader-side-by-side.png` | Side-by-side Arabic/translation layout |
-| `screenshot-reader-dark.png` | Reader in the dark theme |
-| `screenshot-bookmarks.png` | Bookmarks screen with collection and saved note |
-| `screenshot-history.png` | Reading history screen |
-| `screenshot-study-tools.png` | Study tools hub (bookmarks, notes, saved searches, plans, export) |
-| `screenshot-study-tools-plans.png` | Reading plan progress persisted: “1 of 114 · 1%” after marking Al-Fatihah read |
-| `screenshot-saved-search-run.png` | Saved search launches its query from the study-tools hub |
-| `screenshot-player-gated.png` | Recitation player: “QURAN.COM · RIGHTS PENDING”, “RECITATION RIGHTS PENDING”, controls disabled, 0:00 / 0:00 |
-| `screenshot-player-controls.png` | Player layout with play/pause/replay disabled; Previous/Next verse navigation changed the shown verse (6 → 7 → 6 of 7) |
-| `screenshot-admin.png` | Operator admin token-entry screen |
-| `screenshot-admin-data.png` | Live admin data: Verses 6236, Chapters 114, Translations 9, latest feedback RESOLVED, audit entries, reciters UNVERIFIED/disabled, premium DISABLED |
-| `screenshot-share-sheet.png` | Android share sheet with bookmarks CSV — header `Reference,Collection,Note` |
-| `screenshot-share-sheet-notes.png` | Share sheet with notes CSV — e.g. `Al-Baqarah 2:1,General,Guidance begins with sincere intention` |
-| `screenshot-from-aab.png` | App installed from the signed AAB: home screen with the continue-reading card |
+| `qa-r2-home.png` | Home: composer with Voice and 📎 ATTACH actions, example questions, continue-reading card (Al-Fatihah 1:6, Juz 1 · Page 1) |
+| `screenshot-qa-r2-language.png` | Full-width "Interface language" dialog with 10 large rows (English name — native name — code), no tiny spinner |
+| `screenshot-qa-r2-conversation.png` | "Hello" → local neutral greeting reply, with the notice that conversation replies contain no Quranic text or interpretation |
+| `screenshot-qa-r2-player.png` | Recitation playing: Al-Fatihah 1:6, "Playing — Source: Quran.com", 0:04 / 0:05, Pause/Replay/Stop, reciter Mishary Rashid Alafasy, Source & rights card "Review recorded 2026-10-21" |
+| `screenshot-qa-r2-attached.png` | Composer attachment chip "Attached: rafiq-test.txt (144 characters read)" with a Remove action (text read on the device) |
+| `screenshot-qa-r2-attachment-answer.png` | Attachment-driven retrieval returned Al-Baqarah 2:177, with translation and "Recitation — Quran.com" action |
+| `screenshot-qa-r2-tts.png` | Answer screen with the Listen action after TTS was exercised (Google TTS synthesis en-US verified on the emulator; audio cannot be shown in a screenshot) |
+| `screenshot-qa-r2-support.png` | Support page: voluntary-only copy, "Donations are not enabled in this release", no raw config keys and no dead checkout form |
+| `screenshot-qa-r2-admin.png` | Operator screen explains its purpose before token entry; token field masked; Connect / Forget token; no token shown |
+| `screenshot-qa-r2-attach-picker.png` | Blank capture — the system file picker window is excluded from screencap; not used as evidence |
 
-Also exercised in the same QA pass: new bookmark-collection creation (dialog → collection row), note editing and
-removal, bookmarks and notes CSV share sheets, and the operator screen connecting to the live API (header/token
-entered at runtime, never stored in the repository, docs, logs or screenshots).
+Verified in the same pass:
 
-## Live production API — verified from the app
+- **Recitation streaming and auto-next.** Al-Fatihah 1:6 played (~5 s) and automatically advanced to 1:7
+  (13 s run), with the MP3 decoder active; playback ran to completion. The player shows the reciter name and
+  "Source: Quran.com"; nothing is stored on the device.
+- **TTS synthesis.** Tapping "Listen" initialises the TTS engine lazily, falls back to English when the selected
+  language has no voice, and speaks the translation/summary; Google TTS en-US synthesis was verified on the
+  emulator.
+- **Language chooser.** The chooser is a full-width dialog with 10 large rows replacing the tiny spinner; the
+  screenshot shows Arabic, English, Urdu, Indonesian, Bengali, Turkish, Persian, Malay, Swahili and French with
+  native names and codes.
+- **Conversation.** Greeting/off-topic/ruling replies are asserted by the JVM logic tests (ruling requests are
+  refused and pointed to scholars; conversation replies carry no Quran text or interpretation). The emulator
+  capture shows the greeting path, and the safe fallback now includes the "Where to look next" guidance card
+  (scholars, Hadith/Fiqh study with a qualified teacher, general reference for non-Quran questions, explicit
+  no-responsibility statement).
+- **Attachments.** The `.txt` attachment was read entirely on the device (144 characters) and used for Quran
+  retrieval; images need the optional AI service, which is off by default and cannot read images without the
+  operator's key; PDFs show the unsupported-type message.
+- **Page fixes.** The Support page no longer shows raw configuration keys or a dead checkout form; the former
+  "Optional tools" page now presents the free study tools and states that no plans, subscriptions or add-ons are
+  sold; the operator admin screen explains what it is for; the captured pages render without mojibake
+  (source files are UTF-8).
+
+## Live production API — checked 2026-10-20
 
 The operator screen connected to `https://rqmbooks.com/rafiq-api` with `x-admin-token` and rendered
 **6236 verses / 114 chapters / 9 translations**, the latest feedback row (**RESOLVED**), recent audit entries and
 reciter rows with rights status **UNVERIFIED** and playback disabled on the server. Endpoint and authentication
 details are documented in `docs/ADMIN.md`; `server/test/admin.test.js` covers the automated auth paths.
+
+The server's `recitationEnabled` flag and the seeded reciter rows are server-side only: in 1.0.10 the app streams
+Quran.com audio as a **client-side** feature (rights decision recorded 2026-10-21), so the server flag may still
+read `false` while the app plays recitation. The optional AI endpoints were not part of this round's recorded live
+verification; check `/rafiq-api/api/assistant/status` after the operator configures a key (see
+`docs/DEPLOYMENT.md`).
 
 ## Dataset validation
 

@@ -381,8 +381,9 @@ public final class AdminActivity extends Activity {
         }
         if (shown == 0) card.addView(emptyRow("No reciter rows returned."));
         TextView note = Ui.text(this,
-                "Playback inside the app stays disabled until the recitation rights review is recorded; "
-                        + "enabling a reciter on the server is not enough on its own.",
+                "The client player streams Quran.com audio under the recorded recitation rights decision "
+                        + "(21 October 2026). These server reciter rows and RECITATION_ENABLED are a separate "
+                        + "switch and can stay unverified/disabled.",
                 10f, Ui.MUTED);
         note.setPadding(0, Ui.dp(this, 10), 0, 0);
         card.addView(note);

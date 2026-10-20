@@ -127,12 +127,15 @@ run("Align the APK (zipalign)", exe("zipalign"), [
 // used to sign the Play upload AAB). Without it a throwaway key is generated.
 const keystore = path.join(build, "quran-release.keystore");
 const storePass = process.env.QURAN_KEYSTORE_PASSWORD || "quran-companion";
-const persistentKeystore = process.env.QURAN_KEYSTORE_PATH || "";
+const persistentKeystore = process.env.QURAN_KEYSTORE_PATH
+  || path.join(os.homedir(), ".secrets", "quran-release.keystore");
 if (persistentKeystore && fs.existsSync(persistentKeystore)) {
   fs.copyFileSync(persistentKeystore, keystore);
   console.log(`   Using the persistent signing key: ${persistentKeystore}`);
 }
 if (!fs.existsSync(keystore)) {
+  console.log("   WARNING: generating a NEW signing key. This build will NOT match the Play upload key;");
+  console.log("            keep quran-release.keystore in %USERPROFILE%\\.secrets or set QURAN_KEYSTORE_PATH.");
   run("Create a release keystore (keytool)", "keytool", [
     "-genkeypair",
     "-keystore", keystore,

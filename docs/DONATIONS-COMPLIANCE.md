@@ -31,6 +31,10 @@ Behaviour encoded in code and tests:
 - Entitlements are checked server-side (`hasEntitlement`) and admin grants are audited (`admin-grant`).
 - Core reading, search and the conversational experience never depend on payment, and no premium feature changes
   Quranic text, sources or answer quality claims.
+- The study tools (bookmark collections, notes, saved searches, reading plans, side-by-side, exports) are free and
+  built in; the old "optional tools" price list is gone.
+- The optional AI assistance is a **free-tier, operator-configured** feature (no customer charge) used only for
+  small talk, search intent and OCR — never for Quran text or interpretation. It is not a premium product.
 
 ## Not done here
 

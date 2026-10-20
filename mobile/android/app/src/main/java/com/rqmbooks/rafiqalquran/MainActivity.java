@@ -283,7 +283,9 @@ public final class MainActivity extends Activity {
         menu.getMenu().add(0, 10, 1, "Study tools \u2014 collections, notes, plans");
         menu.getMenu().add(0, 9, 2, "Browse surahs");
         menu.getMenu().add(0, 11, 3, "Verse audio \u2014 Quran.com recitation");
-        menu.getMenu().add(0, 14, 4, prefs.aiAssistEnabled() ? "AI conversation: on" : "AI conversation: off");
+        menu.getMenu().add(0, 14, 4, prefs.aiAssistEnabled()
+                ? (aiAvailable ? "AI conversation: on" : "AI conversation: local only (server AI off)")
+                : "AI conversation: off");
         menu.getMenu().add(0, 2, 5, prefs.voiceEnabled() ? "Turn voice off" : "Turn voice on");
         menu.getMenu().add(0, 13, 6, Ui.isDark() ? "Switch to light theme" : "Switch to dark theme");
         menu.getMenu().add(0, 3, 7, "Sources & licences");

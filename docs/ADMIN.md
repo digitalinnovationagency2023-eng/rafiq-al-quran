@@ -4,6 +4,20 @@ Operator-only HTTP API used by the in-app admin screen. Every route below is
 disabled by default and protected by a shared operator token. The API is meant
 for operators only; it is not part of the public app experience.
 
+## Recitation and AI status — read this first
+
+- The publisher's recitation rights review for Quran.com verse audio is **recorded (2026-10-21)**, and the 1.0.10
+  app streams recitation **client-side** from Quran.com's public CDN with the attribution "Source: Quran.com". The
+  client player does not call this API.
+- The server-side recitation settings are independent and unchanged: `RECITATION_ENABLED` defaults to `false`, the
+  seeded `audio_reciters` rows are `rights_status = unverified` and `enabled = 0`, and
+  `GET /api/recitations/:verseKey` answers **403** in the default deployment. The in-app admin screen can therefore
+  legitimately show "Recitation audio DISABLED" and reciter rows as UNVERIFIED while the app itself plays
+  Quran.com recitation. Do not "fix" the server flag just to make the admin screen match the player.
+- Optional AI assistance is **off by default**. The admin `summary.flags.aiConfigured` value only reports whether
+  `AI_PROVIDER` is not `none`; a complete provider configuration is what `GET /api/assistant/status` reports, so
+  use that public discovery endpoint to confirm AI is actually available. See `docs/DEPLOYMENT.md`.
+
 ## Configuration
 
 | Setting | Value |
@@ -71,7 +85,7 @@ All paths are relative to the admin base. Every response is JSON
 
 | Method | Path | Response top-level keys | Notes |
 |---|---|---|---|
-| GET | `/summary` | `generatedAt`, `dataset`, `counts`, `flags` | `dataset` = `{dataset,version,source_url,checksum,imported_at}`; `counts` = `{chapters,verses,translations,conversations,messages,feedbackOpen,donationsPaid,donationsTotalMinor}`; `flags` = `{donationsLive,premiumEnabled,recitationEnabled,aiConfigured}` |
+| GET | `/summary` | `generatedAt`, `dataset`, `counts`, `flags` | `dataset` = `{dataset,version,source_url,checksum,imported_at}`; `counts` = `{chapters,verses,translations,conversations,messages,feedbackOpen,donationsPaid,donationsTotalMinor}`; `flags` = `{donationsLive,premiumEnabled,recitationEnabled,aiConfigured}` — `recitationEnabled` is the server `RECITATION_ENABLED` switch (not the client player), `aiConfigured` only shows `AI_PROVIDER != none`; see the status note above |
 | GET | `/datasets` | `datasets` | Dataset versions with checksums and validation state |
 | GET | `/feedback` | `feedback` | Newest first, max 200; optional `?status=open\|triaged\|in_review\|resolved\|rejected` |
 | PATCH | `/feedback/:id` | `ok` | Body: `status?`, `severity?` (`low\|normal\|high\|critical`), `resolutionNote?` (max 2000 chars); writes an audit entry |
@@ -132,6 +146,14 @@ Checked from an operator workstation over public HTTPS
 `503` cannot occur while a token is configured; it is covered by automated
 tests (`server/test/admin.test.js`).
 
+**1.0.10 note (rights decision recorded 2026-10-21).** The live check above predates the 1.0.10 release. On that
+release the app enables client-side Quran.com recitation (see the status note at the top), while this server-side
+summary and the reciter rows keep their seeded values: `flags.recitationEnabled` is `false`, reciters stay
+UNVERIFIED/disabled, and `GET /api/recitations/:verseKey` answers 403. That is expected, not a regression. The
+optional AI endpoints were not part of the recorded live check; after configuring a key, verify
+`GET https://rqmbooks.com/rafiq-api/api/assistant/status` returns `{"enabled":true,"providerConfigured":true}`
+(`docs/DEPLOYMENT.md`).
+
 ## App / admin-screen integration notes
 
 * Base URL: `https://rqmbooks.com/rafiq-api` → admin calls go to
@@ -159,6 +181,10 @@ tests (`server/test/admin.test.js`).
 * Rotation: set a new `ADMIN_TOKEN` in the deployment `.env`, restart the
   process, update the operator secret store. The previous token stops working
   immediately after the restart.
+* The optional AI assistant has **no admin view**: prompts, attached images, OCR text and the provider's answer are
+  transient, are not stored and are not logged. `GET /api/assistant/status` is the only public signal
+  (`enabled`, `providerConfigured`) and never exposes the provider, model, base URL or key. The AI provider key is a
+  server secret like `ADMIN_TOKEN`: never in the app, docs, CI variables, screenshots or chat.
 
 ## Automated tests
 
@@ -169,5 +195,5 @@ the correct token; an authorised feedback update landing in the audit log; and
 the token never appearing in a response body.
 
 ```bash
-npm test -w server   # full server suite: 58 passing, 0 failing
+npm test -w server   # full server suite: 73 passing, 0 failing (58 baseline + 15 assistant tests)
 ```

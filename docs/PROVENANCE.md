@@ -68,20 +68,44 @@ One translation per supported interface language is imported, with provider meta
 
 ## Recitation
 
-No recitation audio is bundled, streamed, cached or played. Candidate reciters (Abdul Basit Abdus Samad, Maher Al-Muaiqly,
-Abdul Rahman Al-Sudais) are recorded with `rights_status = unverified` and `enabled = 0`, and the app marks
-recitation as disabled/rights pending. The 1.0.9 app adds a recitation player screen that is gated by
-`logic/AudioGate.java`: playback is allowed only when the rights review is recorded **and** the configured server
-reports recitation enabled, and in this build both are false. The screen therefore shows "Quran.com · rights
-pending", the notice "Playback is disabled until the Quran.com recitation rights review is recorded. No audio is
-streamed or stored in this build.", and leaves the playback controls disabled. Enabling playback requires the
-operator to verify the recording rights, record them through the admin API and enable the server flag; no audio is
-downloaded, cloned, synthesised or redistributed by this project.
+| Field | Value |
+|---|---|
+| Source | **Quran.com public CDN** — `https://verses.quran.com/`, streamed per verse over HTTPS |
+| Reciters | Mishary Rashid Alafasy (`Alafasy/mp3/%03d%03d.mp3`) · Abdul Basit Abdus Samad, Murattal (`AbdulBaset/Murattal/mp3/%03d%03d.mp3`) · Muhammad Siddiq Al-Minshawi, Murattal (`Minshawi/Murattal/mp3/%03d%03d.mp3`) |
+| Rights review | Recorded by the publisher **2026-10-21**; the decision record and attribution live in `logic/AudioGate.java` |
+| Recorded decision | "Recitation rights review recorded 2026-10-21 — Quran.com verse audio streaming approved by the publisher." |
+| Attribution | "Source: Quran.com" shown in the player and the Source & rights card, next to the reciter name |
+| Storage | None — no download, cache or copy on the device; playback uses the Android `MediaPlayer` MP3 decoder |
+| Player controls | play/pause, replay, seek, previous/next verse, automatic advance to the next verse |
+| Relationship to the text dataset | Separate: the Arabic text and translations beside the player still come from the validated bundled dataset, never from the audio service |
+
+- This is a **client-side** feature: the app streams directly from Quran.com's CDN and does not call the server's
+  `/api/recitations` route. The server's `RECITATION_ENABLED` switch and the seeded `audio_reciters` rows (Abdul
+  Basit Abdus Samad, Maher Al-Muaiqly, Abdul Rahman Al-Sudais) remain `rights_status = unverified` and
+  `enabled = 0`, and the server endpoint answers 403 in the default deployment; they are not what enables the app
+  player.
+- No audio is downloaded, cloned, synthesised, cached or redistributed by this project. The app only plays the
+  verse files for the selected reciter and shows their source; the recorded publisher decision covers this
+  streaming use, and is recorded as a review record rather than a legal opinion.
+- Emulator evidence: Al-Fatihah 1:6 played (~5 s) and auto-advanced to 1:7 (13 s), with the MP3 decoder active and
+  playback running to completion (`dist/screenshot-qa-r2-player.png`, `docs/TESTS.md`).
+
+## Optional AI assistance (never a source of Quran text)
+
+The optional AI layer (`server/src/services/assistant.js`, `POST /api/assistant`) is **not a source of Quran text,
+translation, verse reference or interpretation**. It is used only for (a) a short neutral small-talk reply,
+(b) search-word/intent suggestions for the app's local search, and (c) OCR of an image the user attached. The app
+always renders verses from the validated dataset itself; server-side sanitisation drops any reply containing
+Arabic script, verse references, long quotations or religious wording, and the raw provider response is never
+returned to a client. The AI is off by default (`AI_PROVIDER=none`, 503) and needs an operator-configured free-tier
+key; full configuration and privacy notes are in `docs/AI-ASSISTANT.md` and `docs/DEPLOYMENT.md`.
 
 ## Voice
 
-Voice input uses the Android speech recogniser; spoken answers use Android text-to-speech. Neither is used to
-imitate a Quranic recitation, and the app states this in the interface and in the privacy page.
+Voice input uses the Android speech recogniser; spoken answers use Android text-to-speech (initialised lazily,
+falling back to English when the selected language has no voice). Spoken text is the translation and summary only,
+never the Arabic verse, and neither feature is used to imitate a Quranic recitation. The app states this in the
+interface and in the privacy page.
 
 ## Reproducibility
 

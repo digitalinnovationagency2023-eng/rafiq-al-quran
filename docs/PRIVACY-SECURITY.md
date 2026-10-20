@@ -11,6 +11,15 @@
 - **Donations** store amount, currency, status and the provider reference. No card data is stored or proxied;
   checkout is hosted by the provider and webhooks are signature-verified with a timestamp tolerance and
   constant-time comparison.
+- **Recitation** is enabled: the app streams verse audio from Quran.com's public CDN over HTTPS with the reciter
+  name and "Source: Quran.com" attribution. No audio is stored on the device. The publisher recorded the recitation
+  rights decision on 2026-10-21.
+- **Optional AI assistance** is off by default. When the operator configures a free-tier AI key and the user consents,
+  the question text and (only if attached) an image are sent to the app's own server and forwarded to the AI provider
+  for transient intent/OCR processing; nothing is stored or logged by the app, and the AI never supplies Quran text.
+  The user can turn it off in the menu; limits are enforced client- and server-side.
+- **Attachments**: .txt/.md and .docx are read on the device and never uploaded; images are sent only through the
+  optional AI service; PDFs are unsupported.
 - **Voice** input uses the platform recogniser and may be processed by the platform provider; TTS is local. Both
   can be disabled, and the app states that spoken answers are not Quranic recitation.
 - **No RQM Books data**: the app/API use their own SQLite database and never read RQM Books accounting, customer,
@@ -29,5 +38,7 @@
 
 ## Secret management
 
-All secrets are read from environment configuration and are never bundled into the app or committed. The repository
-ignores `.env*` (except `.env.example`), databases and keystores.
+All secrets are read from environment configuration and are never bundled into the app or committed, including the
+optional `AI_API_KEY` used only by the server's `/api/assistant` route. The repository ignores `.env*` (except
+`.env.example`), databases and keystores; the Android upload keystore is kept outside the repo and referenced through
+`QURAN_KEYSTORE_PATH`.

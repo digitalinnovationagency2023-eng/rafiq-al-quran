@@ -132,6 +132,12 @@ public final class PagesActivity extends Activity {
                 + "• The app does not read RQM Books accounting, customer, invoice or payroll data.");
         section(parent, "Voice features",
                 "Voice input uses the device's speech recognition; audio may be processed by the platform provider. Spoken answers use the device's speech synthesis for the translation and summary only and are never presented as Quranic recitation. Both can be disabled in the menu.");
+        section(parent, "Optional AI assistance",
+                "AI assistance is off unless the operator enables a free AI service. When it is used, your question and any attached image are sent to this app's own server, which processes them with an AI provider only to understand the wording or to read the image. Nothing is stored and no account or identifier is attached; the feature can be turned off in the menu. The AI never supplies Quran text or interpretation — every verse comes from the bundled dataset. Without AI the app works locally.");
+        section(parent, "Attachments",
+                "Text files (.txt/.md) and .docx documents are read on this device and are never uploaded. Images are sent only to the optional AI service when it is enabled. PDF attachments are not supported yet. Do not attach sensitive personal documents.");
+        section(parent, "Recitation",
+                "Verse recitation streams from Quran.com's public CDN over the internet, shows the reciter name and 'Source: Quran.com' attribution, and is not stored on the device. The recitation rights review for this source was recorded on 21 October 2026. Text-to-speech is used only for translations and summaries and is never presented as Quranic recitation.");
         section(parent, "Isolation",
                 "This app keeps its own database and never reads RQM Books accounting data.");
     }
@@ -156,7 +162,7 @@ public final class PagesActivity extends Activity {
         }
         section(parent, "Translations", translations.toString());
         section(parent, "Recitation",
-                "Authentic recitation is a separate, rights-gated feature. Candidate reciters are recorded with an unverified rights status and playback is disabled. No recording is cloned, synthesised or redistributed. Text-to-speech is used only for translations and summaries and is never presented as Quranic recitation.");
+                "Verse recitation is enabled and streams from Quran.com's public CDN over the internet, with the reciter name and \u201CSource: Quran.com\u201D attribution shown in the player. Audio is not stored on the device. The recitation rights review for this source was recorded by the publisher on 21 October 2026. Text-to-speech is used only for translations and summaries and is never presented as Quranic recitation.");
         section(parent, "Required notices", "English and Arabic: verified wording.\nOther languages: the English notice is shown and marked as pending review.");
     }
 
