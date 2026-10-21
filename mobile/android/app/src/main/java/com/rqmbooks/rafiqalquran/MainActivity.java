@@ -222,8 +222,8 @@ public final class MainActivity extends Activity {
         pill.setPadding(Ui.dp(this, 6), Ui.dp(this, 4), Ui.dp(this, 6), Ui.dp(this, 4));
         pill.addView(Ui.glyph(this, "\uD83D\uDCCE", this::pickAttachment));
         input = new EditText(this);
-        input.setHint("Ask the Quran anything\u2026");
-        input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f);
+        input.setHint("Ask the Quran\u2026");
+        input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f);
         input.setMinLines(1);
         input.setMaxLines(5);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
@@ -436,7 +436,7 @@ public final class MainActivity extends Activity {
         LinearLayout box = Ui.column(this);
         box.setPadding(0, Ui.dp(this, 44), 0, 0);
 
-        TextView heading = Ui.text(this, "What can I help with?", 26f, Ui.INK);
+        TextView heading = Ui.text(this, "What can I help with?", 23f, Ui.INK);
         heading.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         heading.setGravity(Gravity.CENTER);
         box.addView(heading);
@@ -852,7 +852,10 @@ public final class MainActivity extends Activity {
         turns.add(new HistoryCodec.Turn("assistant", null, answer));
         messages.addView(answerView(answer));
         saveHistory();
-        scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
+        messages.post(() -> {
+            View last = messages.getChildAt(messages.getChildCount() - 1);
+            if (last != null) scroll.smoothScrollTo(0, Math.max(0, last.getTop() - Ui.dp(this, 8)));
+        });
     }
 
     /**

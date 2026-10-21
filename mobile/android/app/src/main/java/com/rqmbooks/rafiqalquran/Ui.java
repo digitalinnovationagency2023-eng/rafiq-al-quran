@@ -272,9 +272,9 @@ public final class Ui {
 
     /** Plain green text action used under answers (Copy / Listen / More verses). */
     public static TextView textAction(Context context, String label, Runnable onClick) {
-        TextView view = text(context, label, 12.5f, GREEN);
+        TextView view = text(context, label, 12f, GREEN);
         view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        view.setPadding(dp(context, 10), dp(context, 8), dp(context, 10), dp(context, 8));
+        view.setPadding(dp(context, 5), dp(context, 8), dp(context, 5), dp(context, 8));
         if (onClick != null) view.setOnClickListener(v -> onClick.run());
         return view;
     }
@@ -292,8 +292,8 @@ public final class Ui {
 
     /** Small glyph shown inside the composer (attach / voice). */
     public static TextView glyph(Context context, String value, Runnable onClick) {
-        TextView view = text(context, value, 18f, MUTED);
-        view.setPadding(dp(context, 10), dp(context, 10), dp(context, 10), dp(context, 10));
+        TextView view = text(context, value, 17f, MUTED);
+        view.setPadding(dp(context, 6), dp(context, 10), dp(context, 6), dp(context, 10));
         view.setGravity(Gravity.CENTER);
         if (onClick != null) view.setOnClickListener(v -> onClick.run());
         return view;

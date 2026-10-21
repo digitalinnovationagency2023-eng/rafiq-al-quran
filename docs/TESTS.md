@@ -4,7 +4,7 @@ Run on 2026-10-21 (Windows, Node 24, JDK 17, Android SDK 34; emulator AVD `rafiq
 1080×2340). Release **1.1.0** (versionCode 13, versionName 1.1.0). Earlier measurements are kept for history; the
 1.1.0 advisory-answer additions, the 1.0.12 voice matrix and the updated counts are in the sections below.
 
-**Artifacts (1.1.0)** — APK `dist/rafiq-al-quran-1.1.0.apk`: 3,593,144 bytes, SHA-256 `525C70BCA6527738DC98B85062CACBC65C9BD3F82FCD65D288F71A34F3697FAC`; unsigned AAB `dist/rafiq-al-quran-1.1.0.aab`: 3,585,601 bytes, SHA-256 `78B0A2F07CE31D70BE26C64A8BDD34E063AED40854053459E7F1E9876D3DFA8E`; signed upload AAB `dist/rafiq-al-quran-1.1.0-signed.aab`: 3,588,922 bytes, SHA-256 `4A6C002083C4E6484734F15FA6CC6CE9CF072409A8E9E9BC5CEAFF36B5D7EBD3` (jarsigner "jar verified"; upload cert 08:DE:24:53…).
+**Artifacts (1.1.0)** — APK `dist/rafiq-al-quran-1.1.0.apk`: 3,593,144 bytes, SHA-256 `B680204A4BA2BAAC0465C4B7EBD6675639476F3791803A83C68F84AC1F95068A`; unsigned AAB `dist/rafiq-al-quran-1.1.0.aab`: 3,585,640 bytes, SHA-256 `2A275C7AE887D9DEFC0A4D512B38CCB8C53AAB13D035D38BD14637E7B03692BB`; signed upload AAB `dist/rafiq-al-quran-1.1.0-signed.aab`: 3,588,965 bytes, SHA-256 `AC42360B8C397A9502955B8D3C249C5A13F8BF1644DFBBF73BC81B420D298FEF` (jarsigner "jar verified"; upload cert 08:DE:24:53…).
 
 **Artifacts (1.0.12)** — APK `dist/rafiq-al-quran-1.0.12.apk`: 3,584,952 bytes, SHA-256 `4ED8ACAA7726ABB6075B6DFE551A9F5D0B8F1B872B7253B14AE91001593EA91C`; unsigned AAB `dist/rafiq-al-quran-1.0.12.aab`: 3,576,845 bytes, SHA-256 `E5FB7FAD125EBA52300F87428C0C92F5BC363EF403E4138E573C5AF4E480334F`; signed upload AAB `dist/rafiq-al-quran-1.0.12-signed.aab`: 3,580,167 bytes, SHA-256 `165AA653BADB9FF31C45BC05BB2EAA4020FAB68E832515CA234BF0338AD0A659` (jarsigner "jar verified"; upload cert 08:DE:24:53…).
 
@@ -55,7 +55,7 @@ The 67 checks include the per-passage dataset-existence assertions emitted in a 
 - **36 Java sources** compiled (adds `logic/VoiceLanguage.java` and `logic/Roman.java`); signed (apksigner verify passed) and zipaligned;
 - size **~3.43 MB**; the exact size and SHA-256 of the release artifact are recorded in the release note;
 - bundles `classes.dex`, the seven dataset assets (including `assets/quran-meta.tsv`) and the launcher icon;
-- **Artifacts (1.1.0): APK SHA-256 525C70BCA6527738DC98B85062CACBC65C9BD3F82FCD65D288F71A34F3697FAC; unsigned AAB SHA-256 78B0A2F07CE31D70BE26C64A8BDD34E063AED40854053459E7F1E9876D3DFA8E; signed upload AAB SHA-256 4A6C002083C4E6484734F15FA6CC6CE9CF072409A8E9E9BC5CEAFF36B5D7EBD3 (jarsigner verified, upload cert 08:DE…).**
+- **Artifacts (1.1.0): APK SHA-256 B680204A4BA2BAAC0465C4B7EBD6675639476F3791803A83C68F84AC1F95068A; unsigned AAB SHA-256 2A275C7AE887D9DEFC0A4D512B38CCB8C53AAB13D035D38BD14637E7B03692BB; signed upload AAB SHA-256 AC42360B8C397A9502955B8D3C249C5A13F8BF1644DFBBF73BC81B420D298FEF (jarsigner verified, upload cert 08:DE…).**
 
 ## APK packaging verification — 22 checks passed
 
@@ -81,8 +81,8 @@ AAB template: the new proto `AndroidManifest.xml`, `resources.pb`, `classes.dex`
 is unchanged (seven assets with the same names), and `jarsigner -verify` reports "jar verified" with the upload
 certificate. The authoritative `bundletool validate` must still be run by re-running
 `.github/workflows/build-aab.yml` on the pushed commit before rollout. Hashes: unsigned AAB
-`78B0A2F07CE31D70BE26C64A8BDD34E063AED40854053459E7F1E9876D3DFA8E`; signed AAB
-`4A6C002083C4E6484734F15FA6CC6CE9CF072409A8E9E9BC5CEAFF36B5D7EBD3`. The previous CI-built AABs are described
+`2A275C7AE887D9DEFC0A4D512B38CCB8C53AAB13D035D38BD14637E7B03692BB`; signed AAB
+`AC42360B8C397A9502955B8D3C249C5A13F8BF1644DFBBF73BC81B420D298FEF`. The previous CI-built AABs are described
 below.
 
 ## AAB — CI build for 1.0.11
