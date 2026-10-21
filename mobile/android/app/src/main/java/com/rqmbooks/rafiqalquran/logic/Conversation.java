@@ -181,11 +181,11 @@ public final class Conversation {
     }
 
     public static String aiConsentMessage() {
-        return "To understand natural conversation and read attached screenshots, your question and "
-                + "attachment are sent to this app's server, which processes them with an AI provider. "
-                + "The AI never supplies Quran text — verses always come from the app's validated dataset. "
-                + "The app does not store your question or attachment on the server. You can turn AI "
-                + "assistance off in the menu at any time.";
+        return "To understand natural conversation, read attached screenshots and summarise the verses "
+                + "it finds, your question, attachment and the references/translations of those verses may be "
+                + "sent to this app's server, which processes them with an AI provider. The AI never supplies "
+                + "Quran text — verses always come from the app's validated dataset. The app does not store your "
+                + "question or attachment on the server. You can turn AI assistance off in the menu at any time.";
     }
 
     /**

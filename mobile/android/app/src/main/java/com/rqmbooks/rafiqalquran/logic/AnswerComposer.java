@@ -63,7 +63,11 @@ public final class AnswerComposer {
             passages.add(passage);
         }
 
-        return new Answer("answer", language, Notices.connectiveFound(language, passages.size()), passages,
+        Concept entity = dataset.findEntity(question);
+        String message = entity != null
+                ? Notices.entityFound(language, Dataset.entityLabel(entity, "ar".equals(language)), passages.size())
+                : Notices.connectiveFound(language, passages.size());
+        return new Answer("answer", language, message, passages,
                 best, Notices.noticeFor(language), Notices.noticeVerified(language),
                 englishFallback ? Notices.translationPending(language) : null,
                 Arrays.asList(LIMITS[0][0], LIMITS[1][0]), true, keysOf(passages));

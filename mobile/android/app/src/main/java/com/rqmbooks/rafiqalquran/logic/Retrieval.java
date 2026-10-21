@@ -23,7 +23,9 @@ public final class Retrieval {
             "being","what","which","who","whom","whose","how","why","when","where","do","does","did","can","could",
             "should","would","may","might","will","shall","i","you","he","she","it","we","they","me","my","your",
             "our","their","this","that","these","those","there","here","please","tell","show","give","find","say",
-            "says","said","mention","mentions","mentioned","verse","verses","quran","qur'an","surah","sura","chapter"));
+            "says","said","mention","mentions","mentioned","verse","verses","quran","qur'an","surah","sura","chapter",
+            "hazrat","hadrat","hz","prophet","prophets","nabi","paighambar","peer","pir","saint","imam","maulana",
+            "moulana","sheikh","shaikh","alaihi","alaihis","salam","rahimahullah"));
 
     public static final class Match {
         public final Verse verse;
@@ -55,6 +57,18 @@ public final class Retrieval {
             if (token.length() > 1 && !LATIN_STOP.contains(token)) tokens.add(token);
         }
         return tokens;
+    }
+
+    /** Arabic search terms for a named figure found in the question (exact alias match). */
+    private static List<String> expandEntityTerms(Dataset dataset, List<String> tokens, String question) {
+        List<String> terms = new ArrayList<>();
+        Concept entity = dataset.findEntity(question);
+        if (entity == null) return terms;
+        for (String term : entity.arabic) {
+            String normalized = ArabicText.normalize(term);
+            if (!normalized.isEmpty() && !terms.contains(normalized)) terms.add(normalized);
+        }
+        return terms;
     }
 
     private static List<String> expandConcepts(Dataset dataset, List<String> tokens, String language) {
@@ -131,6 +145,20 @@ public final class Retrieval {
                 List<Integer> bucket = dataset.arabicIndex.get(form);
                 if (bucket == null) continue;
                 double weight = idf(bucket.size(), total) * 0.9;
+                for (int index : bucket) {
+                    scores.merge(index, weight, Double::sum);
+                    matchedConcept.computeIfAbsent(index, key -> new HashSet<>()).add(term);
+                }
+            }
+        }
+
+        // Named figures (Essa/Isa/Jesus, Yaqoob/Jacob, ...) get a stronger boost: the
+        // name itself usually carries the whole question.
+        for (String term : expandEntityTerms(dataset, questionTokens, question)) {
+            for (String form : ArabicText.searchForms(term)) {
+                List<Integer> bucket = dataset.arabicIndex.get(form);
+                if (bucket == null) continue;
+                double weight = idf(bucket.size(), total) * 1.6;
                 for (int index : bucket) {
                     scores.merge(index, weight, Double::sum);
                     matchedConcept.computeIfAbsent(index, key -> new HashSet<>()).add(term);

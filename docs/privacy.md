@@ -39,20 +39,25 @@ following may be sent over HTTPS to the app's own server, which forwards it to t
 single request:
 
 - the question text you typed;
-- if you attached an image, that image.
+- if you attached an image, that image;
+- when the app prepares a **Quran-only summary**, the references and translations of the Quran verses it
+  already retrieved locally (the verses are shown to you below the summary).
 
 The AI service is used only to (a) write a short, neutral small-talk or off-topic reply, (b) suggest search words
-for the app's own Quran search, and (c) read text from an attached screenshot (OCR). It **never** supplies Quran
-text, translations, verse references or interpretation: every verse and translation you see is taken from the
-validated dataset bundled with the app and rendered by the app itself.
+for the app's own Quran search, (c) read text from an attached screenshot (OCR), and (d) write a short summary of
+the verses the app has already retrieved, using only those verses and citing only their references. It **never**
+supplies Quran text, translations or interpretation of its own: every verse, translation and reference you see is
+taken from the validated dataset bundled with the app and rendered by the app itself. A summary is a paraphrase of
+those supplied translations, labelled as such, and is not tafsir or a religious ruling.
 
 The request is processed transiently. The app's server does not store your question text, the attachment or the
 AI provider's answer, and it logs metadata only (such as whether a request succeeded). No account, name or
 advertising identifier is attached. The configured AI provider is a third party and processes the request under
 its own terms; free-tier services may have different data-use terms from paid tiers.
 
-Free-tier limits: the app allows up to 30 AI-assisted requests per day on the device, and the service also applies
-rate limits (currently about 20 requests per 10 minutes per client, with an optional monthly cap). When AI
+Free-tier limits: the app allows up to 40 AI-assisted requests per day on the device (a grounded summary can be a
+second request for one question), and the service also applies rate limits (currently about 20 requests per 10
+minutes per client, with an optional monthly cap). When AI
 assistance is unavailable, switched off or rate-limited, the app falls back to its local behaviour and tells you.
 
 You can turn AI assistance off at any time in the menu. With it off, conversation replies are produced locally and
@@ -108,7 +113,7 @@ The app is suitable for general audiences and does not knowingly collect persona
 ## Retention and deletion
 Locally stored data is removed when you clear the app's data or uninstall it. Feedback reports are kept for review
 and can be deleted on request. In-app conversations can be deleted from the app. AI-assisted questions and
-attachments are not stored by the app's server. Recitation audio is not stored on the device.
+attachments, and the verse references/translations sent for a summary are not stored by the app's server. Recitation audio is not stored on the device.
 
 ## Your choices
 Use the app's menu to turn AI assistance off, disable voice, remove a saved operator token, and delete

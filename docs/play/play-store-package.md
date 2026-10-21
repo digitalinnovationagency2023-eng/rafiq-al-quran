@@ -4,22 +4,22 @@ Publisher: Digital Innovative Agency FZ LLC · info@rqmbooks.com · +971 9 501 0
 
 ---
 
-## Release metadata — release 1.0.12
+## Release metadata — release 1.1.0
 
 | Field | Value |
 |---|---|
 | App name | Rafiq Al-Quran: AI Assistant |
 | Category | Education |
 | Package name | `com.rqmbooks.rafiqalquran` |
-| Version | versionCode **12** · versionName **1.0.12** |
+| Version | versionCode **13** · versionName **1.1.0** |
 | SDK range | minSdk **24** (Android 7.0) · targetSdk **36** (Android 16 — Play requirement for new apps since 31 Aug 2026) |
 | Build toolchain | Android SDK 34 build-tools and platform (`compileSdk` 34, `targetSdk` 36), `aapt2` / `javac` / `d8` / `zipalign` / `apksigner`, **no Gradle**; **35 Java sources**. Edge-to-edge insets are handled in `Ui.init()` for Android 15+ |
-| Release APK | `dist/rafiq-al-quran-1.0.12.apk` — signed, installable, **~3.41 MB**; versionCode 12 / versionName 1.0.12 (verified with `aapt2 dump badging`). Exact size and SHA-256 are recorded in the release note |
-| AAB (unsigned) | `dist/rafiq-al-quran-1.0.12.aab` — produced with the same toolchain as `.github/workflows/build-aab.yml` (`mobile/android/scripts/buildAab.js` + bundletool 1.18.0, no Gradle); SHA-256 in the release note. Push the commit to run the identical GitHub Actions workflow and record the CI run URL. |
-| AAB (signed, Play upload) | `dist/rafiq-al-quran-1.0.12-signed.aab` — AAB signed locally with `jarsigner` using the upload keystore; `jarsigner -verify` must report "jar verified" plus the expected self-signed certificate warning |
+| Release APK | `dist/rafiq-al-quran-1.1.0.apk` — signed, installable, **~3.42 MB**; versionCode 13 / versionName 1.1.0 (verified with `aapt2 dump badging`). Exact size and SHA-256 are recorded in the release note |
+| AAB (unsigned) | `dist/rafiq-al-quran-1.1.0.aab` — assembled from the Play-validated 1.0.12 AAB template with this build's proto manifest/resources/dex/assets (bundletool cannot run in the offline build host); SHA-256 in the release note. Re-run `.github/workflows/build-aab.yml` on the pushed commit for the authoritative bundletool validation. |
+| AAB (signed, Play upload) | `dist/rafiq-al-quran-1.1.0-signed.aab` — AAB signed locally with `jarsigner` using the upload keystore; `jarsigner -verify` must report "jar verified" plus the expected self-signed certificate warning |
 | Signing key | Play upload keystore kept **outside the repository** (default `%USERPROFILE%\.secrets\quran-release.keystore`, supplied to `buildApk.js` via `QURAN_KEYSTORE_PATH`); the copy under `mobile/android/build/` is gitignored and **never committed**. Sign the 1.0.11 AAB with the same upload key as 1.0.9 to preserve Play upload-key continuity |
-| Artifacts (1.0.12) | APK `dist/rafiq-al-quran-1.0.12.apk` 3,584,952 bytes, SHA-256 `4ED8ACAA7726ABB6075B6DFE551A9F5D0B8F1B872B7253B14AE91001593EA91C`; unsigned AAB 3,576,845 bytes, SHA-256 `E5FB7FAD125EBA52300F87428C0C92F5BC363EF403E4138E573C5AF4E480334F`; signed upload AAB `dist/rafiq-al-quran-1.0.12-signed.aab` 3,580,167 bytes, SHA-256 `165AA653BADB9FF31C45BC05BB2EAA4020FAB68E832515CA234BF0338AD0A659` (jarsigner verified, upload cert 08:DE:24:53…). The AAB was assembled from the bundletool-validated 1.0.11 template with the new manifest/resources/dex because this build host had no GitHub/bundletool access; re-run the CI workflow on the pushed commit for the authoritative bundletool validate before rollout |
-| Version history | 1.0.9 (versionCode 9) was uploaded to **internal testing**; 1.0.11 (versionCode 11) was uploaded by the operator after this round's QA. **1.0.12 (versionCode 12) is the next upload candidate** and supersedes the 1.0.11 upload if it is stopped — the versionCode is greater than every versionCode previously uploaded. |
+| Artifacts (1.1.0) | APK `dist/rafiq-al-quran-1.1.0.apk` 3,589,048 bytes, SHA-256 `97215C7505378A43F9E9B6E873460459ABDFC4DA5ACB05094D6893C70025A35A`; unsigned AAB 3,580,905 bytes, SHA-256 `364E37CCADA5AA0F9FD13A03BF0334D121B0311F56695C0CA8E6A9B030BFEC38`; signed upload AAB `dist/rafiq-al-quran-1.1.0-signed.aab` 3,584,218 bytes, SHA-256 `4F8D50D0111205FCC33C4C443C19E3A3553153E4E37D4232C2E3A30FB7A6F50A` (jarsigner verified, upload cert 08:DE:24:53…). Assembled from the Play-validated 1.0.12 AAB template because this build host has no GitHub/bundletool access; re-run the CI workflow on the pushed commit for the authoritative bundletool validate before rollout |
+| Version history | 1.0.9 (versionCode 9) was uploaded to internal testing; 1.0.11 (versionCode 11) and 1.0.12 (versionCode 12, uploaded as the production release candidate) were uploaded by the operator. **1.1.0 (versionCode 13) is the next upload candidate**, greater than every versionCode previously uploaded. |
 | CI verification | GitHub Actions workflow "Build release AAB" (`.github/workflows/build-aab.yml`) builds the AAB with bundletool and validates it with `bundletool validate`; for 1.0.12 the same steps were run locally (`buildAab.js`, `bundletool validate` exit 0) because the build environment had no GitHub access — push the commit and record the CI run URL when available. Previous runs: 1.0.11 = 39503214114, 1.0.9 = 39483479573. |
 
 ---
@@ -62,20 +62,24 @@ When you switch AI assistance on (menu → **AI conversation**) and accept the o
 following may be sent over HTTPS to the app's own server, which forwards it to the configured AI provider for that
 single request:
 - the question text you typed;
-- if you attached an image, that image.
+- if you attached an image, that image;
+- for a **Quran-only summary**, the references and translations of the Quran verses the app already retrieved.
 
 The AI service is used only to (a) write a short, neutral small-talk or off-topic reply, (b) suggest search words
-for the app's own Quran search, and (c) read text from an attached screenshot (OCR). It **never** supplies Quran
-text, translations, verse references or interpretation: every verse and translation you see is taken from the
-validated dataset bundled with the app and rendered by the app itself.
+for the app's own Quran search, (c) read text from an attached screenshot (OCR), and (d) write a short summary of
+the verses the app has already retrieved, using only those verses and citing only their references. It **never**
+supplies Quran text, translations or interpretation of its own: every verse, translation and reference you see is
+taken from the validated dataset bundled with the app and rendered by the app itself. A summary is a paraphrase of
+the supplied translations, labelled as such, not tafsir or a religious ruling.
 
 The request is processed transiently. The app's server does not store your question text, the attachment or the
 AI provider's answer, and it logs metadata only (such as whether a request succeeded). No account, name or
 advertising identifier is attached. The configured AI provider is a third party and processes the request under
 its own terms; free-tier services may have different data-use terms from paid tiers.
 
-Free-tier limits: the app allows up to 30 AI-assisted requests per day on the device, and the service also applies
-rate limits (currently about 20 requests per 10 minutes per client, with an optional monthly cap). When AI
+Free-tier limits: the app allows up to 40 AI-assisted requests per day on the device (a grounded summary can be a
+second request for one question), and the service also applies rate limits (currently about 20 requests per 10
+minutes per client, with an optional monthly cap). When AI
 assistance is unavailable, switched off or rate-limited, the app falls back to its local behaviour and tells you.
 
 You can turn AI assistance off at any time in the menu. With it off, conversation replies are produced locally and
@@ -154,7 +158,8 @@ Source page: `docs/terms.md` (published for GitHub Pages). Keep this copy and th
 4. **Optional AI assistance.** AI assistance is off by default and must be configured by the app's operator with
    a third-party AI service (the current free configuration uses a Google AI Studio / Gemini key held on the
    server). Where it is enabled and switched on by the user, it is used only to write a short neutral small-talk
-   reply, suggest search words for the app's own search, and read text from an attached image (OCR). It may be
+   reply, suggest search words for the app's own search, read text from an attached image (OCR), and write a short
+   summary of verses the app has already retrieved using only those verses and their references. It may be
    limited, rate-limited or unavailable, in which case the app falls back to its local behaviour. AI requests are
    processed transiently and the app's server stores no user text or attachments. AI output is not religious
    content and must not be treated as guidance or interpretation; all Quranic text shown comes from the bundled
@@ -188,7 +193,7 @@ Source page: `docs/terms.md` (published for GitHub Pages). Keep this copy and th
 | Question | Answer |
 |---|---|
 | Does your app collect or share any required user data types? | Yes — but only **optional, user-initiated** data: feedback reports, and (only when the user turns on optional AI assistance and accepts the consent notice) question text and an attached image. There is no account, no required data collection, no advertising and no data selling. |
-| App activity → "Other user-generated content" | **Optional.** Feedback content (description, optional verse reference, optional contact detail) when the user submits a report, and question text only when the user has switched on optional AI assistance and accepted the one-time consent. AI data is sent to the app's own server and forwarded to the configured AI provider for transient processing (small-talk reply, search words, OCR). Not stored by the app, not used for advertising, not sold. |
+| App activity → "Other user-generated content" | **Optional.** Feedback content (description, optional verse reference, optional contact detail) when the user submits a report, and question text only when the user has switched on optional AI assistance and accepted the one-time consent. AI data is sent to the app's own server and forwarded to the configured AI provider for transient processing (small-talk reply, search words, OCR, and grounded summaries of the retrieved Quran verses — the summary request carries the question plus the verse references/translations the app already found). Not stored by the app, not used for advertising, not sold. |
 | Photos and videos → "Photos" | **Optional.** An attached screenshot image is sent only when the user attaches an image **and** optional AI assistance is enabled and used, so text in the image can be extracted (OCR). Sent to the app's own server and forwarded to the AI provider for transient processing; not stored by the app, not used for advertising, not sold. No camera or photo-library access beyond the user's explicit file pick. |
 | Stays on the device (not collected) | Bookmarks and bookmark collections, personal notes, saved searches, reading plans, reading history, reading position, conversation history, language/theme/text-size/voice/reciter preferences, the local AI-assistance switch and daily counter, and the operator token (operator screen only). Never transmitted. |
 | Is data encrypted in transit? | Yes — HTTPS for the app's own API (public API base `https://rqmbooks.com/rafiq-api`), for the AI request it forwards, and for Quran.com's recitation CDN (`https://verses.quran.com/`). |
@@ -319,12 +324,12 @@ action now opens the recitation player, so re-capture anything you intend to sub
 
 ## 7. Release checklist
 
-- [ ] Confirm `AndroidManifest.xml` versionCode is greater than every versionCode previously uploaded — current **12** (versionCode 11 is the 1.0.11 upload) — and versionName matches the release: **1.0.12**.
+- [ ] Confirm `AndroidManifest.xml` versionCode is greater than every versionCode previously uploaded — current **13** (versionCodes 11 and 12 were uploaded) — and versionName matches the release: **1.1.0**.
 - [ ] Rebuild assets with `node mobile/android/scripts/exportAssets.js` (this copies `quran-meta.tsv` into the app assets).
-- [ ] Build the APK with `node mobile/android/scripts/buildApk.js`, then copy/rename it to `dist/rafiq-al-quran-1.0.12.apk` and record its SHA-256 in the release note.
-- [ ] Verify the installable APK: `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.12.apk` → **22 checks passed** (includes the two speech `<queries>` checks).
+- [ ] Build the APK with `node mobile/android/scripts/buildApk.js`, then copy/rename it to `dist/rafiq-al-quran-1.1.0.apk` and record its SHA-256 in the release note.
+- [ ] Verify the installable APK: `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.1.0.apk` → **22 checks passed** (includes the two speech `<queries>` checks).
 - [ ] Build the AAB from a clean committed tree: GitHub Actions `.github/workflows/build-aab.yml` → download the unsigned artifact → sign locally with `jarsigner` using the upload keystore → `jarsigner -verify` (expect "jar verified" plus the self-signed warning) → `bundletool validate`. Record the CI run URL and artifact SHA-256 values in the release note (**Artifacts (1.0.11): CI run 39503214114 on commit 557057d (success); APK SHA-256 C3FB6D536014F7E646EB7D01835BE46E2E9D5F6CDEEA87019DA48591E64E9005; signed upload AAB SHA-256 BE998597D7EE7EAA98CB63CBC68550834F90B7A99F3F1A6E20A6531A9E3EDECB (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 8943D5878B738BB8783747A1267C671073F7FE93C7A3643720F8C56CE8067B74**).
-- [ ] **AI assistance is optional and only for conversation/OCR; never for Quran text; the key lives only in the server `.env`; keep limits on** (`RATE_LIMIT_ASSISTANT_MAX`, optional `AI_MAX_MONTHLY_CALLS`, app 30 calls/day cap). Verify `/api/assistant/status` after `pm2 restart` (see `docs/DEPLOYMENT.md`), and confirm `TRUST_PROXY=true` on the live server so per-client limiting is correct.
+- [ ] **AI assistance is optional (conversation, OCR and grounded verse summaries); never a source of Quran text; the key lives only in the server `.env`; keep limits on** (`RATE_LIMIT_ASSISTANT_MAX`, optional `AI_MAX_MONTHLY_CALLS`, app 40 calls/day cap). The summary endpoint rejects citations outside the supplied verses and Arabic script; deploy the updated server and restart it so `/api/assistant/summary` exists before users get this build. Verify `/api/assistant/status` after `pm2 restart` (see `docs/DEPLOYMENT.md`), and confirm `TRUST_PROXY=true` on the live server so per-client limiting is correct.
 - [ ] **Recitation streams from Quran.com with attribution; rights decision recorded 2026-10-21.** Keep the "Source: Quran.com" attribution visible in the player, keep audio unstored (no download/cache), and keep the server's `RECITATION_ENABLED` switch and unverified reciter rows independent of the client player (the app streams directly from the CDN; see `docs/ADMIN.md`).
 - [ ] Keep billing, subscriptions and donation processing disabled in this release (server feature flags off; the app shows disabled states).
 - [ ] Keep `targetSdk` at **36** (Android 16) and `minSdk` at **24**: Play rejects new apps below these levels (Automatic protection requires minSdk 24; target API 36 is required for new apps since 31 Aug 2026). The app handles Android 15+ edge-to-edge insets in `Ui.init()`. Ensure the emulator/device QA covers a modern Android version after changing SDK levels.

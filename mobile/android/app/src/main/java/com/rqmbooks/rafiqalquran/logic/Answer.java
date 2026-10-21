@@ -16,10 +16,20 @@ public final class Answer {
     public final List<String> limits;
     public final boolean suggestRefine;
     public final List<String> shownVerseKeys;
+    /** Optional AI summary synthesised only from these passages (never Quran text). */
+    public final String summary;
 
     public Answer(String kind, String language, String message, List<Passage> passages, double confidence,
                   String notice, boolean noticeVerified, String translationNotice, List<String> limits,
                   boolean suggestRefine, List<String> shownVerseKeys) {
+        this(kind, language, message, passages, confidence, notice, noticeVerified, translationNotice,
+                limits, suggestRefine, shownVerseKeys, null);
+    }
+
+    public Answer(String kind, String language, String message, List<Passage> passages, double confidence,
+                  String notice, boolean noticeVerified, String translationNotice, List<String> limits,
+                  boolean suggestRefine, List<String> shownVerseKeys, String summary) {
+        this.summary = summary;
         this.kind = kind;
         this.language = language;
         this.message = message;
@@ -31,6 +41,12 @@ public final class Answer {
         this.limits = limits;
         this.suggestRefine = suggestRefine;
         this.shownVerseKeys = shownVerseKeys;
+    }
+
+    /** Copy of this answer carrying an AI summary (or null to clear it). */
+    public Answer withSummary(String value) {
+        return new Answer(kind, language, message, passages, confidence, notice, noticeVerified,
+                translationNotice, limits, suggestRefine, shownVerseKeys, value);
     }
 
     public static Answer fallback(String language, List<String> limits) {

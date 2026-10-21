@@ -31,10 +31,12 @@ Every external capability is off unless configured. Feature switches for this re
 
 ## Optional AI assistance (`/api/assistant`)
 
-`POST /api/assistant` and `GET /api/assistant/status` add an **optional** free-tier AI layer used only for (a) a
-short neutral small-talk reply, (b) search-word/intent suggestions for the app's local Quran search, and (c) OCR of
-an attached screenshot. It never supplies Quran text, translations, verse references or interpretation; the app
-renders every verse from its validated dataset. It is **off by default**: with no provider configured the endpoint
+`POST /api/assistant`, `POST /api/assistant/summary` and `GET /api/assistant/status` add an **optional** free-tier
+AI layer used only for (a) a short neutral small-talk reply, (b) search-word/intent suggestions for the app's local
+Quran search, (c) OCR of an attached screenshot, and (d) a grounded summary of verses the app already retrieved. It
+never supplies Quran text, translations or interpretation of its own: the app renders every verse from its
+validated dataset, and the summary endpoint rejects answers that cite references outside the supplied verses or
+write Arabic script. After deploying this build, restart the API process so the new route is mounted. It is **off by default**: with no provider configured the endpoint
 answers `503` and the app silently uses its local rules. Full endpoint, sanitisation and client-fallback notes are
 in `docs/AI-ASSISTANT.md`.
 

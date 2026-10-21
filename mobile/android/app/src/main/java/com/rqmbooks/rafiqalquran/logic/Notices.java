@@ -39,6 +39,16 @@ public final class Notices {
         return count == 1 ? "I found one passage that refers to this:" : "I found " + count + " passages that refer to this:";
     }
 
+    /** Message for a question about a named figure (prophet/person). */
+    public static String entityFound(String language, String name, int count) {
+        if ("ar".equals(language)) {
+            return "يذكر القرآن " + name + " في " + (count == 1 ? "آية واحدة" : count + " آيات")
+                    + "، وهي معروضة أدناه مع مراجعها. هذا استرجاع لنص القرآن فقط وليس تفسيرًا ولا فتوى.";
+        }
+        return "The Quran mentions " + name + " in " + (count == 1 ? "one passage" : count + " passages")
+                + ", shown below with their references. This is a Quran-only retrieval — not a tafsir or a ruling.";
+    }
+
     public static String translationPending(String language) {
         return "ar".equals(language)
                 ? "لا تتوفر ترجمة مُراجعة لهذه اللغة بعد، لذلك تُعرض الترجمة الإنجليزية."

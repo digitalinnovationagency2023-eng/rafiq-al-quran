@@ -36,6 +36,7 @@ import com.rqmbooks.rafiqalquran.logic.Language;
 import com.rqmbooks.rafiqalquran.logic.Passage;
 import com.rqmbooks.rafiqalquran.logic.Verse;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
@@ -58,7 +59,9 @@ public final class MainActivity extends Activity {
     public static final String EXTRA_ASK = "ask";
     private static final int MIC_REQUEST = 41;
     private static final int ATTACH_REQUEST = 42;
-    private static final int AI_DAILY_LIMIT = 30;
+    // A grounded summary is a second AI request per question, so the device cap is
+    // slightly higher than the old single-call allowance.
+    private static final int AI_DAILY_LIMIT = 40;
 
     private Dataset dataset;
     private Prefs prefs;
@@ -505,6 +508,10 @@ public final class MainActivity extends Activity {
         blockParams.topMargin = Ui.dp(this, 16);
         block.setLayoutParams(blockParams);
 
+        if (answer.summary != null && !answer.summary.trim().isEmpty()) {
+            block.addView(summaryCard(answer.summary));
+        }
+
         if ("fallback".equals(answer.kind)) {
             TextView label = Ui.label(this, "No confident match");
             block.addView(label);
@@ -556,6 +563,21 @@ public final class MainActivity extends Activity {
         small.setPadding(0, Ui.dp(this, 6), 0, 0);
         block.addView(small);
         return block;
+    }
+
+    private View summaryCard(String summary) {
+        LinearLayout card = Ui.cardBox(this);
+        card.setLayoutParams(Ui.withTop(this, 10));
+        card.addView(Ui.label(this, "QURAN-ONLY SUMMARY"));
+        TextView text = Ui.text(this, summary, 14f, Ui.INK);
+        text.setPadding(0, Ui.dp(this, 6), 0, 0);
+        card.addView(text);
+        TextView meta = Ui.text(this,
+                "Synthesised only from the verses below \u2014 not tafsir or a fatwa. Consult a qualified scholar for rulings.",
+                11f, Ui.MUTED);
+        meta.setPadding(0, Ui.dp(this, 8), 0, 0);
+        card.addView(meta);
+        return card;
     }
 
     private View guidanceCard() {
@@ -763,6 +785,11 @@ public final class MainActivity extends Activity {
             } catch (Exception error) {
                 answer = AnswerComposer.answer(dataset, originalQuestion, language);
             }
+            // Optional grounded summary: the AI may only use the verses we already retrieved.
+            if (answer != null && "answer".equals(answer.kind) && !answer.passages.isEmpty()
+                    && aiAvailable && prefs.aiAssistEnabled() && prefs.aiConsentShown()) {
+                answer = summarizeAnswer(answer, originalQuestion, language);
+            }
             final Answer finalAnswer = answer;
             final String finalNote = note;
             runOnUiThread(() -> {
@@ -778,6 +805,33 @@ public final class MainActivity extends Activity {
         messages.addView(answerView(answer));
         saveHistory();
         scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
+    }
+
+    /**
+     * Optional grounded AI summary of the verses already retrieved. The verse keys
+     * are sent to the app's server, which loads the authoritative translations and
+     * rejects any answer that cites a verse outside that set; on any failure the
+     * deterministic answer is shown unchanged.
+     */
+    private Answer summarizeAnswer(Answer answer, String question, String language) {
+        if (question == null || question.trim().isEmpty()) return answer;
+        if (!consumeAiAllowance()) return answer;
+        try {
+            JSONObject body = new JSONObject();
+            String trimmed = question.trim();
+            body.put("question", trimmed.length() > 500 ? trimmed.substring(0, 500) : trimmed);
+            body.put("language", language);
+            JSONArray keys = new JSONArray();
+            for (Passage passage : answer.passages) keys.put(passage.verseKey);
+            body.put("verseKeys", keys);
+            runOnUiThread(() -> status.setText("Composing a Quran-only summary\u2026"));
+            JSONObject response = Api.assistantSummary(getResources(), body);
+            String summary = response.isNull("summary") ? "" : response.optString("summary", "");
+            if (!summary.trim().isEmpty()) return answer.withSummary(summary.trim());
+        } catch (Exception ignored) {
+            // The verses are still shown; the summary is an optional enhancement.
+        }
+        return answer;
     }
 
     private void startConversationTurn(String question, Conversation.Reply reply) {

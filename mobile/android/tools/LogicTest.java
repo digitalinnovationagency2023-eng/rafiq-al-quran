@@ -220,6 +220,28 @@ public final class LogicTest {
         check("spoken text is capped at the platform length",
                 VoiceLanguage.spokenText(urduReference, 20).length() <= 20);
 
+        // ------------------------------------------------ named figures and topics
+        Answer essa = AnswerComposer.answer(dataset, "Who is Hazrat Essa?", "en");
+        check("Hazrat Essa resolves to Isa/Jesus and returns verses",
+                "answer".equals(essa.kind) && !essa.passages.isEmpty());
+        check("Essa answer names the figure", essa.message.contains("Isa") || essa.message.contains("Jesus"));
+        check("Essa answer combines several verses", essa.passages.size() >= 3);
+        Answer jacob = AnswerComposer.answer(dataset, "Who is Yaqoob?", "en");
+        check("Yaqoob resolves to Jacob and returns verses",
+                "answer".equals(jacob.kind) && !jacob.passages.isEmpty()
+                        && (jacob.message.contains("Yaqub") || jacob.message.contains("Jacob")));
+        Answer theft = AnswerComposer.answer(dataset, "What is the law about theft?", "en");
+        check("theft/law question is answered with verses", "answer".equals(theft.kind) && !theft.passages.isEmpty());
+        check("theft answer includes the Quranic theft verse 5:38",
+                theft.passages.stream().anyMatch(p -> p.verseKey.equals("5:38")));
+        Answer arabicIsa = AnswerComposer.answer(dataset, "من هو عيسى", "ar");
+        check("Arabic name question (عيسى) is answered", "answer".equals(arabicIsa.kind) && !arabicIsa.passages.isEmpty());
+        check("honorifics alone are not a named figure", dataset.findEntity("Who is the prophet?") == null);
+        check("ordinary topic questions are not treated as a named figure",
+                dataset.findEntity("What does the Quran say about patience?") == null);
+        check("entity alias list is loaded from the bundled lexicon",
+                dataset.findEntity("Tell me about Jesus") != null && dataset.findEntity("hazrat essa") != null);
+
         System.out.println();
         System.out.println("Logic tests: " + passed + " passed, " + failures.size() + " failed");
         if (!failures.isEmpty()) {

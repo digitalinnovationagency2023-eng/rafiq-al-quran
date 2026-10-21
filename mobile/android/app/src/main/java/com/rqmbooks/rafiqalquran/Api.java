@@ -56,6 +56,11 @@ public final class Api {
         return request(resources, "POST", "/api/assistant", body, null, 45000);
     }
 
+    /** Optional grounded summary of the verses the app already retrieved. */
+    public static JSONObject assistantSummary(Resources resources, JSONObject body) throws Exception {
+        return request(resources, "POST", "/api/assistant/summary", body, null, 45000);
+    }
+
     private static JSONObject request(Resources resources, String method, String path, JSONObject body, String adminToken) throws Exception {
         return request(resources, method, path, body, adminToken, 15000);
     }

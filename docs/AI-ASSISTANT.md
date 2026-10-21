@@ -294,6 +294,59 @@ The app must treat AI assistance as an optional enhancement:
 * Do not embed, request or transmit an API key in the app. The key exists only
   in the server environment.
 
+## Grounded advisory summaries (`POST /api/assistant/summary`)
+
+This is the optional "answer like a study companion" layer requested for advisory
+questions. The app first retrieves the relevant verses **locally** (deterministic
+retrieval), then sends only the question and those verse references. The server loads
+the authoritative translations itself and asks the configured model for a short answer
+that uses **nothing except those passages**.
+
+```json
+{
+  "question": "What does the Quran say about theft?",
+  "language": "en",
+  "verseKeys": ["5:38", "5:39"]
+}
+```
+
+Success (`200`):
+
+```json
+{
+  "enabled": true,
+  "summary": "The Quran addresses theft with a measured legal response [5:38]. It also states that repentance after wrongdoing is accepted [5:39].",
+  "citations": ["5:38", "5:39"],
+  "verseLanguage": "en"
+}
+```
+
+Server-side grounding rules (enforced in `server/src/services/synthesis.js`, not only
+in the prompt):
+
+| Rule | Enforcement |
+|---|---|
+| Only the supplied verses are sent to the provider | The server loads those translations from its own database; the client cannot inject text |
+| Every citation must be one of the supplied references | Any `a:b` reference outside that set rejects the answer (`502`) |
+| No Arabic script in the answer | Rejected (`502`) — the model may paraphrase translations, never write Quran text |
+| Minimum one citation, 40–1500 characters | Rejected (`502`) |
+| No fatwa/tafsir/hadith/fiqh content | Strict system prompt; the app labels the card as a summary, not a ruling |
+| Unknown verse reference in the request | `400` |
+| Provider error/timeout | `502` / `504`; the app keeps the deterministic verse answer |
+
+The app shows the summary in a card labelled **"Quran-only summary"** with the notice
+*"Synthesised only from the verses below — not tafsir or a fatwa. Consult a qualified
+scholar for rulings."* The verse cards with Arabic text, translation, reference and
+provenance are always displayed below it. If AI assistance is off, unavailable, over
+its limits or returns an ungrounded answer, the app simply shows the deterministic
+retrieved verses (no error state).
+
+Privacy is the same as the rest of the optional AI layer: the question and the
+translations of the retrieved verses are processed transiently by the configured
+provider; they are not stored or logged by this server. The one-time AI consent text
+now mentions the summary use. The same `AI_*` settings, rate limit and optional
+monthly cap apply (a summary is an additional AI request).
+
 ## Tests
 
 `server/test/assistant.test.js` (15 tests) starts a local mock

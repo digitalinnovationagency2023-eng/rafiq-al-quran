@@ -15,8 +15,10 @@
   name and "Source: Quran.com" attribution. No audio is stored on the device. The publisher recorded the recitation
   rights decision on 2026-10-21.
 - **Optional AI assistance** is off by default. When the operator configures a free-tier AI key and the user consents,
-  the question text and (only if attached) an image are sent to the app's own server and forwarded to the AI provider
-  for transient intent/OCR processing; nothing is stored or logged by the app, and the AI never supplies Quran text.
+  the question text, (only if attached) an image, and — for summary answers — the references/translations of the
+  verses the app already retrieved are sent to the app's own server and forwarded to the AI provider for transient
+  intent/OCR/summary processing; nothing is stored or logged by the app, and the AI never supplies Quran text
+  (summaries are grounded by the server: references outside the supplied set and Arabic script are rejected).
   The user can turn it off in the menu; limits are enforced client- and server-side.
 - **Attachments**: .txt/.md and .docx are read on the device and never uploaded; images are sent only through the
   optional AI service; PDFs are unsupported.

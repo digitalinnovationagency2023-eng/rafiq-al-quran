@@ -1,6 +1,6 @@
 # Rafiq Al-Quran: AI Assistant
 
-**Status: 1.0.12** — native Android release, versionCode 12, versionName 1.0.12 (Android 7.0+, minSdk 24, targetSdk 36).
+**Status: 1.1.0** — native Android release, versionCode 13, versionName 1.1.0 (Android 7.0+, minSdk 24, targetSdk 36).
 
 A free, Quran-only **native Android app** with an offline Quran reader, study tools, a conversational
 verse-finding assistant and enabled Quran.com recitation, plus an optional API. The complete Quran — all 114
@@ -10,7 +10,7 @@ Android application with no WebView and no Gradle, the Quran dataset is bundled 
 answers, conversation replies and study tools work fully offline. Recitation streams from Quran.com and the
 optional AI assistance needs the operator to configure a free key; see below.
 
-## What's in the 1.0.12 build
+## What's in the 1.1.0 build
 
 - **Offline reader for all 114 surahs**, with a Juz and Madani page indicator on every verse, per-verse actions
   (copy, share, save, note, listen), reading progress and a continue-reading card.
@@ -45,6 +45,16 @@ optional AI assistance needs the operator to configure a free key; see below.
   with the voice of the language that is actually spoken (see the voice bullet below); mojibake in the in-app pages is fixed; the Support page no longer shows raw config keys or
   a dead checkout form; the former "Optional tools" page now presents the free study tools; the operator admin
   screen explains its purpose before use.
+- **Quran-only advisory answers (1.1.0)**: questions about named figures now work with the names people
+  actually use — "Hazrat Essa", "Esa", "Jesus", "Christ" all resolve to the Quranic `عيسى`, and "Yaqoob"/
+  "Jacob" resolves to `يعقوب` (the same alias table covers ~35 prophets and figures in ten languages, and
+  honorifics like Hazrat/Prophet/Nabi are ignored). Topic questions such as "What is the law about theft?"
+  expand across related concepts (theft, law, punishment, repentance) and combine verses from several surahs.
+  When the optional AI service is enabled, the server writes a short **grounded summary** of exactly those verses:
+  it may only use the supplied translations, every citation must be one of the supplied references, Arabic script
+  is rejected, and the app labels it "Quran-only summary — not tafsir or a fatwa" above the verse cards. With AI
+  off or unavailable, the app shows the same verses with an entity/topic-aware message (fully offline). The
+  per-verse Arabic, translation, reference and provenance card is always displayed.
 - **Voice-language fixes (1.0.12)**: "Listen" now chooses the TTS voice from the **language of the text being
   spoken**, not from the interface setting (Arabic answers speak the English translation with an English voice; Urdu,
   Bengali, Turkish, Indonesian, Malay and Swahili answers speak their own translation; non-English text is never read
@@ -64,9 +74,9 @@ optional AI assistance needs the operator to configure a free key; see below.
 
 | Path | What it is |
 |---|---|
-| `dist/rafiq-al-quran-1.0.12.apk` | Signed, installable release APK (versionCode 12 / 1.0.12, Android 7.0+, ~3.41 MB); built locally from `mobile/android/build/quran-companion.apk` — SHA-256 recorded in the release note |
-| `dist/rafiq-al-quran-1.0.12-signed.aab` | Signed release AAB for Play upload (built with the same aapt2/d8/bundletool pipeline as CI, `jarsigner`-signed locally) — artifact SHA-256 recorded in the release note |
-| `dist/rafiq-al-quran-1.0.12.aab` | Unsigned AAB produced by `mobile/android/scripts/buildAab.js` (bundletool, no Gradle) |
+| `dist/rafiq-al-quran-1.1.0.apk` | Signed, installable release APK (versionCode 13 / 1.1.0, Android 7.0+, ~3.42 MB); built locally from `mobile/android/build/quran-companion.apk` — SHA-256 recorded in the release note |
+| `dist/rafiq-al-quran-1.1.0-signed.aab` | Signed release AAB for Play upload (assembled from the validated AAB template, `jarsigner`-signed locally) — artifact SHA-256 recorded in the release note |
+| `dist/rafiq-al-quran-1.1.0.aab` | Unsigned AAB produced by `mobile/android/scripts/buildAab.js` assets (bundletool, no Gradle) |
 | `dist/` screenshots | 31 `screenshot-*.png` captures plus 2 `qa-*` home captures (33 PNGs total, 1080×2340, AVD `rafiqtest`, Android 14); the 10 new 1.0.11 captures are `qa-r2-home.png` and the `screenshot-qa-r2-*.png` files |
 | `mobile/android/` | Native Android client (Java, Android SDK; no Gradle, no WebView; 34 Java sources) |
 | `server/` | Optional API: feedback, donations configuration/checkout, premium entitlements, admin, optional AI assistance |
@@ -104,14 +114,14 @@ npm run import:quran -w server
 # 2. Export the compact assets the app bundles (includes quran-meta.tsv)
 node mobile/android/scripts/exportAssets.js
 
-# 3. Build, align and sign the APK (35 Java sources; versionCode 12 / 1.0.12)
+# 3. Build, align and sign the APK (35 Java sources; versionCode 13 / 1.1.0)
 node mobile/android/scripts/buildApk.js
 # -> mobile/android/build/quran-companion.apk
 ```
 
-Copy the APK to `dist/rafiq-al-quran-1.0.12.apk` and verify it:
-`node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.12.apk` → **22 checks passed**. Install on a
-device with `adb install -r dist/rafiq-al-quran-1.0.12.apk` or by opening the APK on the phone. `buildApk.js`
+Copy the APK to `dist/rafiq-al-quran-1.1.0.apk` and verify it:
+`node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.1.0.apk` → **22 checks passed**. Install on a
+device with `adb install -r dist/rafiq-al-quran-1.1.0.apk` or by opening the APK on the phone. `buildApk.js`
 signs with the Play upload keystore supplied via `QURAN_KEYSTORE_PATH` (default
 `%USERPROFILE%\.secrets\quran-release.keystore`), so rebuilding does not change the signature and it matches the
 signing key of the Play upload AAB; keep that keystore outside the repository and never commit it. If no keystore
@@ -143,10 +153,10 @@ repository.
 
 | Suite | Command | Result |
 |---|---|---|
-| Server data, retrieval, API, donations, safety, admin auth, AI assistance | `npm run test -w server` | 73 passed (58 baseline + 15 assistant) |
-| Native app core logic against real bundled assets (incl. conversation, recitation rights and all ten voice locales) | `node mobile/android/scripts/runLogicTests.js` | 88 passed (includes feature-help and voice-language checks) |
+| Server data, retrieval, API, donations, safety, admin auth, AI assistance, grounded synthesis | `npm run test -w server` | 80 passed (58 baseline + 15 assistant + 7 synthesis) |
+| Native app core logic against real bundled assets (incl. conversation, recitation rights, all ten voice locales and name/topic retrieval) | `node mobile/android/scripts/runLogicTests.js` | 98 passed (includes feature-help, voice-language and named-figure checks) |
 | APK packaging check | `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.12.apk` | 22/22 checks passed (adds the two speech `<queries>` actions; signature, manifest, versionCode/Name, minSdk 24/targetSdk 36, bundled assets incl. `quran-meta.tsv`, icon) |
-| Release artifacts | APK build + AAB assembly/signing; `jarsigner -verify` | **Artifacts (1.0.12): APK SHA-256 4ED8ACAA7726ABB6075B6DFE551A9F5D0B8F1B872B7253B14AE91001593EA91C; unsigned AAB SHA-256 E5FB7FAD125EBA52300F87428C0C92F5BC363EF403E4138E573C5AF4E480334F; signed upload AAB SHA-256 165AA653BADB9FF31C45BC05BB2EAA4020FAB68E832515CA234BF0338AD0A659 (jar verified); re-run the CI AAB workflow on the pushed commit for the authoritative bundletool validation.** |
+| Release artifacts | APK build + AAB assembly/signing; `jarsigner -verify` | **Artifacts (1.1.0): APK SHA-256 97215C7505378A43F9E9B6E873460459ABDFC4DA5ACB05094D6893C70025A35A; unsigned AAB SHA-256 364E37CCADA5AA0F9FD13A03BF0334D121B0311F56695C0CA8E6A9B030BFEC38; signed upload AAB SHA-256 4F8D50D0111205FCC33C4C443C19E3A3553153E4E37D4232C2E3A30FB7A6F50A (jar verified); re-run the CI AAB workflow on the pushed commit for the authoritative bundletool validation.** |
 | Emulator QA | 1.0.11 round-2 captures in `dist/` (home + attach, language dialog, conversation, recitation player, text attachment, TTS/answer, support, admin) | flows verified; see `docs/TESTS.md` |
 
 ## Guarantees encoded in the code and tests

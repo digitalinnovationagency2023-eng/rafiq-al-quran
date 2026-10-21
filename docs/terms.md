@@ -20,7 +20,8 @@ Publisher: Digital Innovative Agency FZ LLC · info@rqmbooks.com · +971 9 501 0
 4. **Optional AI assistance.** AI assistance is off by default and must be configured by the app's operator with a
    third-party AI service (the current free configuration uses a Google AI Studio / Gemini key held on the server).
    Where it is enabled and switched on by the user, it is used only to write a short neutral small-talk reply,
-   suggest search words for the app's own search, and read text from an attached image (OCR). It may be limited,
+   suggest search words for the app's own search, read text from an attached image (OCR), and write a short
+   summary of verses the app has already retrieved using only those verses and their references. It may be limited,
    rate-limited or unavailable, in which case the app falls back to its local behaviour. AI requests are processed
    transiently and the app's server stores no user text or attachments. AI output is not religious content and
    must not be treated as guidance or interpretation; all Quranic text shown comes from the bundled dataset.

@@ -196,6 +196,43 @@ public final class Dataset {
         }
     }
 
+    /** Finds a named figure (prophet/person) whose alias appears in the question. */
+    public Concept findEntity(String question) {
+        if (question == null || question.trim().isEmpty()) return null;
+        List<String> tokens = new ArrayList<>();
+        if (ArabicText.isArabic(question)) {
+            tokens.addAll(ArabicText.tokens(question));
+        } else {
+            tokens.addAll(latinTokens(question));
+        }
+        for (String token : tokens) {
+            String lower = token.toLowerCase();
+            for (Concept concept : concepts) {
+                if (!concept.key.startsWith("entity-")) continue;
+                for (List<String> vocabulary : concept.byLanguage) {
+                    for (String term : vocabulary) {
+                        if (term.length() >= 3 && term.equals(lower)) return concept;
+                    }
+                }
+                for (String term : concept.arabic) {
+                    if (ArabicText.normalize(term).equals(ArabicText.normalize(token))) return concept;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Display name for a named figure: the Arabic form for Arabic UI, English otherwise. */
+    public static String entityLabel(Concept concept, boolean arabicUi) {
+        if (concept == null) return "";
+        if (arabicUi && !concept.arabic.isEmpty()) return concept.arabic.get(0);
+        if (!concept.byLanguage.isEmpty() && !concept.byLanguage.get(0).isEmpty()) {
+            String name = concept.byLanguage.get(0).get(0);
+            return name.substring(0, 1).toUpperCase() + name.substring(1);
+        }
+        return concept.key;
+    }
+
     static List<String> latinTokens(String text) {
         List<String> out = new ArrayList<>();
         if (text == null) return out;

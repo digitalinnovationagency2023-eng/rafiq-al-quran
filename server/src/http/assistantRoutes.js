@@ -16,6 +16,7 @@ import {
   runAssistant,
   validateAssistantRequest,
 } from "../services/assistant.js";
+import { SUMMARY_NOT_ENABLED_MESSAGE, isSummaryConfigured, runSummary, validateSummaryRequest } from "../services/synthesis.js";
 
 // The app is a native client and does not send cookies, so the assistant's
 // allowance is keyed by client IP rather than by the anonymous session id.
@@ -45,6 +46,25 @@ export const createAssistantRoutes = ({ db }) => {
       if (!assistantBudgetAvailable(db)) throw new HttpError(429, BUDGET_EXHAUSTED_MESSAGE);
 
       const result = await runAssistant(request);
+      recordAssistantCall(db);
+      res.json({ enabled: true, ...result });
+    })
+  );
+
+  // Grounded advisory answer: the model may only use the verses the app already
+  // retrieved, and the server rejects any answer citing references outside that set.
+  router.post(
+    "/summary",
+    rateLimit({
+      max: config.rateLimit.assistantMax,
+      windowMs: ASSISTANT_RATE_WINDOW_MS,
+      key: (req) => "assistant-summary:" + (req.ip || "unknown"),
+    }),
+    asyncHandler(async (req, res) => {
+      if (!isSummaryConfigured()) return res.status(503).json({ error: SUMMARY_NOT_ENABLED_MESSAGE });
+      const request = validateSummaryRequest(req.body);
+      if (!assistantBudgetAvailable(db)) throw new HttpError(429, BUDGET_EXHAUSTED_MESSAGE);
+      const result = await runSummary({ db, question: request.question, language: request.language, verseKeys: request.verseKeys });
       recordAssistantCall(db);
       res.json({ enabled: true, ...result });
     })

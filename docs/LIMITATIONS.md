@@ -29,10 +29,12 @@ Reported honestly; nothing here is claimed as solved.
    default**; without a free Google AI Studio / Gemini key (or another OpenAI-compatible endpoint) in the server
    `.env`, `/api/assistant` answers 503 and the app uses its local rules. When enabled it can be slow, rate-limited
    (20 requests per 10 minutes per client IP by default, with an optional monthly cap) or unavailable; the app also
-   caps AI-assisted requests at 30 per day and falls back to local behaviour. The AI is used only for short,
-   neutral small talk, search-word suggestions and OCR of an attached image; it never supplies Quran text,
-   translation or interpretation and its intent guesses can be wrong. The free tier's data-use terms differ from
-   paid tiers; the operator must review the provider's terms before enabling it (`docs/AI-ASSISTANT.md`).
+   caps AI-assisted requests at 40 per day and falls back to local behaviour. The AI is used only for short,
+   neutral small talk, search-word suggestions, OCR of an attached image and grounded summaries of verses the app
+   already retrieved; it never supplies Quran text, translation or interpretation of its own and its intent guesses
+   can be wrong. Such a summary is a paraphrase of the supplied translations, not tafsir or a religious ruling, and
+   must be checked against the verse cards shown with it. The free tier's data-use terms differ from paid tiers; the
+   operator must review the provider's terms before enabling it (`docs/AI-ASSISTANT.md`).
 7. **Image reading requires the optional AI service; PDFs are unsupported.** Images (PNG/JPEG/WebP, decoded
    ≤ 5 MB) are not readable on the device; they can only be OCR'd through the optional AI service, so with AI
    assistance off the app says images cannot be read. PDFs and other document formats are not supported yet and
@@ -93,3 +95,12 @@ Reported honestly; nothing here is claimed as solved.
     free Google speech/voice services have their own limits. English and Urdu text-to-speech and the locale requests
     for all ten languages were verified on the QA emulator, but the emulator lacked the other languages' voice and
     speech packs, so audible output and real recognition for those languages must be checked on a physical device.
+19. **Grounded advisory summaries depend on the optional AI service and are not scholarship.** The app can summarise
+    the verses it retrieved (name-aware questions such as "Hazrat Essa" / "Yaqoob" and topic questions such as
+    "the law about theft" retrieve relevant verses offline; the summary itself needs the server AI endpoint). A
+    summary is generated only from the supplied translations and references, the server rejects Arabic script and
+    any citation outside that set, and the app labels it as a Quran-only summary — not tafsir, a fatwa or a
+    scholar's ruling. It can still misstate, over-generalise or miss a relevant verse, the retrieval itself is
+    keyword/concept based rather than exhaustive, and no substitute exists for qualified scholarship. If the AI is
+    off, unreachable, over quota or returns ungrounded text, the app shows the deterministic verse answer only. A
+    new server build must be deployed and the API restarted for summaries to appear in the app.
