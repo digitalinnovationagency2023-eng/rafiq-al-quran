@@ -59,6 +59,12 @@ check("targets Android 16 (sdk 36)", /targetSdkVersion:'36'/.test(badgingText));
 check("versionCode matches AndroidManifest.xml", Boolean(versionCode) && badgingText.includes(`versionCode='${versionCode}'`), `manifest ${versionCode}`);
 check("versionName matches AndroidManifest.xml", Boolean(versionName) && badgingText.includes(`versionName='${versionName}'`), `manifest ${versionName}`);
 
+// Android 11+ package visibility: both speech services must be declared in <queries>,
+// otherwise SpeechRecognizer/TextToSpeech silently report "not available" on devices.
+const manifestTree = capture(aapt2, ["dump", "xmltree", apk, "--file", "AndroidManifest.xml"]).output;
+check("manifest queries allow speech recognition", manifestTree.includes("android.speech.RecognitionService"), "missing <queries> action");
+check("manifest queries allow text-to-speech", manifestTree.includes("android.intent.action.TTS_SERVICE"), "missing <queries> action");
+
 const listing = capture("jar", ["tf", apk]).output.split(/\r?\n/);
 check("classes.dex bundled", listing.includes("classes.dex"));
 for (const asset of ["assets/quran.tsv", "assets/translations.tsv", "assets/chapters.tsv", "assets/translation-meta.tsv", "assets/lexicon.tsv", "assets/provenance.tsv", "assets/quran-meta.tsv"]) {

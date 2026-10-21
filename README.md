@@ -1,6 +1,6 @@
 # Rafiq Al-Quran: AI Assistant
 
-**Status: 1.0.11** — native Android release, versionCode 11, versionName 1.0.11 (Android 7.0+, minSdk 24, targetSdk 36).
+**Status: 1.0.12** — native Android release, versionCode 12, versionName 1.0.12 (Android 7.0+, minSdk 24, targetSdk 36).
 
 A free, Quran-only **native Android app** with an offline Quran reader, study tools, a conversational
 verse-finding assistant and enabled Quran.com recitation, plus an optional API. The complete Quran — all 114
@@ -10,7 +10,7 @@ Android application with no WebView and no Gradle, the Quran dataset is bundled 
 answers, conversation replies and study tools work fully offline. Recitation streams from Quran.com and the
 optional AI assistance needs the operator to configure a free key; see below.
 
-## What's in the 1.0.11 build
+## What's in the 1.0.12 build
 
 - **Offline reader for all 114 surahs**, with a Juz and Madani page indicator on every verse, per-verse actions
   (copy, share, save, note, listen), reading progress and a continue-reading card.
@@ -41,10 +41,19 @@ optional AI assistance needs the operator to configure a free key; see below.
   operator-configured free AI key; without it the app works locally and images are not readable.** PDFs are not
   supported yet (clear message).
 - **Accessibility and page fixes**: the language chooser is now a full-width dialog with 10 large rows (English
-  name, native name, code) instead of a tiny spinner; the "Listen" action initialises TTS lazily, falls back to
-  English and now speaks; mojibake in the in-app pages is fixed; the Support page no longer shows raw config keys or
+  name, native name, code) instead of a tiny spinner; the "Listen" action initialises TTS lazily and now speaks
+  with the voice of the language that is actually spoken (see the voice bullet below); mojibake in the in-app pages is fixed; the Support page no longer shows raw config keys or
   a dead checkout form; the former "Optional tools" page now presents the free study tools; the operator admin
   screen explains its purpose before use.
+- **Voice-language fixes (1.0.12)**: "Listen" now chooses the TTS voice from the **language of the text being
+  spoken**, not from the interface setting (Arabic answers speak the English translation with an English voice; Urdu,
+  Bengali, Turkish, Indonesian, Malay and Swahili answers speak their own translation; non-English text is never read
+  by a silent English fallback). A missing voice now produces a clear "install voice data" message, synthesis
+  failures are reported instead of failing silently, and the saved language is loaded on a cold start. The **Voice**
+  (dictation) button now requests the right locale, uses the Android 13+ recognition-support check where available,
+  and explains a missing speech pack ("download its speech pack in the Google app → Settings → Voice → Offline
+  speech recognition") instead of a generic failure. Android 11+ package-visibility entries for both speech services
+  are declared, so recognizer/TTS discovery is not filtered.
 - **Operator-only admin screen**: token-protected and read-only, reached only by tapping the app title five
   times quickly (hidden from customers, session-only unlock); connected to the app's own live API
   (`https://rqmbooks.com/rafiq-api`); no operator token is bundled with the app.
@@ -55,9 +64,9 @@ optional AI assistance needs the operator to configure a free key; see below.
 
 | Path | What it is |
 |---|---|
-| `dist/rafiq-al-quran-1.0.11.apk` | Signed, installable release APK (versionCode 11 / 1.0.11, Android 7.0+, ~3.41 MB); built locally from `mobile/android/build/quran-companion.apk` — SHA-256 recorded in the release note |
-| `dist/rafiq-al-quran-1.0.11-signed.aab` | Signed release AAB for Play upload (CI-built, `jarsigner`-signed locally) — artifact SHA-256/CI run recorded in the release note |
-| `dist/rafiq-al-quran-1.0.11.aab` | Unsigned AAB produced by the GitHub Actions workflow (bundletool) |
+| `dist/rafiq-al-quran-1.0.12.apk` | Signed, installable release APK (versionCode 12 / 1.0.12, Android 7.0+, ~3.41 MB); built locally from `mobile/android/build/quran-companion.apk` — SHA-256 recorded in the release note |
+| `dist/rafiq-al-quran-1.0.12-signed.aab` | Signed release AAB for Play upload (built with the same aapt2/d8/bundletool pipeline as CI, `jarsigner`-signed locally) — artifact SHA-256 recorded in the release note |
+| `dist/rafiq-al-quran-1.0.12.aab` | Unsigned AAB produced by `mobile/android/scripts/buildAab.js` (bundletool, no Gradle) |
 | `dist/` screenshots | 31 `screenshot-*.png` captures plus 2 `qa-*` home captures (33 PNGs total, 1080×2340, AVD `rafiqtest`, Android 14); the 10 new 1.0.11 captures are `qa-r2-home.png` and the `screenshot-qa-r2-*.png` files |
 | `mobile/android/` | Native Android client (Java, Android SDK; no Gradle, no WebView; 34 Java sources) |
 | `server/` | Optional API: feedback, donations configuration/checkout, premium entitlements, admin, optional AI assistance |
@@ -95,14 +104,14 @@ npm run import:quran -w server
 # 2. Export the compact assets the app bundles (includes quran-meta.tsv)
 node mobile/android/scripts/exportAssets.js
 
-# 3. Build, align and sign the APK (34 Java sources; versionCode 11 / 1.0.11)
+# 3. Build, align and sign the APK (35 Java sources; versionCode 12 / 1.0.12)
 node mobile/android/scripts/buildApk.js
 # -> mobile/android/build/quran-companion.apk
 ```
 
-Copy the APK to `dist/rafiq-al-quran-1.0.11.apk` and verify it:
-`node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.11.apk` → **20 checks passed**. Install on a
-device with `adb install -r dist/rafiq-al-quran-1.0.11.apk` or by opening the APK on the phone. `buildApk.js`
+Copy the APK to `dist/rafiq-al-quran-1.0.12.apk` and verify it:
+`node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.12.apk` → **22 checks passed**. Install on a
+device with `adb install -r dist/rafiq-al-quran-1.0.12.apk` or by opening the APK on the phone. `buildApk.js`
 signs with the Play upload keystore supplied via `QURAN_KEYSTORE_PATH` (default
 `%USERPROFILE%\.secrets\quran-release.keystore`), so rebuilding does not change the signature and it matches the
 signing key of the Play upload AAB; keep that keystore outside the repository and never commit it. If no keystore
@@ -135,9 +144,9 @@ repository.
 | Suite | Command | Result |
 |---|---|---|
 | Server data, retrieval, API, donations, safety, admin auth, AI assistance | `npm run test -w server` | 73 passed (58 baseline + 15 assistant) |
-| Native app core logic against real bundled assets (incl. conversation and recitation rights) | `node mobile/android/scripts/runLogicTests.js` | 67 passed (includes feature-help checks) |
-| APK packaging check | `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.11.apk` | 20/20 checks passed (signature, manifest, versionCode/Name, minSdk 24/targetSdk 36, bundled assets incl. `quran-meta.tsv`, icon) |
-| Release artifacts | CI AAB workflow + local `jarsigner`/`bundletool validate` | **Artifacts (1.0.11): CI run 39503214114 on commit 557057d (success); APK SHA-256 C3FB6D536014F7E646EB7D01835BE46E2E9D5F6CDEEA87019DA48591E64E9005; signed upload AAB SHA-256 BE998597D7EE7EAA98CB63CBC68550834F90B7A99F3F1A6E20A6531A9E3EDECB (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 8943D5878B738BB8783747A1267C671073F7FE93C7A3643720F8C56CE8067B74** |
+| Native app core logic against real bundled assets (incl. conversation, recitation rights and all ten voice locales) | `node mobile/android/scripts/runLogicTests.js` | 88 passed (includes feature-help and voice-language checks) |
+| APK packaging check | `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.12.apk` | 22/22 checks passed (adds the two speech `<queries>` actions; signature, manifest, versionCode/Name, minSdk 24/targetSdk 36, bundled assets incl. `quran-meta.tsv`, icon) |
+| Release artifacts | APK build + AAB assembly/signing; `jarsigner -verify` | **Artifacts (1.0.12): APK SHA-256 4ED8ACAA7726ABB6075B6DFE551A9F5D0B8F1B872B7253B14AE91001593EA91C; unsigned AAB SHA-256 E5FB7FAD125EBA52300F87428C0C92F5BC363EF403E4138E573C5AF4E480334F; signed upload AAB SHA-256 165AA653BADB9FF31C45BC05BB2EAA4020FAB68E832515CA234BF0338AD0A659 (jar verified); re-run the CI AAB workflow on the pushed commit for the authoritative bundletool validation.** |
 | Emulator QA | 1.0.11 round-2 captures in `dist/` (home + attach, language dialog, conversation, recitation player, text attachment, TTS/answer, support, admin) | flows verified; see `docs/TESTS.md` |
 
 ## Guarantees encoded in the code and tests

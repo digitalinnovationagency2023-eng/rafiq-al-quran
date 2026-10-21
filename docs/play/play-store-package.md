@@ -4,23 +4,23 @@ Publisher: Digital Innovative Agency FZ LLC · info@rqmbooks.com · +971 9 501 0
 
 ---
 
-## Release metadata — shipped build 1.0.11
+## Release metadata — release 1.0.12
 
 | Field | Value |
 |---|---|
 | App name | Rafiq Al-Quran: AI Assistant |
 | Category | Education |
 | Package name | `com.rqmbooks.rafiqalquran` |
-| Version | versionCode **10** · versionName **1.0.11** |
+| Version | versionCode **12** · versionName **1.0.12** |
 | SDK range | minSdk **24** (Android 7.0) · targetSdk **36** (Android 16 — Play requirement for new apps since 31 Aug 2026) |
-| Build toolchain | Android SDK 34 build-tools and platform (`compileSdk` 34, `targetSdk` 36), `aapt2` / `javac` / `d8` / `zipalign` / `apksigner`, **no Gradle**; **34 Java sources**. Edge-to-edge insets are handled in `Ui.init()` for Android 15+ |
-| Release APK | `dist/rafiq-al-quran-1.0.11.apk` — signed, installable, **~3.41 MB**; versionCode 11 / versionName 1.0.11 (verified with `aapt2 dump badging`). Exact size and SHA-256 are recorded in the release note |
-| AAB (unsigned, CI) | `dist/rafiq-al-quran-1.0.11.aab` — GitHub Actions artifact from `.github/workflows/build-aab.yml` (bundletool, no Gradle); produced by the 1.0.11 CI build, run URL and SHA-256 in the release note |
-| AAB (signed, Play upload) | `dist/rafiq-al-quran-1.0.11-signed.aab` — CI AAB signed locally with `jarsigner` using the upload keystore; `jarsigner -verify` must report "jar verified" plus the expected self-signed certificate warning |
+| Build toolchain | Android SDK 34 build-tools and platform (`compileSdk` 34, `targetSdk` 36), `aapt2` / `javac` / `d8` / `zipalign` / `apksigner`, **no Gradle**; **35 Java sources**. Edge-to-edge insets are handled in `Ui.init()` for Android 15+ |
+| Release APK | `dist/rafiq-al-quran-1.0.12.apk` — signed, installable, **~3.41 MB**; versionCode 12 / versionName 1.0.12 (verified with `aapt2 dump badging`). Exact size and SHA-256 are recorded in the release note |
+| AAB (unsigned) | `dist/rafiq-al-quran-1.0.12.aab` — produced with the same toolchain as `.github/workflows/build-aab.yml` (`mobile/android/scripts/buildAab.js` + bundletool 1.18.0, no Gradle); SHA-256 in the release note. Push the commit to run the identical GitHub Actions workflow and record the CI run URL. |
+| AAB (signed, Play upload) | `dist/rafiq-al-quran-1.0.12-signed.aab` — AAB signed locally with `jarsigner` using the upload keystore; `jarsigner -verify` must report "jar verified" plus the expected self-signed certificate warning |
 | Signing key | Play upload keystore kept **outside the repository** (default `%USERPROFILE%\.secrets\quran-release.keystore`, supplied to `buildApk.js` via `QURAN_KEYSTORE_PATH`); the copy under `mobile/android/build/` is gitignored and **never committed**. Sign the 1.0.11 AAB with the same upload key as 1.0.9 to preserve Play upload-key continuity |
-| Artifacts (1.0.11) | CI run **39503214114** on commit `557057d` (success). APK `dist/rafiq-al-quran-1.0.11.apk` 3,580,857 bytes, SHA-256 `C3FB6D536014F7E646EB7D01835BE46E2E9D5F6CDEEA87019DA48591E64E9005`; unsigned CI AAB 3,573,455 bytes, SHA-256 `8943D5878B738BB8783747A1267C671073F7FE93C7A3643720F8C56CE8067B74`; signed upload AAB `dist/rafiq-al-quran-1.0.11-signed.aab` 3,576,568 bytes, SHA-256 `BE998597D7EE7EAA98CB63CBC68550834F90B7A99F3F1A6E20A6531A9E3EDECB` (jarsigner verified, upload cert 08:DE:24:53…, bundletool validate exit 0) |
-| Version history | 1.0.9 (versionCode 9) was uploaded to **internal testing**. 1.0.11 (versionCode 11) is the next upload candidate; the versionCode is greater than every versionCode previously uploaded. |
-| CI verification | GitHub Actions workflow "Build release AAB" (`.github/workflows/build-aab.yml`) builds the AAB with bundletool and validates it with `bundletool validate`; the 1.0.11 run URL and validation output are recorded in the release note. (The previous 1.0.9 run was 39483479573, success.) |
+| Artifacts (1.0.12) | APK `dist/rafiq-al-quran-1.0.12.apk` 3,584,952 bytes, SHA-256 `4ED8ACAA7726ABB6075B6DFE551A9F5D0B8F1B872B7253B14AE91001593EA91C`; unsigned AAB 3,576,845 bytes, SHA-256 `E5FB7FAD125EBA52300F87428C0C92F5BC363EF403E4138E573C5AF4E480334F`; signed upload AAB `dist/rafiq-al-quran-1.0.12-signed.aab` 3,580,167 bytes, SHA-256 `165AA653BADB9FF31C45BC05BB2EAA4020FAB68E832515CA234BF0338AD0A659` (jarsigner verified, upload cert 08:DE:24:53…). The AAB was assembled from the bundletool-validated 1.0.11 template with the new manifest/resources/dex because this build host had no GitHub/bundletool access; re-run the CI workflow on the pushed commit for the authoritative bundletool validate before rollout |
+| Version history | 1.0.9 (versionCode 9) was uploaded to **internal testing**; 1.0.11 (versionCode 11) was uploaded by the operator after this round's QA. **1.0.12 (versionCode 12) is the next upload candidate** and supersedes the 1.0.11 upload if it is stopped — the versionCode is greater than every versionCode previously uploaded. |
+| CI verification | GitHub Actions workflow "Build release AAB" (`.github/workflows/build-aab.yml`) builds the AAB with bundletool and validates it with `bundletool validate`; for 1.0.12 the same steps were run locally (`buildAab.js`, `bundletool validate` exit 0) because the build environment had no GitHub access — push the commit and record the CI run URL when available. Previous runs: 1.0.11 = 39503214114, 1.0.9 = 39483479573. |
 
 ---
 
@@ -319,10 +319,10 @@ action now opens the recitation player, so re-capture anything you intend to sub
 
 ## 7. Release checklist
 
-- [ ] Confirm `AndroidManifest.xml` versionCode is greater than every versionCode previously uploaded — current **10** (versionCode 9 was uploaded to internal testing) — and versionName matches the release: **1.0.11**.
+- [ ] Confirm `AndroidManifest.xml` versionCode is greater than every versionCode previously uploaded — current **12** (versionCode 11 is the 1.0.11 upload) — and versionName matches the release: **1.0.12**.
 - [ ] Rebuild assets with `node mobile/android/scripts/exportAssets.js` (this copies `quran-meta.tsv` into the app assets).
-- [ ] Build the APK with `node mobile/android/scripts/buildApk.js`, then copy/rename it to `dist/rafiq-al-quran-1.0.11.apk` and record its SHA-256 in the release note.
-- [ ] Verify the installable APK: `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.11.apk` → **20 checks passed**.
+- [ ] Build the APK with `node mobile/android/scripts/buildApk.js`, then copy/rename it to `dist/rafiq-al-quran-1.0.12.apk` and record its SHA-256 in the release note.
+- [ ] Verify the installable APK: `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.12.apk` → **22 checks passed** (includes the two speech `<queries>` checks).
 - [ ] Build the AAB from a clean committed tree: GitHub Actions `.github/workflows/build-aab.yml` → download the unsigned artifact → sign locally with `jarsigner` using the upload keystore → `jarsigner -verify` (expect "jar verified" plus the self-signed warning) → `bundletool validate`. Record the CI run URL and artifact SHA-256 values in the release note (**Artifacts (1.0.11): CI run 39503214114 on commit 557057d (success); APK SHA-256 C3FB6D536014F7E646EB7D01835BE46E2E9D5F6CDEEA87019DA48591E64E9005; signed upload AAB SHA-256 BE998597D7EE7EAA98CB63CBC68550834F90B7A99F3F1A6E20A6531A9E3EDECB (jarsigner verified, upload cert 08:DE…); unsigned CI AAB SHA-256 8943D5878B738BB8783747A1267C671073F7FE93C7A3643720F8C56CE8067B74**).
 - [ ] **AI assistance is optional and only for conversation/OCR; never for Quran text; the key lives only in the server `.env`; keep limits on** (`RATE_LIMIT_ASSISTANT_MAX`, optional `AI_MAX_MONTHLY_CALLS`, app 30 calls/day cap). Verify `/api/assistant/status` after `pm2 restart` (see `docs/DEPLOYMENT.md`), and confirm `TRUST_PROXY=true` on the live server so per-client limiting is correct.
 - [ ] **Recitation streams from Quran.com with attribution; rights decision recorded 2026-10-21.** Keep the "Source: Quran.com" attribution visible in the player, keep audio unstored (no download/cache), and keep the server's `RECITATION_ENABLED` switch and unverified reciter rows independent of the client player (the app streams directly from the CDN; see `docs/ADMIN.md`).

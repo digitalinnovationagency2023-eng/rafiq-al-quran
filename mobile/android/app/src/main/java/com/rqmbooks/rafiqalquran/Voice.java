@@ -5,6 +5,11 @@ import android.content.Intent;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
+
+import com.rqmbooks.rafiqalquran.logic.Answer;
+import com.rqmbooks.rafiqalquran.logic.Language;
+import com.rqmbooks.rafiqalquran.logic.VoiceLanguage;
 
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -13,20 +18,18 @@ import java.util.function.Consumer;
  * Native speech input and output, kept strictly separate from recitation.
  *
  * <p>Text-to-speech is initialised lazily and the first "Listen" tap may wait for
- * the engine; unsupported languages fall back to English and a clear message is
- * returned when no usable TTS engine/voice exists instead of failing silently.
+ * the engine. The voice always matches the language of the text being spoken; a
+ * language without an installed voice gets an actionable message instead of being
+ * silently read by an English voice.
  */
 public final class Voice {
+    private static final String TAG = "RafiqVoice";
+
     private Voice() {}
 
-    public static final String[] LOCALES = {
-            "ar-SA", "en-US", "ur-PK", "id-ID", "bn-BD", "tr-TR", "fa-IR", "ms-MY", "sw-KE", "fr-FR"
-    };
-
+    /** BCP-47 locale for an interface-language code. */
     public static String localeFor(String language) {
-        String[] codes = {"ar", "en", "ur", "id", "bn", "tr", "fa", "ms", "sw", "fr"};
-        for (int i = 0; i < codes.length; i++) if (codes[i].equals(language)) return LOCALES[i];
-        return "en-US";
+        return VoiceLanguage.localeTag(language);
     }
 
     /** Builds a properly parsed Java locale, e.g. "en-US" -> [en, US]. */
@@ -70,32 +73,59 @@ public final class Voice {
     public static String speak(TextToSpeech tts, String text, String language) {
         if (tts == null) return "The device voice is not ready yet. Try Listen again in a moment.";
         if (text == null || text.trim().isEmpty()) return "There is nothing to read aloud.";
-        int result;
+        final Locale locale = ttsLocale(language);
+        final String languageName = Language.byCode(language).englishName;
+        int available;
         try {
-            result = tts.setLanguage(ttsLocale(language));
+            available = tts.isLanguageAvailable(locale);
         } catch (Exception error) {
             return "The device voice could not be prepared: " + error.getMessage();
         }
-        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            try {
-                result = tts.setLanguage(Locale.US);
-            } catch (Exception error) {
-                return "The device voice could not be prepared: " + error.getMessage();
-            }
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                return "This device's text-to-speech engine has no usable voice. Install a speech voice in "
-                        + "Android Settings, then try Listen again.";
-            }
+        Log.i(TAG, "tts language=" + language + " locale=" + locale + " available=" + available + " chars=" + text.length());
+        if (available == TextToSpeech.LANG_MISSING_DATA) {
+            Log.w(TAG, "tts voice missing for " + language);
+            return missingVoiceMessage(languageName);
+        }
+        if (available == TextToSpeech.LANG_NOT_SUPPORTED) {
+            Log.w(TAG, "tts language unsupported for " + language);
+            return unsupportedVoiceMessage(languageName);
+        }
+        int result;
+        try {
+            result = tts.setLanguage(locale);
+        } catch (Exception error) {
+            return "The device voice could not be prepared: " + error.getMessage();
+        }
+        if (result == TextToSpeech.LANG_MISSING_DATA) {
+            Log.w(TAG, "tts setLanguage missing data for " + language);
+            return missingVoiceMessage(languageName);
+        }
+        if (result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            Log.w(TAG, "tts setLanguage unsupported for " + language);
+            return unsupportedVoiceMessage(languageName);
         }
         try {
             int speakResult = tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "rafiq-answer");
             if (speakResult == TextToSpeech.ERROR) {
+                Log.w(TAG, "tts queue failed for " + language);
                 return "The device voice could not start. Please try again.";
             }
+            Log.i(TAG, "tts queued language=" + language);
         } catch (Exception error) {
             return "The device voice could not start: " + error.getMessage();
         }
         return null;
+    }
+
+    private static String missingVoiceMessage(String languageName) {
+        return "The " + languageName + " voice is not installed on this device. Open Android Settings > "
+                + "System > Languages & input > Text-to-speech > Install voice data, then try Listen again. "
+                + "The translation is still shown on screen.";
+    }
+
+    private static String unsupportedVoiceMessage(String languageName) {
+        return "This device's text-to-speech engine does not support " + languageName + ". The translation is "
+                + "shown on screen; you can install another speech engine or voice in Android Settings.";
     }
 
     public static boolean isSpeaking(TextToSpeech tts) {
@@ -114,15 +144,17 @@ public final class Voice {
         }
     }
 
-    /** Text spoken aloud: translation + references only, never the Arabic verse. */
-    public static String spokenText(com.rqmbooks.rafiqalquran.logic.Answer answer) {
-        if (answer == null) return "";
-        if ("fallback".equals(answer.kind) || "conversation".equals(answer.kind)) return answer.message;
-        StringBuilder builder = new StringBuilder();
-        for (com.rqmbooks.rafiqalquran.logic.Passage passage : answer.passages) {
-            builder.append(passage.referenceLabel).append(". ").append(passage.translationText).append(' ');
-        }
-        builder.append(" ").append(answer.message);
-        return builder.toString();
+    /** Language of the text that will be spoken (never simply the UI setting). */
+    public static String spokenLanguage(Answer answer) {
+        return VoiceLanguage.spokenLanguage(answer);
+    }
+
+    /**
+     * Text spoken aloud: translation + references only, never the Arabic verse.
+     * For non-English voices only the translation is spoken; see VoiceLanguage.
+     */
+    public static String spokenText(Answer answer) {
+        int max = TextToSpeech.getMaxSpeechInputLength();
+        return VoiceLanguage.spokenText(answer, max > 0 ? max : 4000);
     }
 }

@@ -7,10 +7,15 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
+import android.speech.RecognitionSupport;
+import android.speech.RecognitionSupportCallback;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
+import android.util.Log;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -49,6 +54,7 @@ import java.util.Locale;
  * AI never supplies verses or interpretation.
  */
 public final class MainActivity extends Activity {
+    private static final String TAG = "RafiqVoice";
     public static final String EXTRA_ASK = "ask";
     private static final int MIC_REQUEST = 41;
     private static final int ATTACH_REQUEST = 42;
@@ -66,8 +72,10 @@ public final class MainActivity extends Activity {
     private SpeechRecognizer recognizer;
     private TextToSpeech tts;
     private boolean ttsReady;
+    private boolean ttsFailed;
     private Answer pendingSpeech;
     private boolean listening;
+    private Answer speakingAnswer;
 
     private LinearLayout attachmentRow;
     private TextView attachmentLabel;
@@ -91,6 +99,9 @@ public final class MainActivity extends Activity {
             try {
                 final Dataset loaded = Assets.dataset(this);
                 Assets.ensureLanguage(this, loaded, "en");
+                // A saved non-English interface language must also be loaded on a cold
+                // start, otherwise answers fall back to English while the UI says e.g. "ur".
+                if (!"en".equals(prefs.language())) Assets.ensureLanguage(this, loaded, prefs.language());
                 runOnUiThread(() -> {
                     dataset = loaded;
                     loadHistory();
@@ -114,6 +125,16 @@ public final class MainActivity extends Activity {
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        // Leaving the screen must not keep reading aloud or recording.
+        Voice.stop(tts);
+        speakingAnswer = null;
+        pendingSpeech = null;
+        stopListening();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         if (tts != null) {
@@ -122,6 +143,9 @@ public final class MainActivity extends Activity {
             tts = null;
         }
         if (recognizer != null) recognizer.destroy();
+        recognizer = null;
+        pendingSpeech = null;
+        speakingAnswer = null;
         saveHistory();
     }
 
@@ -731,6 +755,8 @@ public final class MainActivity extends Activity {
                         if (ai != null && ai.searchText != null && !ai.searchText.trim().isEmpty()) {
                             searchText = ai.searchText;
                         }
+                        // Make sure the selected translation is in memory before composing.
+                        Assets.ensureLanguage(MainActivity.this, dataset, language);
                         answer = AnswerComposer.answer(dataset, searchText, language);
                     }
                 }
@@ -850,6 +876,7 @@ public final class MainActivity extends Activity {
         final List<String> shown = previous.shownVerseKeys;
         status.setText("Searching for more passages\u2026");
         new Thread(() -> {
+            Assets.ensureLanguage(MainActivity.this, dataset, language);
             final Answer answer = AnswerComposer.answer(dataset, asking, language, shown);
             runOnUiThread(() -> {
                 status.setText("");
@@ -970,12 +997,39 @@ public final class MainActivity extends Activity {
 
     // --------------------------------------------------------------- speech
     private void ensureTts() {
+        if (ttsFailed) {
+            // A failed engine is shut down so the next tap can try a fresh one.
+            if (tts != null) {
+                try { tts.shutdown(); } catch (Exception ignored) { }
+            }
+            tts = null;
+            ttsReady = false;
+            ttsFailed = false;
+        }
         if (tts != null) return;
-        tts = Voice.createTts(this, this::onTtsReady, message -> toast(message));
+        tts = Voice.createTts(this, this::onTtsReady, message -> {
+            ttsReady = false;
+            ttsFailed = true;
+            speakingAnswer = null;
+            if (tts != null) {
+                try { tts.shutdown(); } catch (Exception ignored) { }
+                tts = null;
+            }
+            toast(message);
+        });
     }
 
     private void onTtsReady() {
         ttsReady = true;
+        ttsFailed = false;
+        if (tts != null) {
+            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                @Override public void onStart(String utteranceId) { Log.i(TAG, "tts utterance start"); }
+                @Override public void onDone(String utteranceId) { Log.i(TAG, "tts utterance done"); speakingAnswer = null; }
+                @Override public void onError(String utteranceId) { onTtsUtteranceError(0); }
+                @Override public void onError(String utteranceId, int errorCode) { onTtsUtteranceError(errorCode); }
+            });
+        }
         if (pendingSpeech != null) {
             Answer answer = pendingSpeech;
             pendingSpeech = null;
@@ -983,17 +1037,30 @@ public final class MainActivity extends Activity {
         }
     }
 
+    /** Synthesis failures arrive after queuing; tell the user instead of failing silently. */
+    private void onTtsUtteranceError(int errorCode) {
+        Log.w(TAG, "tts utterance error " + errorCode);
+        speakingAnswer = null;
+        if (isFinishing() || isDestroyed()) return;
+        toast("The device voice could not read this text aloud. Read it on screen, or install/update speech "
+                + "voice data in Android Settings.");
+    }
+
     private void speakAnswer(Answer answer) {
         if (!prefs.voiceEnabled()) {
             toast("Voice features are disabled in the menu.");
             return;
         }
+        if (listening) stopListening();
         if (Voice.isSpeaking(tts)) {
             Voice.stop(tts);
-            toast("Stopped reading aloud.");
-            return;
+            if (answer == speakingAnswer) {
+                speakingAnswer = null;
+                toast("Stopped reading aloud.");
+                return;
+            }
         }
-        if (tts == null) {
+        if (tts == null || ttsFailed) {
             pendingSpeech = answer;
             ensureTts();
             toast("Preparing the device voice\u2026");
@@ -1004,12 +1071,53 @@ public final class MainActivity extends Activity {
             toast("Preparing the device voice\u2026");
             return;
         }
-        String error = Voice.speak(tts, Voice.spokenText(answer), prefs.language());
+        // Never read the text with the UI language's voice: the voice follows the
+        // language of the text that is actually spoken.
+        Log.i(TAG, "listen ui=" + prefs.language() + " spoken=" + Voice.spokenLanguage(answer));
+        String error = Voice.speak(tts, Voice.spokenText(answer), Voice.spokenLanguage(answer));
         if (error != null) {
+            speakingAnswer = null;
             toast(error);
         } else {
+            speakingAnswer = answer;
             toast("Reading the translation and summary aloud. This is not a Quranic recitation.");
         }
+    }
+
+    private void ensureRecognizer() {
+        if (recognizer != null) return;
+        recognizer = SpeechRecognizer.createSpeechRecognizer(this);
+        recognizer.setRecognitionListener(new RecognitionListener() {
+            @Override public void onReadyForSpeech(Bundle params) { status.setText("\u25CF Listening\u2026 speak your question."); }
+            @Override public void onBeginningOfSpeech() { }
+            @Override public void onRmsChanged(float rmsdB) { }
+            @Override public void onBufferReceived(byte[] buffer) { }
+            @Override public void onEndOfSpeech() { status.setText(""); }
+            @Override public void onError(int error) {
+                status.setText("");
+                listening = false;
+                Log.w(TAG, "asr error=" + error + " ui=" + prefs.language());
+                if (error == SpeechRecognizer.ERROR_CLIENT || error == SpeechRecognizer.ERROR_SERVER_DISCONNECTED) {
+                    abandonRecognizer();
+                }
+                toast(voiceErrorMessage(error));
+            }
+            @Override public void onResults(Bundle results) {
+                status.setText("");
+                listening = false;
+                ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                if (matches != null && !matches.isEmpty()) {
+                    input.setText(matches.get(0));
+                    input.setSelection(input.getText().length());
+                    toast("You can edit the transcript before sending.");
+                }
+            }
+            @Override public void onPartialResults(Bundle partialResults) {
+                ArrayList<String> partials = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                if (partials != null && !partials.isEmpty()) input.setText(partials.get(0));
+            }
+            @Override public void onEvent(int eventType, Bundle params) { }
+        });
     }
 
     private void startListening() {
@@ -1025,33 +1133,135 @@ public final class MainActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
             return;
         }
-        if (recognizer == null) {
-            recognizer = SpeechRecognizer.createSpeechRecognizer(this);
-            recognizer.setRecognitionListener(new RecognitionListener() {
-                @Override public void onReadyForSpeech(Bundle params) { status.setText("\u25CF Listening\u2026 speak your question."); }
-                @Override public void onBeginningOfSpeech() { }
-                @Override public void onRmsChanged(float rmsdB) { }
-                @Override public void onBufferReceived(byte[] buffer) { }
-                @Override public void onEndOfSpeech() { status.setText(""); }
-                @Override public void onError(int error) { status.setText(""); listening = false; toast("Voice input did not complete. You can type instead."); }
-                @Override public void onResults(Bundle results) {
-                    status.setText("");
-                    ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                    if (matches != null && !matches.isEmpty()) {
-                        input.setText(matches.get(0));
-                        input.setSelection(input.getText().length());
-                        toast("You can edit the transcript before sending.");
-                    }
-                }
-                @Override public void onPartialResults(Bundle partialResults) {
-                    ArrayList<String> partials = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                    if (partials != null && !partials.isEmpty()) input.setText(partials.get(0));
-                }
-                @Override public void onEvent(int eventType, Bundle params) { }
-            });
+        if (Voice.isSpeaking(tts)) {
+            Voice.stop(tts);
+            speakingAnswer = null;
         }
-        listening = true;
-        recognizer.startListening(Voice.recognitionIntent(prefs.language()));
+        ensureRecognizer();
+        final String language = prefs.language();
+        final Intent intent = Voice.recognitionIntent(language);
+        if (Build.VERSION.SDK_INT >= 33) {
+            try {
+                recognizer.checkRecognitionSupport(intent, getMainExecutor(), new RecognitionSupportCallback() {
+                    @Override public void onSupportResult(RecognitionSupport support) {
+                        String tag = Voice.localeFor(language);
+                        Log.i(TAG, "asr support " + language + " tag=" + tag
+                                + " installed=" + support.getInstalledOnDeviceLanguages()
+                                + " pending=" + support.getPendingOnDeviceLanguages()
+                                + " online=" + support.getOnlineLanguages());
+                        if (hasLanguage(support.getInstalledOnDeviceLanguages(), tag)
+                                || hasLanguage(support.getOnlineLanguages(), tag)) {
+                            beginListening(intent);
+                        } else if (hasLanguage(support.getSupportedOnDeviceLanguages(), tag)
+                                || hasLanguage(support.getPendingOnDeviceLanguages(), tag)) {
+                            try {
+                                recognizer.triggerModelDownload(intent);
+                            } catch (Exception ignored) {
+                                // Model download is best effort.
+                            }
+                            toast("The " + Language.byCode(language).englishName
+                                    + " speech model is downloading. Try Voice again in a moment.");
+                        } else {
+                            toast(unsupportedLanguageMessage(language));
+                        }
+                    }
+
+                    @Override public void onError(int error) {
+                        // Older engines may not support the preflight; start normally and
+                        // let the regular error path report the outcome.
+                        beginListening(intent);
+                    }
+                });
+                return;
+            } catch (Exception ignored) {
+                // Fall through to a direct start on engines without support checks.
+            }
+        }
+        beginListening(intent);
+    }
+
+    private void beginListening(Intent intent) {
+        if (recognizer == null) return;
+        try {
+            Log.i(TAG, "asr start ui=" + prefs.language() + " locale=" + Voice.localeFor(prefs.language()));
+            listening = true;
+            recognizer.startListening(intent);
+        } catch (Exception error) {
+            listening = false;
+            toast("Voice input could not start. You can type instead.");
+        }
+    }
+
+    private void stopListening() {
+        if (recognizer != null) {
+            try {
+                recognizer.cancel();
+            } catch (Exception ignored) {
+                // Recognizer already gone.
+            }
+        }
+        listening = false;
+        status.setText("");
+    }
+
+    private void abandonRecognizer() {
+        if (recognizer != null) {
+            try {
+                recognizer.destroy();
+            } catch (Exception ignored) {
+                // Best effort.
+            }
+            recognizer = null;
+        }
+        listening = false;
+    }
+
+    private static boolean hasLanguage(List<String> tags, String wanted) {
+        if (tags == null || wanted == null) return false;
+        String lowerWanted = wanted.toLowerCase(Locale.ROOT);
+        String code = lowerWanted.split("-")[0];
+        for (String tag : tags) {
+            if (tag == null) continue;
+            String lower = tag.toLowerCase(Locale.ROOT);
+            if (lower.equals(lowerWanted) || lower.equals(code) || lower.startsWith(code + "-")) return true;
+        }
+        return false;
+    }
+
+    private String unsupportedLanguageMessage(String language) {
+        String name = Language.byCode(language).englishName;
+        return "Voice input for " + name + " isn't installed on this device. Download its speech pack in the "
+                + "Google app (Settings > Voice > Offline speech recognition), or type instead.";
+    }
+
+    private String voiceErrorMessage(int error) {
+        switch (error) {
+            case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                return "I didn't hear anything. Tap Voice and speak again, or type instead.";
+            case SpeechRecognizer.ERROR_NO_MATCH:
+                return "I couldn't catch that. Try again or type instead.";
+            case SpeechRecognizer.ERROR_NETWORK:
+            case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                return "Voice input needs a network connection right now. You can type instead.";
+            case SpeechRecognizer.ERROR_AUDIO:
+                return "The microphone could not be used. Check the device microphone and try again.";
+            case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                return "Microphone permission is needed for voice input.";
+            case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                return "Voice input is still finishing. Try again in a moment.";
+            case SpeechRecognizer.ERROR_TOO_MANY_REQUESTS:
+                return "Voice input is busy right now. Try again in a moment.";
+            case SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED:
+            case SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE:
+                return unsupportedLanguageMessage(prefs.language());
+            case SpeechRecognizer.ERROR_CLIENT:
+                // Google's recognizer reports a missing language pack as a client error;
+                // give the user an actionable next step instead of a generic failure.
+                if (!"en".equals(prefs.language())) return unsupportedLanguageMessage(prefs.language());
+                return "Voice input did not complete. You can type instead.";
+            default:
+                return "Voice input did not complete. You can type instead.";
+        }
     }
 
     @Override

@@ -51,10 +51,13 @@ Reported honestly; nothing here is claimed as solved.
    rejected with a message.
 10. **Android only.** iOS was not built (no macOS toolchain here). The client is Java/Android SDK; there is no
     React Native/Flutter parity build.
-11. **Device testing is emulator-only.** The 1.0.11 build was installed and exercised on one emulator (AVD
-    `rafiqtest`, Android 14, 1080×2340) and captured as screenshots in `dist/`; there was no physical-device run
-    and no automated instrumentation/UI suite. Recitation streaming/auto-next and TTS synthesis were verified on
-    the emulator; speech recognition/microphone input and a real-device audio/TTS pass still need to be done.
+11. **Device testing is emulator-only.** Builds are installed and exercised on one emulator (AVD `rafiqtest`,
+    Android 14, 1080×2340) and captured as screenshots in `dist/`; there was no physical-device run and no automated
+    instrumentation/UI suite. Recitation streaming/auto-next and TTS synthesis were verified on the emulator. The
+    1.0.12 voice matrix requested the correct TTS locale and recognizer locale for all ten interface languages and
+    exercised the missing-voice/missing-speech-pack messages, but the emulator had only English speech/voice data
+    and no internet, so audible synthesis and real dictation in the other nine languages still need a real-device
+    pass with the language packs installed (see item 18).
 12. **Study data is device-local with no sync.** Bookmarks and collections, personal notes, saved searches, reading
     plans and reading position are stored only on the device (SharedPreferences storage). They are lost when the
     app's data is cleared or the app is uninstalled; they are not synced to an account or another device. Exports
@@ -80,3 +83,13 @@ Reported honestly; nothing here is claimed as solved.
     answer notice/fallback language and now opens as a full-width dialog with native names, but the interface
     labels themselves are not localised. Only the English and Arabic notices are approved wording; other languages
     show the English notice and are marked "pending review".
+18. **Voice output and input depend on the device's installed voices and speech packs.** "Listen" chooses the
+    text-to-speech voice from the language of the text actually being spoken, and never reads non-English text with
+    an English voice silently; when the voice is missing or unsupported the app says so (install/update voice data
+    in Android Settings) and reports a synthesis failure instead of failing silently. "Voice" (dictation) needs the
+    device recognizer (normally the Google app) to support the selected language and, for offline recognition, its
+    speech pack; when it is missing the app now names the language and explains how to download the pack. The voice
+    quality, availability and Android Settings paths vary by device, OEM, region and Google app version, and the
+    free Google speech/voice services have their own limits. English and Urdu text-to-speech and the locale requests
+    for all ten languages were verified on the QA emulator, but the emulator lacked the other languages' voice and
+    speech packs, so audible output and real recognition for those languages must be checked on a physical device.

@@ -9,6 +9,7 @@ import com.rqmbooks.rafiqalquran.logic.Notices;
 import com.rqmbooks.rafiqalquran.logic.Passage;
 import com.rqmbooks.rafiqalquran.logic.QuranMeta;
 import com.rqmbooks.rafiqalquran.logic.StudyData;
+import com.rqmbooks.rafiqalquran.logic.VoiceLanguage;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -184,6 +185,40 @@ public final class LogicTest {
                 Conversation.attachmentUnavailable().toLowerCase().contains("ai service"));
         check("AI consent text says verses never come from the AI",
                 Conversation.aiConsentMessage().contains("never supplies Quran text"));
+
+        // ---------------------------------------------------------- voice languages
+        check("voice locale mapping covers all ten interface languages",
+                "en-US".equals(VoiceLanguage.localeTag("en")) && "ar-SA".equals(VoiceLanguage.localeTag("ar"))
+                        && "ur-PK".equals(VoiceLanguage.localeTag("ur")) && "bn-BD".equals(VoiceLanguage.localeTag("bn"))
+                        && "fa-IR".equals(VoiceLanguage.localeTag("fa")) && "sw-KE".equals(VoiceLanguage.localeTag("sw")));
+        for (String code : new String[]{"ar", "en", "ur", "id", "bn", "tr", "fa", "ms", "sw", "fr"}) {
+            String tag = VoiceLanguage.localeTag(code);
+            check("voice locale for " + code + " is a real BCP-47 tag",
+                    java.util.Locale.forLanguageTag(tag).getLanguage().equals(code));
+        }
+        check("unknown voice language falls back to en-US", "en-US".equals(VoiceLanguage.localeTag("zz")));
+        check("english answer is voiced and spoken in English",
+                "en".equals(VoiceLanguage.spokenLanguage(english))
+                        && VoiceLanguage.spokenText(english, 4000).contains(english.passages.get(0).translationText));
+        check("arabic answer speaks the English translation (no Arabic translation rows)",
+                "en".equals(VoiceLanguage.spokenLanguage(arabic)));
+        check("arabic answer does not speak the Arabic connective with an English voice",
+                !VoiceLanguage.spokenText(arabic, 4000).contains(Notices.connectiveFound("ar", 1)));
+        check("arabic fallback is spoken in Arabic",
+                "ar".equals(VoiceLanguage.spokenLanguage(Answer.fallback("ar", new ArrayList<String>()))));
+        check("english fallback is spoken in English",
+                "en".equals(VoiceLanguage.spokenLanguage(Answer.fallback("ur", new ArrayList<String>()))));
+        Answer arabicConversation = new Answer("conversation", "ar", "Hello!", new ArrayList<Passage>(), 0,
+                "", false, null, new ArrayList<String>(), false, new ArrayList<String>());
+        check("conversation replies are spoken in English (their text is English)",
+                "en".equals(VoiceLanguage.spokenLanguage(arabicConversation)));
+        Answer urduReference = AnswerComposer.answer(dataset, "Show me 2:255", "ur");
+        check("urdu answer speaks the Urdu translation", "ur".equals(VoiceLanguage.spokenLanguage(urduReference)));
+        String urduSpoken = VoiceLanguage.spokenText(urduReference, 4000);
+        check("non-english spoken text omits English reference labels",
+                !urduSpoken.contains("Al-Baqarah") && !urduSpoken.contains("I found"));
+        check("spoken text is capped at the platform length",
+                VoiceLanguage.spokenText(urduReference, 20).length() <= 20);
 
         System.out.println();
         System.out.println("Logic tests: " + passed + " passed, " + failures.size() + " failed");

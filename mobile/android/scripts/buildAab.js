@@ -40,7 +40,8 @@ const walk = (dir, suffix, acc = []) => {
   return acc;
 };
 
-for (const required of [androidJar, path.join(buildTools, "aapt2"), bundletool]) {
+const aapt2Path = process.platform === "win32" ? path.join(buildTools, "aapt2.exe") : path.join(buildTools, "aapt2");
+for (const required of [androidJar, aapt2Path, bundletool]) {
   if (!fs.existsSync(required)) {
     console.error(`Missing required file: ${required}`);
     process.exit(1);
