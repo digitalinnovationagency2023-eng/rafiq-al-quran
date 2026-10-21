@@ -1,5 +1,19 @@
 # Deployment
 
+## Production deployment runbook (executed for 1.1.0)
+
+The live app runs at `/home/ubuntu/rafiq-app` on EC2 `i-09e2608bfa43e70bf` (us-east-1c), PM2 app
+`rafiq-api` with Node v22.23.3, port 8790, behind nginx at `https://rqmbooks.com/rafiq-api`. The
+app directory is **not a git checkout**, so server releases are file copies:
+
+1. Back up: `cp -a /home/ubuntu/rafiq-app /home/ubuntu/rafiq-app.bak-$(date +%F-%H%M)` (or the
+   three changed files plus `server/data/quran-app.db`).
+2. Copy the changed `server/src/**` files (scp/rsync, or SSM for hosts without SSH).
+3. Validate: `node --check` (copy to `.mjs` for ESM syntax), then `node --test server/test/*.test.js`.
+4. Restart with the nvm Node 22 path: `export PATH=/home/ubuntu/.nvm/versions/node/v22.23.3/bin:$PATH; pm2 restart rafiq-api --update-env`.
+5. Smoke: `curl -s http://127.0.0.1:8790/api/assistant/status`; `POST /api/assistant/summary` with `{}` must be **400** (404 = old code); a real verse-key request must return **200** with citations.
+6. Verify publicly through nginx and roll back by restoring the backup files and restarting.
+
 ## Optional API
 
 ```bash

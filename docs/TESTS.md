@@ -57,6 +57,24 @@ The 67 checks include the per-passage dataset-existence assertions emitted in a 
 - bundles `classes.dex`, the seven dataset assets (including `assets/quran-meta.tsv`) and the launcher icon;
 - **Artifacts (1.1.0): APK SHA-256 B680204A4BA2BAAC0465C4B7EBD6675639476F3791803A83C68F84AC1F95068A; unsigned AAB SHA-256 2A275C7AE887D9DEFC0A4D512B38CCB8C53AAB13D035D38BD14637E7B03692BB; signed upload AAB SHA-256 AC42360B8C397A9502955B8D3C249C5A13F8BF1644DFBBF73BC81B420D298FEF (jarsigner verified, upload cert 08:DE…).**
 
+## Production deployment — 2026-10-22 (verified)
+
+The 1.1.0 server code was deployed to EC2 `i-09e2608bfa43e70bf` (us-east-1c) via SSM, because the
+app directory is not a git checkout: the three changed files were transferred with SHA-256 checks,
+syntax-checked as ESM, installed, and `rafiq-api` was restarted with Node v22.23.3 (PM2 app
+`rafiq-api`, port 8790, nginx base `https://rqmbooks.com/rafiq-api`).
+
+| Item | Result |
+|---|---|
+| Files deployed | `server/src/services/synthesis.js` (12,216 B, SHA-256 `7edacb28…`), `server/src/http/assistantRoutes.js` (3,131 B, SHA-256 `f0e4bd59…`), `server/src/services/lexicon.js` (25,618 B, SHA-256 `ef101792…`) |
+| Backup | `/home/ubuntu/rafiq-deploy-backup-2026-10-21-2011` (3 files + `quran-app.db`); rollback = copy back and restart |
+| Restart | new PID 2863416; dataset 6236 verses / 114 chapters / 9 translations; status returns `{"enabled":true,"providerConfigured":true}` |
+| Route mounted | `POST /api/assistant/summary` with `{}` → **400** (was 404 before deploy) |
+| Grounded summary (local) | `2:153,3:200` → **200**, citations `["2:153","3:200"]` |
+| Public HTTPS summary | "Who is Hazrat Essa?" with `3:45,4:157,19:34` → **200**, citations `["3:45","19:34","4:157"]` |
+| Follow-up context | history + "And what about his mother?" with `3:45,19:16` → **200**, answer references Mary |
+| Provider note | the endpoint returned the expected 200s; earlier `/api/assistant` timeouts in the log came from free-tier provider latency and fall back to local replies |
+
 ## APK packaging verification — 22 checks passed
 
 `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.1.0.apk` → **22 checks passed**
