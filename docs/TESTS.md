@@ -4,13 +4,13 @@ Run on 2026-10-21 (Windows, Node 24, JDK 17, Android SDK 34; emulator AVD `rafiq
 1080×2340). Release **1.1.0** (versionCode 13, versionName 1.1.0). Earlier measurements are kept for history; the
 1.1.0 advisory-answer additions, the 1.0.12 voice matrix and the updated counts are in the sections below.
 
-**Artifacts (1.1.0)** — APK `dist/rafiq-al-quran-1.1.0.apk`: 3,589,048 bytes, SHA-256 `97215C7505378A43F9E9B6E873460459ABDFC4DA5ACB05094D6893C70025A35A`; unsigned AAB `dist/rafiq-al-quran-1.1.0.aab`: 3,580,905 bytes, SHA-256 `364E37CCADA5AA0F9FD13A03BF0334D121B0311F56695C0CA8E6A9B030BFEC38`; signed upload AAB `dist/rafiq-al-quran-1.1.0-signed.aab`: 3,584,218 bytes, SHA-256 `4F8D50D0111205FCC33C4C443C19E3A3553153E4E37D4232C2E3A30FB7A6F50A` (jarsigner "jar verified"; upload cert 08:DE:24:53…).
+**Artifacts (1.1.0)** — APK `dist/rafiq-al-quran-1.1.0.apk`: 3,593,144 bytes, SHA-256 `525C70BCA6527738DC98B85062CACBC65C9BD3F82FCD65D288F71A34F3697FAC`; unsigned AAB `dist/rafiq-al-quran-1.1.0.aab`: 3,585,601 bytes, SHA-256 `78B0A2F07CE31D70BE26C64A8BDD34E063AED40854053459E7F1E9876D3DFA8E`; signed upload AAB `dist/rafiq-al-quran-1.1.0-signed.aab`: 3,588,922 bytes, SHA-256 `4A6C002083C4E6484734F15FA6CC6CE9CF072409A8E9E9BC5CEAFF36B5D7EBD3` (jarsigner "jar verified"; upload cert 08:DE:24:53…).
 
 **Artifacts (1.0.12)** — APK `dist/rafiq-al-quran-1.0.12.apk`: 3,584,952 bytes, SHA-256 `4ED8ACAA7726ABB6075B6DFE551A9F5D0B8F1B872B7253B14AE91001593EA91C`; unsigned AAB `dist/rafiq-al-quran-1.0.12.aab`: 3,576,845 bytes, SHA-256 `E5FB7FAD125EBA52300F87428C0C92F5BC363EF403E4138E573C5AF4E480334F`; signed upload AAB `dist/rafiq-al-quran-1.0.12-signed.aab`: 3,580,167 bytes, SHA-256 `165AA653BADB9FF31C45BC05BB2EAA4020FAB68E832515CA234BF0338AD0A659` (jarsigner "jar verified"; upload cert 08:DE:24:53…).
 
 **Artifacts (1.0.11)** — CI run [https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39503214114](https://github.com/digitalinnovationagency2023-eng/rafiq-al-quran/actions/runs/39503214114) on commit `557057d01ce08c6702cb760170f5a855cffb0732` (success). APK `dist/rafiq-al-quran-1.0.11.apk`: 3,580,857 bytes, SHA-256 `C3FB6D536014F7E646EB7D01835BE46E2E9D5F6CDEEA87019DA48591E64E9005`. Unsigned CI AAB: 3,573,455 bytes, SHA-256 `8943D5878B738BB8783747A1267C671073F7FE93C7A3643720F8C56CE8067B74`. Signed upload AAB `dist/rafiq-al-quran-1.0.11-signed.aab`: 3,576,568 bytes, SHA-256 `BE998597D7EE7EAA98CB63CBC68550834F90B7A99F3F1A6E20A6531A9E3EDECB` (jarsigner `jar verified`, upload cert 08:DE:24:53…, bundletool validate exit 0)..
 
-## Server suite — 80 passed, 0 failed
+## Server suite — 81 passed, 0 failed
 
 `npm test -w server` (the 58-check baseline plus 15 new assistant tests).
 
@@ -26,10 +26,10 @@ Run on 2026-10-21 (Windows, Node 24, JDK 17, Android SDK 34; emulator AVD `rafiq
 | Premium | disabled state, feature list, entitlement false, checkout refused |
 | Admin auth | 5 tests in `server/test/admin.test.js`: 503 when `ADMIN_TOKEN` is unset; 401 for missing, empty, wrong and wrong-length tokens; 200 plus response shape for every read-only endpoint with the correct token; an authorised feedback update lands in the audit log; the token is never echoed in a response body |
 | **AI assistance (new)** | 15 tests in `server/test/assistant.test.js`: 503 and status while unconfigured; configured status never exposes key/model/base URL; 400 validation before any provider call; 413 for a > 5 MB decoded attachment and for a request body above the 8 MB parser limit; per-IP 429 with `retry-after`; fixed JSON contract with Markdown fences stripped and the provider called with the Bearer key/model; image request carries an `image_url` part and non-Latin OCR text is preserved; Arabic-script replies, verse references, long quotations and religious wording are dropped (`reply: null`); reply/search-term caps; generic 502 for provider errors and 504 on timeout with no upstream detail or key leaked; optional monthly cap; inherited CORS preflight and Helmet headers |
-| **Grounded advisory synthesis (new in 1.1.0)** | 7 tests in `server/test/synthesis.test.js`: 503 while unconfigured; 400 validation (missing/blank/overlong question, missing/empty/oversized/duplicate/malformed/unknown verse keys) before any provider call; success path sends ONLY the supplied verses' authoritative translations (no Arabic script, no unsupplied references) with the Bearer key and returns the validated summary + citations; answers citing a verse outside the supplied set are rejected (502); Arabic-script, citation-free, too-short and too-long answers are rejected (502); provider 500 → 502 and timeout → 504 without leaking key/upstream detail; the optional monthly cap applies |
+| **Grounded advisory synthesis (new in 1.1.0)** | 8 tests in `server/test/synthesis.test.js`: 503 while unconfigured; 400 validation (missing/blank/overlong question, missing/empty/oversized/duplicate/malformed/unknown verse keys) before any provider call; success path sends ONLY the supplied verses' authoritative translations (no Arabic script, no unsupplied references) with the Bearer key and returns the validated summary + citations; answers citing a verse outside the supplied set are rejected (502); Arabic-script, citation-free, too-short and too-long answers are rejected (502); provider 500 → 502 and timeout → 504 without leaking key/upstream detail; the optional monthly cap applies; conversation history is validated (role/content/count) and injected only as context, never as a source |
 | Isolation | no RQM/XINVOX references in sources, own database path, rate limiter behaviour |
 
-## Native app logic — 98 passed, 0 failed
+## Native app logic — 107 passed, 0 failed
 
 `node mobile/android/scripts/runLogicTests.js` (Java, real bundled assets) — was 49 checks in 1.0.9, 67 in 1.0.11.
 
@@ -40,6 +40,7 @@ Run on 2026-10-21 (Windows, Node 24, JDK 17, Android SDK 34; emulator AVD `rafiq
 | Study-tools codec | collection names sanitised, empty name → General, case-insensitive de-duplication, length bound; note trim/bound; progress percentages and exact "3 of 38  ·  8%" text; RFC 4180 CSV quoting; Juz 30 preset = surahs 78–114 and full preset = 114; numeric verse-key ordering and validation; next-chapter skips completed chapters and returns 0 when done; plan chapter list round-trips |
 | **Recitation rights and attribution (updated)** | `AudioGate.rightsReviewRecorded()` is true for this build (rights review recorded 2026-10-21); `playbackAllowedInThisBuild()` is true; the gate still requires both the recorded review and the server flag (`playbackAllowed(false, true)` is false); attribution contains "Quran.com" and the decision text contains "rights review recorded" |
 | **Voice language selection (new in 1.0.12)** | All ten interface codes map to real BCP-47 tags whose language matches the code; unknown codes fall back to en-US; `spokenLanguage` picks English for Arabic answers (no Arabic translation rows) and for non-Arabic fallbacks, the answer's translation language for translated answers, and English for conversation replies; Urdu answers speak Urdu; non-English spoken text omits the English reference labels and connectives; the spoken text is capped at the platform limit |
+| **Romanised/fuzzy/mixed input (new in 1.1.0)** | "hazrath eesa" → Isa; "yaqubb" → Yaqub; "moosa" → Musa; mixed English/Roman Urdu answered; mixed Arabic + Roman answered; "namaz" → prayer verses; "roza" → fasting verses; one-letter typo still retrieves; entity lookup ignores honorifics and unrelated English |
 | **Named figures and topic retrieval (new in 1.1.0)** | "Hazrat Essa" resolves to Isa/Jesus and returns several verses; "Yaqoob" resolves to Jacob; "What is the law about theft?" is answered and includes the Quranic theft verse 5:38; Arabic "من هو عيسى" is answered; honorifics alone and ordinary topic questions are not treated as named figures; the bundled lexicon carries the alias rows |
 | **Conversation and feature help (new)** | greeting gets a reply that names the Quran; Islamic greeting recognised; thanks gets a short reply; a fatwa/ruling request is refused and points to scholars; off-topic questions are handled gracefully; advice questions are routed to Quran retrieval (not answered conversationally); overlong messages are not treated as small talk; guidance names scholars, Hadith and Fiqh study and disclaims responsibility; the attachment fallback names the AI service; the AI consent text states that the AI never supplies Quran text; feature-help questions about bookmarks, recitation, language and AI return app instructions without religious content; a bare “help” returns the overview; normal Quran questions still bypass feature help and go to retrieval |
 
@@ -51,10 +52,10 @@ The 67 checks include the per-passage dataset-existence assertions emitted in a 
 
 - package `com.rqmbooks.rafiqalquran`, versionCode **13**, versionName **1.1.0** (`aapt2 dump badging` on
   `mobile/android/build/quran-companion.apk`); minSdk **24**, targetSdk **36**, compileSdk 34;
-- **35 Java sources** compiled (adds `logic/VoiceLanguage.java`); signed (apksigner verify passed) and zipaligned;
-- size **~3.41 MB**; the exact size and SHA-256 of the release artifact are recorded in the release note;
+- **36 Java sources** compiled (adds `logic/VoiceLanguage.java` and `logic/Roman.java`); signed (apksigner verify passed) and zipaligned;
+- size **~3.43 MB**; the exact size and SHA-256 of the release artifact are recorded in the release note;
 - bundles `classes.dex`, the seven dataset assets (including `assets/quran-meta.tsv`) and the launcher icon;
-- **Artifacts (1.0.12): APK SHA-256 4ED8ACAA7726ABB6075B6DFE551A9F5D0B8F1B872B7253B14AE91001593EA91C; unsigned AAB SHA-256 E5FB7FAD125EBA52300F87428C0C92F5BC363EF403E4138E573C5AF4E480334F; signed upload AAB SHA-256 165AA653BADB9FF31C45BC05BB2EAA4020FAB68E832515CA234BF0338AD0A659 (jarsigner verified, upload cert 08:DE…).**
+- **Artifacts (1.1.0): APK SHA-256 525C70BCA6527738DC98B85062CACBC65C9BD3F82FCD65D288F71A34F3697FAC; unsigned AAB SHA-256 78B0A2F07CE31D70BE26C64A8BDD34E063AED40854053459E7F1E9876D3DFA8E; signed upload AAB SHA-256 4A6C002083C4E6484734F15FA6CC6CE9CF072409A8E9E9BC5CEAFF36B5D7EBD3 (jarsigner verified, upload cert 08:DE…).**
 
 ## APK packaging verification — 22 checks passed
 
@@ -80,8 +81,8 @@ AAB template: the new proto `AndroidManifest.xml`, `resources.pb`, `classes.dex`
 is unchanged (seven assets with the same names), and `jarsigner -verify` reports "jar verified" with the upload
 certificate. The authoritative `bundletool validate` must still be run by re-running
 `.github/workflows/build-aab.yml` on the pushed commit before rollout. Hashes: unsigned AAB
-`364E37CCADA5AA0F9FD13A03BF0334D121B0311F56695C0CA8E6A9B030BFEC38`; signed AAB
-`4F8D50D0111205FCC33C4C443C19E3A3553153E4E37D4232C2E3A30FB7A6F50A`. The previous CI-built AABs are described
+`78B0A2F07CE31D70BE26C64A8BDD34E063AED40854053459E7F1E9876D3DFA8E`; signed AAB
+`4A6C002083C4E6484734F15FA6CC6CE9CF072409A8E9E9BC5CEAFF36B5D7EBD3`. The previous CI-built AABs are described
 below.
 
 ## AAB — CI build for 1.0.11

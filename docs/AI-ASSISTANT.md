@@ -306,9 +306,17 @@ that uses **nothing except those passages**.
 {
   "question": "What does the Quran say about theft?",
   "language": "en",
-  "verseKeys": ["5:38", "5:39"]
+  "verseKeys": ["5:38", "5:39"],
+  "history": [
+    { "role": "user", "content": "Who is Hazrat Essa?" },
+    { "role": "assistant", "content": "The Quran mentions Isa in several passages." }
+  ]
 }
 ```
+
+`history` is optional (max 6 items, each ≤ 400 chars, roles `user`/`assistant`). It is included in the prompt only
+as conversational context so follow-up questions such as "and what about his mother?" work; it is never treated as
+a source of Quran text and is validated/rejected like every other field.
 
 Success (`200`):
 

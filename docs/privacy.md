@@ -41,7 +41,8 @@ single request:
 - the question text you typed;
 - if you attached an image, that image;
 - when the app prepares a **Quran-only summary**, the references and translations of the Quran verses it
-  already retrieved locally (the verses are shown to you below the summary).
+  already retrieved locally (the verses are shown to you below the summary), plus a short context of the last few
+  questions/answers in the conversation so follow-up questions can be understood.
 
 The AI service is used only to (a) write a short, neutral small-talk or off-topic reply, (b) suggest search words
 for the app's own Quran search, (c) read text from an attached screenshot (OCR), and (d) write a short summary of

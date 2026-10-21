@@ -242,6 +242,27 @@ public final class LogicTest {
         check("entity alias list is loaded from the bundled lexicon",
                 dataset.findEntity("Tell me about Jesus") != null && dataset.findEntity("hazrat essa") != null);
 
+        // --------------------------------------- romanised, fuzzy and mixed input
+        Answer romanIsa = AnswerComposer.answer(dataset, "hazrath eesa", "en");
+        check("romanised 'hazrath eesa' resolves to Isa", "answer".equals(romanIsa.kind) && !romanIsa.passages.isEmpty());
+        Answer typoJacob = AnswerComposer.answer(dataset, "yaqubb", "en");
+        check("misspelt 'yaqubb' resolves to Yaqub", "answer".equals(typoJacob.kind) && !typoJacob.passages.isEmpty());
+        Answer romanMusa = AnswerComposer.answer(dataset, "moosa", "en");
+        check("romanised 'moosa' resolves to Musa", "answer".equals(romanMusa.kind) && !romanMusa.passages.isEmpty());
+        Answer mixedQuery = AnswerComposer.answer(dataset, "what quran says about sabr aur shukr", "en");
+        check("mixed English/Roman-Urdu question is answered", "answer".equals(mixedQuery.kind) && !mixedQuery.passages.isEmpty());
+        Answer mixedArabicQuery = AnswerComposer.answer(dataset, "ما معنى sabr", "en");
+        check("mixed Arabic + Roman question is answered", "answer".equals(mixedArabicQuery.kind) && !mixedArabicQuery.passages.isEmpty());
+        Answer namaz = AnswerComposer.answer(dataset, "namaz kya hai", "en");
+        check("romanised 'namaz' retrieves prayer verses", "answer".equals(namaz.kind) && !namaz.passages.isEmpty());
+        Answer roza = AnswerComposer.answer(dataset, "roza ke baray mein", "en");
+        check("romanised 'roza' retrieves fasting verses", "answer".equals(roza.kind) && !roza.passages.isEmpty());
+        Answer typo = AnswerComposer.answer(dataset, "pateince", "en");
+        check("a one-letter typo still retrieves patience verses", "answer".equals(typo.kind) && !typo.passages.isEmpty());
+        check("romanised entity lookup handles honorifics and spelling", dataset.findEntity("Hazrath Eesa") != null
+                && dataset.findEntity("hazrat yakoob") != null
+                && dataset.findEntity("random english sentence") == null);
+
         System.out.println();
         System.out.println("Logic tests: " + passed + " passed, " + failures.size() + " failed");
         if (!failures.isEmpty()) {

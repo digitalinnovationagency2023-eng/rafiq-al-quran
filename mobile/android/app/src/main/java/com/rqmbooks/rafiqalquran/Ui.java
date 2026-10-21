@@ -41,6 +41,8 @@ public final class Ui {
     public static int GREEN_SOFT = Color.parseColor("#EAF2EC");
     public static int DANGER = Color.parseColor("#8C2B2B");
     public static int BAR = Color.parseColor("#0B0B0B");        // header bar
+    public static int BUBBLE = Color.parseColor("#F4F4F4");     // user message bubble
+    public static int ON_BAR = Color.parseColor("#FFFFFF");     // title text on the bar
 
     private static boolean dark;
 
@@ -99,35 +101,39 @@ public final class Ui {
     public static void useTheme(boolean darkTheme) {
         dark = darkTheme;
         if (darkTheme) {
-            INK = Color.parseColor("#F2EDE1");        // warm white text
-            PAPER = Color.parseColor("#0B0B0B");      // deep black field
-            CARD = Color.parseColor("#15140F");       // raised card
-            MUTED = Color.parseColor("#A39C8C");
-            LINE = Color.parseColor("#2C2921");
-            SILVER = Color.parseColor("#C9C9C4");
-            GOLD = Color.parseColor("#C9A24B");
+            INK = Color.parseColor("#ECECEC");        // primary text
+            PAPER = Color.parseColor("#212121");      // chat field
+            CARD = Color.parseColor("#2F2F2F");       // raised card
+            MUTED = Color.parseColor("#9B9B9B");
+            LINE = Color.parseColor("#3C3C3C");
+            SILVER = Color.parseColor("#C5C5D2");
+            GOLD = Color.parseColor("#D4AF5A");
             GOLD_BRIGHT = Color.parseColor("#D4AF5A");
-            GOLD_DEEP = Color.parseColor("#D8B45E");
-            GOLD_SOFT = Color.parseColor("#1E1B13");
-            GREEN = Color.parseColor("#4FA379");
-            GREEN_SOFT = Color.parseColor("#12241B");
+            GOLD_DEEP = Color.parseColor("#C9A24B");
+            GOLD_SOFT = Color.parseColor("#2B2517");
+            GREEN = Color.parseColor("#10A37F");
+            GREEN_SOFT = Color.parseColor("#16352B");
             DANGER = Color.parseColor("#D06A6A");
-            BAR = Color.parseColor("#0B0B0B");
+            BAR = Color.parseColor("#171717");
+            BUBBLE = Color.parseColor("#2F2F2F");
+            ON_BAR = Color.parseColor("#FFFFFF");
         } else {
-            INK = Color.parseColor("#0B0B0B");
+            INK = Color.parseColor("#0D0D0D");
             PAPER = Color.parseColor("#FFFFFF");
             CARD = Color.parseColor("#FFFFFF");
-            MUTED = Color.parseColor("#6E6A5E");
-            LINE = Color.parseColor("#E8E2D2");
-            SILVER = Color.parseColor("#C9C9C4");
+            MUTED = Color.parseColor("#6E6E80");
+            LINE = Color.parseColor("#E5E5E5");
+            SILVER = Color.parseColor("#C5C5D2");
             GOLD = Color.parseColor("#B8912F");
             GOLD_BRIGHT = Color.parseColor("#D4AF5A");
             GOLD_DEEP = Color.parseColor("#8C6D1F");
-            GOLD_SOFT = Color.parseColor("#F7F1E1");
-            GREEN = Color.parseColor("#0E5A3A");
-            GREEN_SOFT = Color.parseColor("#EAF2EC");
-            DANGER = Color.parseColor("#8C2B2B");
-            BAR = Color.parseColor("#0B0B0B");
+            GOLD_SOFT = Color.parseColor("#FAF6E9");
+            GREEN = Color.parseColor("#10A37F");
+            GREEN_SOFT = Color.parseColor("#ECFDF5");
+            DANGER = Color.parseColor("#B42318");
+            BAR = Color.parseColor("#0D0D0D");
+            BUBBLE = Color.parseColor("#F4F4F4");
+            ON_BAR = Color.parseColor("#FFFFFF");
         }
     }
 
@@ -141,21 +147,22 @@ public final class Ui {
         view.setText(value == null ? "" : value);
         view.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp);
         view.setTextColor(color);
-        view.setLineSpacing(0, 1.25f);
+        view.setLineSpacing(0, 1.35f);
+        view.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         return view;
     }
 
     public static TextView label(Context context, String value) {
-        TextView view = text(context, value.toUpperCase(), 10f, GOLD_DEEP);
-        view.setLetterSpacing(0.16f);
-        view.setTypeface(Typeface.DEFAULT_BOLD);
+        TextView view = text(context, value, 11f, MUTED);
+        view.setLetterSpacing(0.02f);
+        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         return view;
     }
 
     public static TextView sectionLabel(Context context, String value) {
-        TextView view = text(context, value.toUpperCase(), 11f, GOLD_DEEP);
-        view.setLetterSpacing(0.18f);
-        view.setTypeface(Typeface.DEFAULT_BOLD);
+        TextView view = text(context, value, 12f, INK);
+        view.setLetterSpacing(0.01f);
+        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         return view;
     }
 
@@ -163,7 +170,7 @@ public final class Ui {
     public static GradientDrawable card(Context context) {
         GradientDrawable drawable = new GradientDrawable();
         drawable.setColor(CARD);
-        drawable.setCornerRadius(dp(context, 10));
+        drawable.setCornerRadius(dp(context, 16));
         drawable.setStroke(dp(context, 1), LINE);
         return drawable;
     }
@@ -171,7 +178,7 @@ public final class Ui {
     public static LinearLayout cardBox(Context context) {
         LinearLayout box = column(context);
         box.setBackground(card(context));
-        box.setPadding(dp(context, 14), dp(context, 12), dp(context, 14), dp(context, 12));
+        box.setPadding(dp(context, 16), dp(context, 14), dp(context, 16), dp(context, 14));
         return box;
     }
 
@@ -209,21 +216,17 @@ public final class Ui {
     public static Button button(Context context, String label, boolean primary) {
         Button button = new Button(context);
         button.setText(label);
-        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
         button.setAllCaps(false);
-        button.setLetterSpacing(0.04f);
-        button.setPadding(dp(context, 14), dp(context, 6), dp(context, 14), dp(context, 6));
-        button.setMinHeight(dp(context, 40));
+        button.setLetterSpacing(0.01f);
+        button.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        button.setPadding(dp(context, 18), dp(context, 8), dp(context, 18), dp(context, 8));
+        button.setMinHeight(dp(context, 42));
         if (primary) {
-            if (dark) {
-                button.setBackground(rounded(GOLD, 0, 4, context));
-                button.setTextColor(Color.parseColor("#0B0B0B"));
-            } else {
-                button.setBackground(rounded(INK, GOLD, 4, context));
-                button.setTextColor(GOLD_BRIGHT);
-            }
+            button.setBackground(rounded(GREEN, 0, 24, context));
+            button.setTextColor(Color.WHITE);
         } else {
-            button.setBackground(rounded(CARD, LINE, 4, context));
+            button.setBackground(rounded(CARD, LINE, 24, context));
             button.setTextColor(INK);
         }
         return button;
@@ -258,10 +261,39 @@ public final class Ui {
     // ------------------------------------------------------------------ chrome
     /** Small gold text action used in header bars and cards. */
     public static TextView action(Context context, String label, Runnable onClick) {
-        TextView view = text(context, label.toUpperCase(), 11f, GOLD_BRIGHT);
-        view.setLetterSpacing(0.1f);
-        view.setTypeface(Typeface.DEFAULT_BOLD);
+        TextView view = text(context, label, 12f, GREEN);
+        view.setLetterSpacing(0.01f);
+        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         view.setPadding(dp(context, 8), dp(context, 8), dp(context, 8), dp(context, 8));
+        view.setGravity(Gravity.CENTER);
+        if (onClick != null) view.setOnClickListener(v -> onClick.run());
+        return view;
+    }
+
+    /** Plain green text action used under answers (Copy / Listen / More verses). */
+    public static TextView textAction(Context context, String label, Runnable onClick) {
+        TextView view = text(context, label, 12.5f, GREEN);
+        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        view.setPadding(dp(context, 10), dp(context, 8), dp(context, 10), dp(context, 8));
+        if (onClick != null) view.setOnClickListener(v -> onClick.run());
+        return view;
+    }
+
+    /** Round glyph button (composer send, header actions). */
+    public static TextView circle(Context context, String glyph, int fill, int glyphColor, int sizeDp, Runnable onClick) {
+        TextView view = text(context, glyph, 18f, glyphColor);
+        view.setGravity(Gravity.CENTER);
+        int size = dp(context, sizeDp);
+        view.setLayoutParams(new LinearLayout.LayoutParams(size, size));
+        view.setBackground(rounded(fill, 0, sizeDp, context));
+        if (onClick != null) view.setOnClickListener(v -> onClick.run());
+        return view;
+    }
+
+    /** Small glyph shown inside the composer (attach / voice). */
+    public static TextView glyph(Context context, String value, Runnable onClick) {
+        TextView view = text(context, value, 18f, MUTED);
+        view.setPadding(dp(context, 10), dp(context, 10), dp(context, 10), dp(context, 10));
         view.setGravity(Gravity.CENTER);
         if (onClick != null) view.setOnClickListener(v -> onClick.run());
         return view;
@@ -293,13 +325,13 @@ public final class Ui {
             bar.addView(back);
         }
         LinearLayout titleBox = column(activity);
-        TextView heading = text(activity, title == null ? "" : title.toUpperCase(), 15f, GOLD_BRIGHT);
-        heading.setTypeface(Typeface.SERIF, Typeface.BOLD);
-        heading.setLetterSpacing(0.12f);
+        TextView heading = text(activity, title == null ? "" : title, 16f, ON_BAR);
+        heading.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        heading.setLetterSpacing(0.01f);
         titleBox.addView(heading);
         if (subtitle != null && !subtitle.isEmpty()) {
-            TextView sub = text(activity, subtitle.toUpperCase(), 9f, SILVER);
-            sub.setLetterSpacing(0.14f);
+            TextView sub = text(activity, subtitle, 10f, SILVER);
+            sub.setLetterSpacing(0.02f);
             sub.setPadding(0, dp(activity, 2), 0, 0);
             titleBox.addView(sub);
         }
@@ -322,6 +354,7 @@ public final class Ui {
     /** Small pill used for statuses and flags. */
     public static TextView chip(Context context, String text, int textColor, int fill, int stroke) {
         TextView view = text(context, text, 11f, textColor);
+        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         view.setPadding(dp(context, 10), dp(context, 4), dp(context, 10), dp(context, 4));
         view.setBackground(rounded(fill, stroke, 20, context));
         return view;

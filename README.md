@@ -55,6 +55,15 @@ optional AI assistance needs the operator to configure a free key; see below.
   is rejected, and the app labels it "Quran-only summary — not tafsir or a fatwa" above the verse cards. With AI
   off or unavailable, the app shows the same verses with an entity/topic-aware message (fully offline). The
   per-verse Arabic, translation, reference and provenance card is always displayed.
+- **Chat-box language understanding (1.1.0)**: the composer accepts English, Roman Urdu/Arabic and small spelling
+  mistakes — "Hazrath Eesa", "yaqubb", "moosa", "sabr aur shukr", "namaz", "roza", "jannat", "gunah", even mixed
+  Arabic + Roman input. A curated roman glossary, transliteration normalisation and bounded edit-distance matching
+  resolve terms offline; mixed scripts are tokenised separately and matched together. A short conversation context
+  is kept so follow-up questions work when the optional AI summary is enabled.
+- **ChatGPT-style interface (1.1.0)**: a clean black/white/green/silver/gold chat screen — minimal top bar, greeting
+  with suggestion cards, right-aligned user bubbles, plain assistant text with light verse cards, and a single
+  rounded composer with attach, voice and a green send button. Copy / Listen / More verses / New chat are quiet green
+  actions under each answer, with an animated working indicator while the app searches or composes.
 - **Voice-language fixes (1.0.12)**: "Listen" now chooses the TTS voice from the **language of the text being
   spoken**, not from the interface setting (Arabic answers speak the English translation with an English voice; Urdu,
   Bengali, Turkish, Indonesian, Malay and Swahili answers speak their own translation; non-English text is never read
@@ -153,10 +162,10 @@ repository.
 
 | Suite | Command | Result |
 |---|---|---|
-| Server data, retrieval, API, donations, safety, admin auth, AI assistance, grounded synthesis | `npm run test -w server` | 80 passed (58 baseline + 15 assistant + 7 synthesis) |
-| Native app core logic against real bundled assets (incl. conversation, recitation rights, all ten voice locales and name/topic retrieval) | `node mobile/android/scripts/runLogicTests.js` | 98 passed (includes feature-help, voice-language and named-figure checks) |
+| Server data, retrieval, API, donations, safety, admin auth, AI assistance, grounded synthesis | `npm run test -w server` | 81 passed (58 baseline + 15 assistant + 8 synthesis) |
+| Native app core logic against real bundled assets (incl. conversation, recitation rights, voice locales, name/topic retrieval and romanised/fuzzy input) | `node mobile/android/scripts/runLogicTests.js` | 107 passed |
 | APK packaging check | `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.12.apk` | 22/22 checks passed (adds the two speech `<queries>` actions; signature, manifest, versionCode/Name, minSdk 24/targetSdk 36, bundled assets incl. `quran-meta.tsv`, icon) |
-| Release artifacts | APK build + AAB assembly/signing; `jarsigner -verify` | **Artifacts (1.1.0): APK SHA-256 97215C7505378A43F9E9B6E873460459ABDFC4DA5ACB05094D6893C70025A35A; unsigned AAB SHA-256 364E37CCADA5AA0F9FD13A03BF0334D121B0311F56695C0CA8E6A9B030BFEC38; signed upload AAB SHA-256 4F8D50D0111205FCC33C4C443C19E3A3553153E4E37D4232C2E3A30FB7A6F50A (jar verified); re-run the CI AAB workflow on the pushed commit for the authoritative bundletool validation.** |
+| Release artifacts | APK build + AAB assembly/signing; `jarsigner -verify` | **Artifacts (1.1.0): APK SHA-256 525C70BCA6527738DC98B85062CACBC65C9BD3F82FCD65D288F71A34F3697FAC; unsigned AAB SHA-256 78B0A2F07CE31D70BE26C64A8BDD34E063AED40854053459E7F1E9876D3DFA8E; signed upload AAB SHA-256 4A6C002083C4E6484734F15FA6CC6CE9CF072409A8E9E9BC5CEAFF36B5D7EBD3 (jar verified); re-run the CI AAB workflow on the pushed commit for the authoritative bundletool validation.** |
 | Emulator QA | 1.0.11 round-2 captures in `dist/` (home + attach, language dialog, conversation, recitation player, text attachment, TTS/answer, support, admin) | flows verified; see `docs/TESTS.md` |
 
 ## Guarantees encoded in the code and tests

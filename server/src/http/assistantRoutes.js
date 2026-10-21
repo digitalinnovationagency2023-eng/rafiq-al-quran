@@ -64,7 +64,13 @@ export const createAssistantRoutes = ({ db }) => {
       if (!isSummaryConfigured()) return res.status(503).json({ error: SUMMARY_NOT_ENABLED_MESSAGE });
       const request = validateSummaryRequest(req.body);
       if (!assistantBudgetAvailable(db)) throw new HttpError(429, BUDGET_EXHAUSTED_MESSAGE);
-      const result = await runSummary({ db, question: request.question, language: request.language, verseKeys: request.verseKeys });
+      const result = await runSummary({
+        db,
+        question: request.question,
+        language: request.language,
+        verseKeys: request.verseKeys,
+        history: request.history,
+      });
       recordAssistantCall(db);
       res.json({ enabled: true, ...result });
     })

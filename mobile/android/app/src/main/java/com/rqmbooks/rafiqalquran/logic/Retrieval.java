@@ -24,8 +24,11 @@ public final class Retrieval {
             "should","would","may","might","will","shall","i","you","he","she","it","we","they","me","my","your",
             "our","their","this","that","these","those","there","here","please","tell","show","give","find","say",
             "says","said","mention","mentions","mentioned","verse","verses","quran","qur'an","surah","sura","chapter",
-            "hazrat","hadrat","hz","prophet","prophets","nabi","paighambar","peer","pir","saint","imam","maulana",
-            "moulana","sheikh","shaikh","alaihi","alaihis","salam","rahimahullah"));
+            "aur","kya","kia","ka","ki","ke","mein","me","hai","hain","ko","se","par","yeh","woh","wo","kuch","bhi",
+            "nahi","nahin","hota","hoti","hota","kaise","kaisay","kion","kyon","kab","kahan","kon","kaun","aap","tum",
+            "hum","main","mera","meri","mere","apna","apni","liye","liyay","bare","baray","baare","mutalliq","batao",
+            "bata","bataye","batain","bataein","please","hazrat","hadrat","hz","prophet","prophets","nabi","paighambar",
+            "peer","pir","saint","imam","maulana","moulana","sheikh","shaikh","alaihi","alaihis","salam","rahimahullah"));
 
     public static final class Match {
         public final Verse verse;
@@ -47,14 +50,23 @@ public final class Retrieval {
 
     public static List<String> meaningfulTokens(String text, String language) {
         List<String> tokens = new ArrayList<>();
-        if (ArabicText.isArabic(text)) {
-            for (String token : ArabicText.tokens(text)) {
+        String value = text == null ? "" : text;
+        boolean arabic = false;
+        boolean latin = false;
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            if (character >= 0x0600 && character <= 0x06FF) arabic = true;
+            else if (character < 128 && Character.isLetter(character)) latin = true;
+        }
+        if (arabic) {
+            for (String token : ArabicText.tokens(value)) {
                 if (token.length() > 1 && !ARABIC_STOP.contains(token)) tokens.add(token);
             }
-            return tokens;
         }
-        for (String token : Dataset.latinTokens(text)) {
-            if (token.length() > 1 && !LATIN_STOP.contains(token)) tokens.add(token);
+        if (latin || !arabic) {
+            for (String token : Dataset.latinTokens(value)) {
+                if (token.length() > 1 && !LATIN_STOP.contains(token) && !Roman.isHonorific(token)) tokens.add(token);
+            }
         }
         return tokens;
     }
@@ -81,7 +93,12 @@ public final class Retrieval {
                 for (String term : vocabulary) {
                     if (term.length() < 3) continue;
                     for (String word : lowered) {
-                        if (word.equals(term) || word.contains(term) || term.contains(word)) {
+                        boolean matched = word.equals(term) || word.contains(term) || term.contains(word);
+                        if (!matched && Roman.isAscii(word) && Roman.isAscii(term)) {
+                            // Romanised spellings and small typos: sabrr, yaqubb, pateince.
+                            matched = Roman.sameRoman(word, term) || Roman.fuzzyMatch(word, term);
+                        }
+                        if (matched) {
                             hit = true;
                             break;
                         }

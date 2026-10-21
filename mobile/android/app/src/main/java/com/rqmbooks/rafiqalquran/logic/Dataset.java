@@ -196,22 +196,27 @@ public final class Dataset {
         }
     }
 
-    /** Finds a named figure (prophet/person) whose alias appears in the question. */
+    /**
+     * Finds a named figure (prophet/person) whose alias appears in the question.
+     * Handles romanised spellings ("Eesa", "Hazrath Essa", "Yaqoob", "Moosa"),
+     * small typos and mixed Arabic/Latin input.
+     */
     public Concept findEntity(String question) {
         if (question == null || question.trim().isEmpty()) return null;
-        List<String> tokens = new ArrayList<>();
-        if (ArabicText.isArabic(question)) {
-            tokens.addAll(ArabicText.tokens(question));
-        } else {
-            tokens.addAll(latinTokens(question));
-        }
+        List<String> tokens = mixedTokens(question);
         for (String token : tokens) {
+            if (token.length() < 3 || Roman.isHonorific(token)) continue;
             String lower = token.toLowerCase();
             for (Concept concept : concepts) {
                 if (!concept.key.startsWith("entity-")) continue;
                 for (List<String> vocabulary : concept.byLanguage) {
                     for (String term : vocabulary) {
-                        if (term.length() >= 3 && term.equals(lower)) return concept;
+                        if (term.length() < 3) continue;
+                        if (term.equals(lower)
+                                || (Roman.isAscii(term) && Roman.sameRoman(term, lower))
+                                || (Roman.isAscii(term) && Roman.fuzzyMatch(lower, term))) {
+                            return concept;
+                        }
                     }
                 }
                 for (String term : concept.arabic) {
@@ -220,6 +225,23 @@ public final class Dataset {
             }
         }
         return null;
+    }
+
+    /** Arabic and Latin tokens from mixed-script input (both, when both are present). */
+    static List<String> mixedTokens(String text) {
+        List<String> tokens = new ArrayList<>();
+        boolean arabic = false;
+        boolean latin = false;
+        if (text != null) {
+            for (int index = 0; index < text.length(); index++) {
+                char character = text.charAt(index);
+                if (character >= 0x0600 && character <= 0x06FF) arabic = true;
+                else if (character < 128 && Character.isLetter(character)) latin = true;
+            }
+        }
+        if (arabic) tokens.addAll(ArabicText.tokens(text));
+        if (latin || !arabic) tokens.addAll(latinTokens(text));
+        return tokens;
     }
 
     /** Display name for a named figure: the Arabic form for Arabic UI, English otherwise. */

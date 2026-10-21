@@ -104,3 +104,10 @@ Reported honestly; nothing here is claimed as solved.
     keyword/concept based rather than exhaustive, and no substitute exists for qualified scholarship. If the AI is
     off, unreachable, over quota or returns ungrounded text, the app shows the deterministic verse answer only. A
     new server build must be deployed and the API restarted for summaries to appear in the app.
+20. **Romanised understanding is a curated, bounded search aid — not a full transliteration engine.** Names and
+    common Islamic terms have reviewed alias/roman rows, and a small edit-distance match tolerates one or two typos
+    (same first letter, four or more letters). It does not translate arbitrary Roman Urdu sentences into Quranic
+    Arabic, unusual spellings outside the curated table can still miss, and fuzzy matching can occasionally pick a
+    near term. Mixed Arabic+English input is tokenised for both scripts, but heavily code-mixed questions are best
+    phrased as topic + name words. The AI summary (when enabled) receives a short recent-turn context for follow-ups;
+    that context is never a source of Quran text.
