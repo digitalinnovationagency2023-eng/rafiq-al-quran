@@ -71,6 +71,7 @@ public final class MainActivity extends Activity {
 
     private Dataset dataset;
     private Prefs prefs;
+    private String conversationId = java.util.UUID.randomUUID().toString();
     private StudyStore store;
     private final List<HistoryCodec.Turn> turns = new ArrayList<>();
     private LinearLayout messages;
@@ -1081,6 +1082,7 @@ public final class MainActivity extends Activity {
 
     private void newConversation() {
         archiveCurrentConversation();
+        conversationId = java.util.UUID.randomUUID().toString();
         turns.clear();
         prefs.clearHistory();
         clearAttachment();
@@ -1105,22 +1107,21 @@ public final class MainActivity extends Activity {
         }
         if (title.isEmpty()) title = "Attachment conversation";
         org.json.JSONArray turnsJson = HistoryCodec.encode(turns);
-        String signature = title + "|" + turns.size() + "|" + turnsJson.toString().hashCode();
         org.json.JSONArray list = prefs.conversations();
-        for (int index = 0; index < list.length(); index++) {
-            org.json.JSONObject existing = list.optJSONObject(index);
-            if (existing != null && signature.equals(existing.optString("sig"))) return;
-        }
         try {
             org.json.JSONArray next = new org.json.JSONArray();
             org.json.JSONObject item = new org.json.JSONObject();
+            item.put("id", conversationId);
             item.put("title", clip(title, 90));
             item.put("savedAt", System.currentTimeMillis());
-            item.put("sig", signature);
             item.put("turns", turnsJson);
             next.put(item);
             for (int index = 0; index < list.length() && next.length() < 20; index++) {
-                next.put(list.get(index));
+                org.json.JSONObject existing = list.optJSONObject(index);
+                if (existing == null) continue;
+                // one entry per conversation: the current chat replaces its previous archive
+                if (conversationId.equals(existing.optString("id"))) continue;
+                next.put(existing);
             }
             prefs.setConversations(next);
         } catch (Exception ignored) {
@@ -1132,6 +1133,8 @@ public final class MainActivity extends Activity {
         if (json == null || json.trim().isEmpty()) return;
         try {
             org.json.JSONObject item = new org.json.JSONObject(json);
+            String restoredId = item.optString("id", "");
+            conversationId = restoredId.isEmpty() ? java.util.UUID.randomUUID().toString() : restoredId;
             org.json.JSONArray encoded = item.optJSONArray("turns");
             if (encoded == null) return;
             List<HistoryCodec.Turn> restored = HistoryCodec.decode(encoded.toString());

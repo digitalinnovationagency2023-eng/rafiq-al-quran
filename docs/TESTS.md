@@ -70,7 +70,7 @@ a four-item ChatGPT-style menu, a History screen with back navigation, and a con
 | Native logic | **114 passed, 0 failed** (new checks: prophet count/list, 114 surahs, 6,236 verses, named mention count for Musa, qualifying passages for the fact answer, wider Isa retrieval) |
 | Device (Android 14 AVD) | four-item menu, History screen (saved chats + back arrow), index-fact answer "25 prophets …", and live reasoning answer for Isa citing 3:55, 4:157, 4:158, 19:33 |
 
-**Artifacts (1.2.0)** — APK `dist/rafiq-al-quran-1.2.0.apk`: 3,601,339 bytes, SHA-256 `6E7333A2DB99E8676E833B5D8DD6D57281C1F15FA1DAE80B3553EC46E912251D`; unsigned AAB `dist/rafiq-al-quran-1.2.0.aab`: 3,591,279 bytes, SHA-256 `65C17A2BE936E0B8C5E2E11F3E63CAC0CFE99FD085C97011B7F9CF66B2B73002`; signed upload AAB `dist/rafiq-al-quran-1.2.0-signed.aab`: 3,594,597 bytes, SHA-256 `4FA16E386AB4A9C14F43EF2CF16DD0591E8E1D9BEC2796CF7A55FCC41EC23766` (jarsigner verified).
+**Artifacts (1.2.0)** — APK `dist/rafiq-al-quran-1.2.0.apk`: 3,601,339 bytes, SHA-256 `6AC178FD13D698D09308C15296BC1568448AEB56A4EFE93DC3A576524B941AF4`; unsigned AAB `dist/rafiq-al-quran-1.2.0.aab`: 3,591,272 bytes, SHA-256 `9F8DD2A47BCF407E66089CCE47E98BE85028F8EB98CC8022C77F8FAC9F06CE89`; signed upload AAB `dist/rafiq-al-quran-1.2.0-signed.aab`: 3,594,593 bytes, SHA-256 `671076DA0CF8D285418E7D9F8DBD3816056EA3CCC2CD1B2F1CF81EABB969CEE9` (jarsigner verified).
 
 ## Production deployment — 2026-10-22 (verified)
 
