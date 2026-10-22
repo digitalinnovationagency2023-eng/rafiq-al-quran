@@ -147,7 +147,7 @@ public final class Ui {
         view.setText(value == null ? "" : value);
         view.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp);
         view.setTextColor(color);
-        view.setLineSpacing(0, 1.35f);
+        view.setLineSpacing(0, 1.42f);
         view.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         return view;
     }

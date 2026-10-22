@@ -111,3 +111,12 @@ Reported honestly; nothing here is claimed as solved.
     near term. Mixed Arabic+English input is tokenised for both scripts, but heavily code-mixed questions are best
     phrased as topic + name words. The AI summary (when enabled) receives a short recent-turn context for follow-ups;
     that context is never a source of Quran text.
+
+21. **Deep reasoning answers are model-written over the supplied verses.** The app gives the model up to 18
+    retrieved verses (plus one reviewed index fact for counts/lists), and the server rejects citations outside
+    that set, Arabic script and answers without references. Even so, the model can misread a translation, merge
+    verses imperfectly or phrase an inference too strongly; the card says "not tafsir or a fatwa" and the verses
+    are always shown. Counts/lists come from the app's reviewed index and say so: 25 prophets are **named** in the
+    Quran (4:164 and 40:78 note other messengers were not mentioned), surah/verse totals are dataset totals, and
+    mention counts cover named occurrences only (not pronouns or implied references). The AI never supplies Quran
+    text, and the Quran does not state a total number of all prophets or a future return of Isa.

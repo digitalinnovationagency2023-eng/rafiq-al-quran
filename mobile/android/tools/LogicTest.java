@@ -5,6 +5,7 @@ import com.rqmbooks.rafiqalquran.logic.Conversation;
 import com.rqmbooks.rafiqalquran.logic.Dataset;
 import com.rqmbooks.rafiqalquran.logic.DatasetLoader;
 import com.rqmbooks.rafiqalquran.logic.DonationRules;
+import com.rqmbooks.rafiqalquran.logic.Facts;
 import com.rqmbooks.rafiqalquran.logic.Notices;
 import com.rqmbooks.rafiqalquran.logic.Passage;
 import com.rqmbooks.rafiqalquran.logic.QuranMeta;
@@ -262,6 +263,27 @@ public final class LogicTest {
         check("romanised entity lookup handles honorifics and spelling", dataset.findEntity("Hazrath Eesa") != null
                 && dataset.findEntity("hazrat yakoob") != null
                 && dataset.findEntity("random english sentence") == null);
+
+        // --------------------------------------- index facts / deep advisory answers
+        Facts.Result prophetCount = Facts.match(dataset, "How many prophets are mentioned in the Quran?");
+        check("index fact: named prophet count is 25 with 4:164/40:78",
+                prophetCount != null && prophetCount.message.contains("25")
+                        && prophetCount.message.contains("4:164")
+                        && prophetCount.verseKeys.contains("4:164") && prophetCount.verseKeys.contains("40:78"));
+        Facts.Result prophetNames = Facts.match(dataset, "List the names of the prophets in the Quran");
+        check("index fact: list-of-prophets question resolves", prophetNames != null && prophetNames.message.contains("Muhammad"));
+        Facts.Result surahCount = Facts.match(dataset, "How many surahs are in the Quran?");
+        check("index fact: 114 surahs from the validated dataset", surahCount != null && surahCount.message.contains("114"));
+        Facts.Result verseCount = Facts.match(dataset, "How many verses are in the Quran?");
+        check("index fact: 6236 verses from the validated dataset", verseCount != null && verseCount.message.contains("6236"));
+        Facts.Result mentionCount = Facts.match(dataset, "How many times is Musa mentioned in the Quran?");
+        check("index fact: named mentions of Musa are counted", mentionCount != null && mentionCount.message.contains("Musa")
+                && !mentionCount.verseKeys.isEmpty());
+        Answer factAnswer = AnswerComposer.factAnswer(dataset, "en", prophetCount.message, prophetCount.verseKeys);
+        check("index-fact answer carries the qualifying verses", factAnswer.passages.size() == 2
+                && "4:164".equals(factAnswer.passages.get(0).verseKey));
+        Answer deepEntity = AnswerComposer.answer(dataset, "Who is Hazrat Essa?", "en");
+        check("entity questions now retrieve a wider verse set", deepEntity.passages.size() >= 3);
 
         System.out.println();
         System.out.println("Logic tests: " + passed + " passed, " + failures.size() + " failed");

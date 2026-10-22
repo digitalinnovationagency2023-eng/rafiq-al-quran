@@ -382,3 +382,27 @@ OpenAI-compatible HTTP server and covers:
 
 Run with `npm test -w server` from the repository root. No real provider and no
 real key are used by the suite.
+
+
+## Deep reasoning answer (`POST /api/assistant/answer`, 1.2.0)
+
+The app sends the question, up to **18** verse keys it retrieved (including reviewed core verses for
+major figures), a short history and—for count/list questions—one reviewed index fact. The server loads
+the authoritative translations for exactly those references and asks the provider for a direct answer
+followed by step-by-step reasoning. The same grounding rules apply: citations outside the supplied set
+or Arabic script are rejected, the answer must be 80–2200 characters with at least one citation, and
+nothing is persisted.
+
+```json
+{
+  "question": "How many prophets are named in the Quran?",
+  "language": "en",
+  "verseKeys": ["4:164", "40:78"],
+  "facts": ["App index: 25 named prophets (...); 4:164/40:78 say others were not mentioned."],
+  "history": []
+}
+```
+
+`facts` is optional (max 6 items, each ≤ 300 ASCII characters, no Arabic script) and is used only for
+counts/names, never as scripture. The deterministic fact answer is always available offline, so a
+provider failure leaves the count/list and its qualifying verses on screen.

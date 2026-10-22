@@ -196,6 +196,15 @@ public final class Dataset {
         }
     }
 
+    /** Looks up a reviewed concept (including entity-* figures) by key. */
+    public Concept entity(String key) {
+        if (key == null) return null;
+        for (Concept concept : concepts) {
+            if (key.equals(concept.key)) return concept;
+        }
+        return null;
+    }
+
     /**
      * Finds a named figure (prophet/person) whose alias appears in the question.
      * Handles romanised spellings ("Eesa", "Hazrath Essa", "Yaqoob", "Moosa"),

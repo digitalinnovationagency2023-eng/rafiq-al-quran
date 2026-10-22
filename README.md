@@ -1,6 +1,6 @@
 # Rafiq Al-Quran: AI Assistant
 
-**Status: 1.1.0** — native Android release, versionCode 13, versionName 1.1.0 (Android 7.0+, minSdk 24, targetSdk 36).
+**Status: 1.2.0** — native Android release, versionCode 14, versionName 1.2.0 (Android 7.0+, minSdk 24, targetSdk 36).
 
 A free, Quran-only **native Android app** with an offline Quran reader, study tools, a conversational
 verse-finding assistant and enabled Quran.com recitation, plus an optional API. The complete Quran — all 114
@@ -10,8 +10,14 @@ Android application with no WebView and no Gradle, the Quran dataset is bundled 
 answers, conversation replies and study tools work fully offline. Recitation streams from Quran.com and the
 optional AI assistance needs the operator to configure a free key; see below.
 
-## What's in the 1.1.0 build
+## What's in the 1.2.0 build
 
+- **Deeper Quran-only reasoning answers (1.2.0)**: count/list questions are answered from the reviewed Quran
+  index with references (25 named prophets with 4:164/40:78, surah/verse totals, name-mention counts), and other
+  questions get a direct answer plus step-by-step reasoning over up to 18 supplied verses (with reviewed core
+  verses for major figures, e.g. Isa 3:45/3:55/4:157/4:158/19:33), citing only those verses and clearly separating
+  what the Quran states from inference and silence. New ChatGPT-style four-item menu, History screen with back
+  arrow and a consolidated Settings page; typography and spacing refreshed.
 - **Offline reader for all 114 surahs**, with a Juz and Madani page indicator on every verse, per-verse actions
   (copy, share, save, note, listen), reading progress and a continue-reading card.
 - **Nine translations**, each shown with its source, checksum provenance and licence status, with text-size controls
@@ -162,8 +168,8 @@ repository.
 
 | Suite | Command | Result |
 |---|---|---|
-| Server data, retrieval, API, donations, safety, admin auth, AI assistance, grounded synthesis | `npm run test -w server` | 81 passed (58 baseline + 15 assistant + 8 synthesis) |
-| Native app core logic against real bundled assets (incl. conversation, recitation rights, voice locales, name/topic retrieval and romanised/fuzzy input) | `node mobile/android/scripts/runLogicTests.js` | 107 passed |
+| Server data, retrieval, API, donations, safety, admin auth, AI assistance, grounded synthesis and reasoning | `npm run test -w server` | 88 passed (58 baseline + 15 assistant + 8 synthesis + 7 deep-answer) |
+| Native app core logic against real bundled assets (incl. conversation, recitation rights, voice locales, name/topic retrieval, romanised/fuzzy input and index facts) | `node mobile/android/scripts/runLogicTests.js` | 114 passed |
 | APK packaging check | `node mobile/android/scripts/verifyApk.js dist/rafiq-al-quran-1.0.12.apk` | 22/22 checks passed (adds the two speech `<queries>` actions; signature, manifest, versionCode/Name, minSdk 24/targetSdk 36, bundled assets incl. `quran-meta.tsv`, icon) |
 | Release artifacts | APK build + AAB assembly/signing; `jarsigner -verify` | **Artifacts (1.1.0): APK SHA-256 B680204A4BA2BAAC0465C4B7EBD6675639476F3791803A83C68F84AC1F95068A; unsigned AAB SHA-256 2A275C7AE887D9DEFC0A4D512B38CCB8C53AAB13D035D38BD14637E7B03692BB; signed upload AAB SHA-256 AC42360B8C397A9502955B8D3C249C5A13F8BF1644DFBBF73BC81B420D298FEF (jar verified); re-run the CI AAB workflow on the pushed commit for the authoritative bundletool validation.** |
 | Emulator QA | 1.0.11 round-2 captures in `dist/` (home + attach, language dialog, conversation, recitation player, text attachment, TTS/answer, support, admin) | flows verified; see `docs/TESTS.md` |

@@ -61,6 +61,11 @@ public final class Api {
         return request(resources, "POST", "/api/assistant/summary", body, null, 45000);
     }
 
+    /** Deeper Quran-only reasoning answer over a larger supplied verse set. */
+    public static JSONObject assistantAnswer(Resources resources, JSONObject body) throws Exception {
+        return request(resources, "POST", "/api/assistant/answer", body, null, 60000);
+    }
+
     private static JSONObject request(Resources resources, String method, String path, JSONObject body, String adminToken) throws Exception {
         return request(resources, method, path, body, adminToken, 15000);
     }

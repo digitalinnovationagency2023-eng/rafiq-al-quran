@@ -57,6 +57,21 @@ The 67 checks include the per-passage dataset-existence assertions emitted in a 
 - bundles `classes.dex`, the seven dataset assets (including `assets/quran-meta.tsv`) and the launcher icon;
 - **Artifacts (1.1.0): APK SHA-256 B680204A4BA2BAAC0465C4B7EBD6675639476F3791803A83C68F84AC1F95068A; unsigned AAB SHA-256 2A275C7AE887D9DEFC0A4D512B38CCB8C53AAB13D035D38BD14637E7B03692BB; signed upload AAB SHA-256 AC42360B8C397A9502955B8D3C249C5A13F8BF1644DFBBF73BC81B420D298FEF (jarsigner verified, upload cert 08:DE…).**
 
+## 1.2.0 verification — 2026-10-22/23
+
+Release **1.2.0** (versionCode 14). New in this build: the /api/assistant/answer reasoning endpoint,
+deterministic index facts (prophet count/list, 25 named prophets with 4:164/40:78; surah and verse
+totals from the validated dataset; named-mention counts), reviewed core verses for major figures,
+a four-item ChatGPT-style menu, a History screen with back navigation, and a consolidated Settings page.
+
+| Suite | Result |
+|---|---|
+| Server | **88 passed, 0 failed** (new `server/test/deepAnswer.test.js`: 7 tests covering 503, validation incl. 18-verse and facts limits, grounded success with facts/history in the prompt, outside-citation 502, Arabic 502, missing citation 502, provider 502/504) |
+| Native logic | **114 passed, 0 failed** (new checks: prophet count/list, 114 surahs, 6,236 verses, named mention count for Musa, qualifying passages for the fact answer, wider Isa retrieval) |
+| Device (Android 14 AVD) | four-item menu, History screen (saved chats + back arrow), index-fact answer "25 prophets …", and live reasoning answer for Isa citing 3:55, 4:157, 4:158, 19:33 |
+
+**Artifacts (1.2.0)** — APK `dist/rafiq-al-quran-1.2.0.apk`: 3,601,339 bytes, SHA-256 `6E7333A2DB99E8676E833B5D8DD6D57281C1F15FA1DAE80B3553EC46E912251D`; unsigned AAB `dist/rafiq-al-quran-1.2.0.aab`: 3,591,279 bytes, SHA-256 `65C17A2BE936E0B8C5E2E11F3E63CAC0CFE99FD085C97011B7F9CF66B2B73002`; signed upload AAB `dist/rafiq-al-quran-1.2.0-signed.aab`: 3,594,597 bytes, SHA-256 `4FA16E386AB4A9C14F43EF2CF16DD0591E8E1D9BEC2796CF7A55FCC41EC23766` (jarsigner verified).
+
 ## Production deployment — 2026-10-22 (verified)
 
 The 1.1.0 server code was deployed to EC2 `i-09e2608bfa43e70bf` (us-east-1c) via SSM, because the

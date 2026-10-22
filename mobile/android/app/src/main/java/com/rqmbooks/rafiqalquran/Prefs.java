@@ -27,6 +27,19 @@ public final class Prefs {
     public void setHistory(JSONArray array) { prefs.edit().putString("history", array.toString()).apply(); }
     public void clearHistory() { prefs.edit().putString("history", "[]").apply(); }
 
+    /** Saved conversations shown on the History screen (newest first). */
+    public JSONArray conversations() {
+        try {
+            return new JSONArray(prefs.getString("conversations", "[]"));
+        } catch (Exception error) {
+            return new JSONArray();
+        }
+    }
+
+    public void setConversations(JSONArray value) {
+        prefs.edit().putString("conversations", value == null ? "[]" : value.toString()).apply();
+    }
+
     // ---------------------------------------------------------------- theme
     public String theme() { return prefs.getString("theme", "light"); }
     public boolean isDark() { return "dark".equals(theme()); }

@@ -16,7 +16,14 @@ import {
   runAssistant,
   validateAssistantRequest,
 } from "../services/assistant.js";
-import { SUMMARY_NOT_ENABLED_MESSAGE, isSummaryConfigured, runSummary, validateSummaryRequest } from "../services/synthesis.js";
+import {
+  SUMMARY_NOT_ENABLED_MESSAGE,
+  isSummaryConfigured,
+  runAnswer,
+  runSummary,
+  validateAnswerRequest,
+  validateSummaryRequest,
+} from "../services/synthesis.js";
 
 // The app is a native client and does not send cookies, so the assistant's
 // allowance is keyed by client IP rather than by the anonymous session id.
@@ -71,6 +78,26 @@ export const createAssistantRoutes = ({ db }) => {
         verseKeys: request.verseKeys,
         history: request.history,
       });
+      recordAssistantCall(db);
+      res.json({ enabled: true, ...result });
+    })
+  );
+
+  // Deeper Quran-only reasoning answer: more supplied verses plus app index facts for
+  // counts/lists. Same grounding rules as the summary: citations are whitelisted,
+  // Arabic script is rejected, and nothing outside the supplied text is allowed.
+  router.post(
+    "/answer",
+    rateLimit({
+      max: config.rateLimit.assistantMax,
+      windowMs: ASSISTANT_RATE_WINDOW_MS,
+      key: (req) => "assistant-answer:" + (req.ip || "unknown"),
+    }),
+    asyncHandler(async (req, res) => {
+      if (!isSummaryConfigured()) return res.status(503).json({ error: SUMMARY_NOT_ENABLED_MESSAGE });
+      const request = validateAnswerRequest(req.body);
+      if (!assistantBudgetAvailable(db)) throw new HttpError(429, BUDGET_EXHAUSTED_MESSAGE);
+      const result = await runAnswer({ db, ...request });
       recordAssistantCall(db);
       res.json({ enabled: true, ...result });
     })

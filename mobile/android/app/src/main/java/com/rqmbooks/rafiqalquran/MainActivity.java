@@ -36,6 +36,7 @@ import com.rqmbooks.rafiqalquran.logic.AnswerComposer;
 import com.rqmbooks.rafiqalquran.logic.Chapter;
 import com.rqmbooks.rafiqalquran.logic.Conversation;
 import com.rqmbooks.rafiqalquran.logic.Dataset;
+import com.rqmbooks.rafiqalquran.logic.Facts;
 import com.rqmbooks.rafiqalquran.logic.Language;
 import com.rqmbooks.rafiqalquran.logic.Passage;
 import com.rqmbooks.rafiqalquran.logic.Verse;
@@ -63,6 +64,7 @@ public final class MainActivity extends Activity {
     public static final String EXTRA_ASK = "ask";
     private static final int MIC_REQUEST = 41;
     private static final int ATTACH_REQUEST = 42;
+    private static final int REQUEST_HISTORY = 43;
     // A grounded summary is a second AI request per question, so the device cap is
     // slightly higher than the old single-call allowance.
     private static final int AI_DAILY_LIMIT = 40;
@@ -181,12 +183,20 @@ public final class MainActivity extends Activity {
         menuIcon.setContentDescription("Menu");
         menuIcon.setOnClickListener(this::showMenu);
         topbar.addView(menuIcon);
-        TextView heading = Ui.text(this, "Rafiq Al-Quran", 16.5f, Ui.ON_BAR);
+        TextView heading = Ui.text(this, "Rafiq Al-Quran", 13.8f, Ui.ON_BAR);
         heading.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         heading.setGravity(Gravity.CENTER);
+        heading.setSingleLine(true);
+        heading.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        heading.setPadding(Ui.dp(this, 2), 0, Ui.dp(this, 2), 0);
         topbar.addView(heading, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView historyIcon = Ui.text(this, "\u25F7", 21f, Ui.ON_BAR);
+        historyIcon.setPadding(Ui.dp(this, 7), Ui.dp(this, 2), Ui.dp(this, 7), Ui.dp(this, 2));
+        historyIcon.setContentDescription("History");
+        historyIcon.setOnClickListener(view -> openHistory());
+        topbar.addView(historyIcon);
         TextView newChat = Ui.text(this, "\uFF0B", 22f, Ui.ON_BAR);
-        newChat.setPadding(Ui.dp(this, 10), Ui.dp(this, 2), Ui.dp(this, 10), Ui.dp(this, 2));
+        newChat.setPadding(Ui.dp(this, 7), Ui.dp(this, 2), Ui.dp(this, 7), Ui.dp(this, 2));
         newChat.setContentDescription("New conversation");
         newChat.setOnClickListener(view -> newConversation());
         topbar.addView(newChat);
@@ -312,68 +322,90 @@ public final class MainActivity extends Activity {
     // ------------------------------------------------------------------ menu
     private void showMenu(View anchor) {
         PopupMenu menu = new PopupMenu(this, anchor);
-        menu.getMenu().add(0, 1, 0, "New conversation");
-        menu.getMenu().add(0, 15, 1, "Interface language \u2014 " + prefs.language());
-        menu.getMenu().add(0, 16, 2, "Text size smaller  (A\u2212)");
-        menu.getMenu().add(0, 17, 3, "Text size larger  (A+)");
-        menu.getMenu().add(0, 10, 4, "Study tools \u2014 collections, notes, plans");
-        menu.getMenu().add(0, 9, 2, "Browse surahs");
-        menu.getMenu().add(0, 11, 3, "Verse audio \u2014 Quran.com recitation");
-        menu.getMenu().add(0, 14, 4, prefs.aiAssistEnabled()
-                ? (aiAvailable ? "AI conversation: on" : "AI conversation: local only (server AI off)")
-                : "AI conversation: off");
-        menu.getMenu().add(0, 2, 5, prefs.voiceEnabled() ? "Turn voice off" : "Turn voice on");
-        menu.getMenu().add(0, 13, 6, Ui.isDark() ? "Switch to light theme" : "Switch to dark theme");
-        menu.getMenu().add(0, 3, 7, "Sources & licences");
-        menu.getMenu().add(0, 6, 8, "Report an issue");
-        menu.getMenu().add(0, 7, 9, "About");
-        menu.getMenu().add(0, 8, 10, "Privacy");
-        if (operatorUnlocked) menu.getMenu().add(0, 12, 11, "Operator admin");
-        menu.getMenu().add(0, 4, 12, "Support the app");
+        menu.getMenu().add(0, 1, 0, "New chat");
+        menu.getMenu().add(0, 18, 1, "History");
+        menu.getMenu().add(0, 19, 2, "Settings");
+        menu.getMenu().add(0, 20, 3, "About & legal");
         menu.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
-                case 1:
-                    newConversation();
-                    return true;
-                case 15:
-                    showLanguageDialog();
-                    return true;
-                case 16:
-                    changeTextScale(-0.05f);
-                    return true;
-                case 17:
-                    changeTextScale(0.05f);
-                    return true;
-                case 2:
-                    prefs.setVoiceEnabled(!prefs.voiceEnabled());
-                    if (prefs.voiceEnabled()) ensureTts();
-                    else if (tts != null) Voice.stop(tts);
-                    toast(prefs.voiceEnabled() ? "Voice features on" : "Voice features off");
-                    return true;
-                case 4: openPage("support"); return true;
-                case 6: openPage("report"); return true;
-                case 7: openPage("about"); return true;
-                case 8: openPage("privacy"); return true;
-                case 9: startActivity(new Intent(this, SurahActivity.class)); return true;
-                case 10: startActivity(new Intent(this, StudyActivity.class)); return true;
-                case 11:
-                    startActivity(PlayerActivity.intent(this,
-                            store.hasProgress() ? store.lastChapter() : 1,
-                            store.hasProgress() ? store.lastVerseKey() : null));
-                    return true;
-                case 12: startActivity(new Intent(this, AdminActivity.class)); return true;
-                case 13: Ui.toggleTheme(this); return true;
-                case 14:
-                    prefs.setAiAssistEnabled(!prefs.aiAssistEnabled());
-                    toast(prefs.aiAssistEnabled()
-                            ? (aiAvailable ? "AI conversation on" : "AI conversation on \u2014 server AI is not configured yet; local replies are used")
-                            : "AI conversation off \u2014 offline replies only");
-                    return true;
-                case 3: openPage("sources"); return true;
+                case 1: newConversation(); return true;
+                case 18: openHistory(); return true;
+                case 19: showSettings(); return true;
+                case 20: showLegal(); return true;
                 default: return false;
             }
         });
         menu.show();
+    }
+
+    private void showSettings() {
+        List<String> items = new ArrayList<>();
+        items.add("Interface language \u2014 " + prefs.language());
+        items.add("Text size smaller (A\u2212)");
+        items.add("Text size larger (A+)");
+        items.add(Ui.isDark() ? "Switch to light theme" : "Switch to dark theme");
+        items.add(prefs.aiAssistEnabled() ? "AI answers: on" : "AI answers: off");
+        items.add(prefs.voiceEnabled() ? "Voice: on" : "Voice: off");
+        items.add("Study tools");
+        items.add("Browse surahs");
+        items.add("Verse audio \u2014 Quran.com");
+        items.add("Sources & licences");
+        items.add("Report an issue");
+        items.add("Privacy");
+        items.add("Support the app");
+        if (operatorUnlocked) items.add("Operator admin");
+        new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
+                .setTitle("Settings")
+                .setItems(items.toArray(new String[0]), (dialog, which) -> {
+                    switch (which) {
+                        case 0: showLanguageDialog(); break;
+                        case 1: changeTextScale(-0.05f); break;
+                        case 2: changeTextScale(0.05f); break;
+                        case 3: Ui.toggleTheme(this); break;
+                        case 4:
+                            prefs.setAiAssistEnabled(!prefs.aiAssistEnabled());
+                            toast(prefs.aiAssistEnabled()
+                                    ? (aiAvailable ? "AI answers on" : "AI answers on \u2014 server AI is not configured yet; local replies are used")
+                                    : "AI answers off \u2014 Quran verses and index facts only");
+                            break;
+                        case 5:
+                            prefs.setVoiceEnabled(!prefs.voiceEnabled());
+                            if (prefs.voiceEnabled()) ensureTts();
+                            else if (tts != null) Voice.stop(tts);
+                            toast(prefs.voiceEnabled() ? "Voice features on" : "Voice features off");
+                            break;
+                        case 6: startActivity(new Intent(this, StudyActivity.class)); break;
+                        case 7: startActivity(new Intent(this, SurahActivity.class)); break;
+                        case 8:
+                            startActivity(PlayerActivity.intent(this,
+                                    store.hasProgress() ? store.lastChapter() : 1,
+                                    store.hasProgress() ? store.lastVerseKey() : null));
+                            break;
+                        case 9: openPage("sources"); break;
+                        case 10: openPage("report"); break;
+                        case 11: openPage("privacy"); break;
+                        case 12: openPage("support"); break;
+                        case 13: startActivity(new Intent(this, AdminActivity.class)); break;
+                        default: break;
+                    }
+                })
+                .show();
+    }
+
+    private void showLegal() {
+        String[] items = {"About", "Privacy", "Sources & licences", "Report an issue", "Support the app"};
+        new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
+                .setTitle("About & legal")
+                .setItems(items, (dialog, which) -> {
+                    switch (which) {
+                        case 0: openPage("about"); break;
+                        case 1: openPage("privacy"); break;
+                        case 2: openPage("sources"); break;
+                        case 3: openPage("report"); break;
+                        default: openPage("support"); break;
+                    }
+                })
+                .show();
     }
 
     private void attachOperatorUnlock(LinearLayout topbar) {
@@ -597,14 +629,14 @@ public final class MainActivity extends Activity {
         LinearLayout card = Ui.column(this);
         card.setBackground(Ui.rounded(Ui.GREEN_SOFT, 0, 16, this));
         card.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
-        TextView label = Ui.text(this, "Quran-only summary", 11f, Ui.GREEN);
+        TextView label = Ui.text(this, "Quran-only answer", 11f, Ui.GREEN);
         label.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         card.addView(label);
         TextView text = Ui.text(this, summary, 15f, Ui.INK);
         text.setPadding(0, Ui.dp(this, 6), 0, 0);
         card.addView(text);
         TextView meta = Ui.text(this,
-                "Synthesised only from the verses below \u2014 not tafsir or a fatwa. Consult a qualified scholar for rulings.",
+                "Reasoned only from the verses below \u2014 not tafsir or a fatwa. Consult a qualified scholar for rulings.",
                 11f, Ui.MUTED);
         meta.setPadding(0, Ui.dp(this, 8), 0, 0);
         card.addView(meta);
@@ -699,7 +731,7 @@ public final class MainActivity extends Activity {
         row.setPadding(0, Ui.dp(this, 4), 0, 0);
         row.addView(Ui.textAction(this, "Copy", () -> copyAnswer(answer)));
         row.addView(Ui.textAction(this, "Listen", () -> speakAnswer(answer)));
-        if (!"fallback".equals(answer.kind)) {
+        if (!"fallback".equals(answer.kind) && !answer.passages.isEmpty()) {
             row.addView(Ui.textAction(this, "More verses", () -> askMore(answer)));
         }
         row.addView(Ui.textAction(this, "New chat", () -> newConversation()));
@@ -790,6 +822,7 @@ public final class MainActivity extends Activity {
         busy(attachment != null && attachment.image ? "Reading the attachment" : "Searching the Quran");
         new Thread(() -> {
             Answer answer;
+            Facts.Result indexFact = null;
             String note = null;
             try {
                 String searchText = originalQuestion;
@@ -827,16 +860,22 @@ public final class MainActivity extends Activity {
                         }
                         // Make sure the selected translation is in memory before composing.
                         Assets.ensureLanguage(MainActivity.this, dataset, language);
-                        answer = AnswerComposer.answer(dataset, searchText, language);
+                        indexFact = Facts.match(dataset, originalQuestion);
+                        if (indexFact != null) {
+                            answer = AnswerComposer.factAnswer(dataset, language, indexFact.message, indexFact.verseKeys);
+                        } else {
+                            answer = AnswerComposer.answer(dataset, searchText, language);
+                        }
                     }
                 }
             } catch (Exception error) {
                 answer = AnswerComposer.answer(dataset, originalQuestion, language);
             }
-            // Optional grounded summary: the AI may only use the verses we already retrieved.
+            // Optional deeper reasoning answer: the AI may only use the verses (and the
+            // reviewed index fact) we already retrieved.
             if (answer != null && "answer".equals(answer.kind) && !answer.passages.isEmpty()
                     && aiAvailable && prefs.aiAssistEnabled() && prefs.aiConsentShown()) {
-                answer = summarizeAnswer(answer, originalQuestion, language);
+                answer = deepenAnswer(answer, originalQuestion, language, indexFact == null ? null : indexFact.aiFact);
             }
             final Answer finalAnswer = answer;
             final String finalNote = note;
@@ -859,13 +898,14 @@ public final class MainActivity extends Activity {
     }
 
     /**
-     * Optional grounded AI summary of the verses already retrieved. The verse keys
-     * are sent to the app's server, which loads the authoritative translations and
-     * rejects any answer that cites a verse outside that set; on any failure the
-     * deterministic answer is shown unchanged.
+     * Optional deeper Quran-only answer: the app sends up to 18 retrieved verse
+     * keys plus an optional reviewed index fact. The server reloads the
+     * authoritative translations and rejects any answer that cites outside verses
+     * or writes Arabic script; on any failure the deterministic answer stays.
      */
-    private Answer summarizeAnswer(Answer answer, String question, String language) {
+    private Answer deepenAnswer(Answer answer, String question, String language, String indexFact) {
         if (question == null || question.trim().isEmpty()) return answer;
+        if (answer.passages.isEmpty()) return answer;
         if (!consumeAiAllowance()) return answer;
         try {
             JSONObject body = new JSONObject();
@@ -873,8 +913,17 @@ public final class MainActivity extends Activity {
             body.put("question", trimmed.length() > 500 ? trimmed.substring(0, 500) : trimmed);
             body.put("language", language);
             JSONArray keys = new JSONArray();
-            for (Passage passage : answer.passages) keys.put(passage.verseKey);
+            if (!answer.shownVerseKeys.isEmpty()) {
+                for (String key : answer.shownVerseKeys) keys.put(key);
+            } else {
+                for (Passage passage : answer.passages) keys.put(passage.verseKey);
+            }
             body.put("verseKeys", keys);
+            if (indexFact != null && !indexFact.trim().isEmpty()) {
+                JSONArray facts = new JSONArray();
+                facts.put(indexFact.trim());
+                body.put("facts", facts);
+            }
             JSONArray history = new JSONArray();
             for (HistoryCodec.Turn turn : recentHistory(6)) {
                 JSONObject item = new JSONObject();
@@ -893,12 +942,12 @@ public final class MainActivity extends Activity {
                 history.put(item);
             }
             if (history.length() > 0) body.put("history", history);
-            runOnUiThread(() -> busy("Composing a Quran-only summary"));
-            JSONObject response = Api.assistantSummary(getResources(), body);
-            String summary = response.isNull("summary") ? "" : response.optString("summary", "");
-            if (!summary.trim().isEmpty()) return answer.withSummary(summary.trim());
+            runOnUiThread(() -> busy("Thinking through the verses"));
+            JSONObject response = Api.assistantAnswer(getResources(), body);
+            String text = response.isNull("answer") ? "" : response.optString("answer", "");
+            if (!text.trim().isEmpty()) return answer.withSummary(text.trim());
         } catch (Exception ignored) {
-            // The verses are still shown; the summary is an optional enhancement.
+            // The verses are still shown; the reasoning answer is optional.
         }
         return answer;
     }
@@ -1031,10 +1080,80 @@ public final class MainActivity extends Activity {
     }
 
     private void newConversation() {
+        archiveCurrentConversation();
         turns.clear();
         prefs.clearHistory();
         clearAttachment();
         rebuildMessages();
+    }
+
+    private void openHistory() {
+        archiveCurrentConversation();
+        startActivityForResult(new Intent(this, HistoryActivity.class), REQUEST_HISTORY);
+    }
+
+    /** Archives the current chat so it appears on the History screen (device only). */
+    private void archiveCurrentConversation() {
+        if (turns.isEmpty()) return;
+        String title = "";
+        for (HistoryCodec.Turn turn : turns) {
+            if ("user".equals(turn.role) && turn.question != null && !turn.question.trim().isEmpty()
+                    && !turn.question.startsWith("[")) {
+                title = turn.question.trim();
+                break;
+            }
+        }
+        if (title.isEmpty()) title = "Attachment conversation";
+        org.json.JSONArray turnsJson = HistoryCodec.encode(turns);
+        String signature = title + "|" + turns.size() + "|" + turnsJson.toString().hashCode();
+        org.json.JSONArray list = prefs.conversations();
+        for (int index = 0; index < list.length(); index++) {
+            org.json.JSONObject existing = list.optJSONObject(index);
+            if (existing != null && signature.equals(existing.optString("sig"))) return;
+        }
+        try {
+            org.json.JSONArray next = new org.json.JSONArray();
+            org.json.JSONObject item = new org.json.JSONObject();
+            item.put("title", clip(title, 90));
+            item.put("savedAt", System.currentTimeMillis());
+            item.put("sig", signature);
+            item.put("turns", turnsJson);
+            next.put(item);
+            for (int index = 0; index < list.length() && next.length() < 20; index++) {
+                next.put(list.get(index));
+            }
+            prefs.setConversations(next);
+        } catch (Exception ignored) {
+            // history is a convenience; the chat itself is unaffected
+        }
+    }
+
+    private void loadArchivedConversation(String json) {
+        if (json == null || json.trim().isEmpty()) return;
+        try {
+            org.json.JSONObject item = new org.json.JSONObject(json);
+            org.json.JSONArray encoded = item.optJSONArray("turns");
+            if (encoded == null) return;
+            List<HistoryCodec.Turn> restored = HistoryCodec.decode(encoded.toString());
+            turns.clear();
+            for (HistoryCodec.Turn turn : restored) {
+                if (turn.answer == null || "conversation".equals(turn.answer.kind)) {
+                    turns.add(turn);
+                    continue;
+                }
+                boolean valid = true;
+                for (Passage passage : turn.answer.passages) {
+                    Verse verse = dataset == null ? null : dataset.verse(passage.verseKey);
+                    if (verse == null || !verse.arabic.equals(passage.arabic)) valid = false;
+                }
+                if (valid) turns.add(turn);
+            }
+            rebuildMessages();
+            saveHistory();
+            toast("Conversation restored");
+        } catch (Exception ignored) {
+            toast("That conversation could not be restored.");
+        }
     }
 
     private void showSourceDialog(Passage passage) {
@@ -1096,6 +1215,12 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_HISTORY) {
+            if (resultCode == RESULT_OK && data != null) {
+                loadArchivedConversation(data.getStringExtra(HistoryActivity.EXTRA_CONVERSATION));
+            }
+            return;
+        }
         if (requestCode != ATTACH_REQUEST || resultCode != RESULT_OK || data == null) return;
         final Uri uri = data.getData();
         if (uri == null) return;
