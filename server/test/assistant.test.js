@@ -128,7 +128,12 @@ test("assistant is disabled (503) until a provider is configured and reports sta
 
   const status = await request("GET", "/api/assistant/status");
   assert.equal(status.status, 200);
-  assert.deepEqual(status.json, { enabled: false, providerConfigured: false });
+  assert.deepEqual(status.json, {
+    enabled: false,
+    providerConfigured: false,
+    limits: { deviceDaily: 10, serverDaily: 300, monthlyBudgetUsd: 25 },
+    donationUrl: "",
+  });
   noSecrets(status, "status");
 });
 
@@ -137,7 +142,12 @@ test("status reports a configured provider without exposing the key, model or ba
   try {
     const status = await request("GET", "/api/assistant/status");
     assert.equal(status.status, 200);
-    assert.deepEqual(status.json, { enabled: true, providerConfigured: true });
+    assert.deepEqual(status.json, {
+      enabled: true,
+      providerConfigured: true,
+      limits: { deviceDaily: 10, serverDaily: 300, monthlyBudgetUsd: 25 },
+      donationUrl: "",
+    });
     noSecrets(status, "configured status");
     assert.equal(status.text.includes("test-model"), false);
     assert.equal(status.text.includes(mockBaseUrl), false);
@@ -145,12 +155,22 @@ test("status reports a configured provider without exposing the key, model or ba
     // A provider name without a key is not a usable configuration.
     config.ai.apiKey = "";
     const missingKey = await request("GET", "/api/assistant/status");
-    assert.deepEqual(missingKey.json, { enabled: false, providerConfigured: false });
+    assert.deepEqual(missingKey.json, {
+      enabled: false,
+      providerConfigured: false,
+      limits: { deviceDaily: 10, serverDaily: 300, monthlyBudgetUsd: 25 },
+      donationUrl: "",
+    });
     config.ai.apiKey = TEST_API_KEY;
 
     config.ai.provider = "gemini";
     const unsupported = await request("GET", "/api/assistant/status");
-    assert.deepEqual(unsupported.json, { enabled: false, providerConfigured: false });
+    assert.deepEqual(unsupported.json, {
+      enabled: false,
+      providerConfigured: false,
+      limits: { deviceDaily: 10, serverDaily: 300, monthlyBudgetUsd: 25 },
+      donationUrl: "",
+    });
   } finally {
     unconfigureProvider();
   }

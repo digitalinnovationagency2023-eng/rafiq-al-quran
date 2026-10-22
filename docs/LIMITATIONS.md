@@ -120,3 +120,9 @@ Reported honestly; nothing here is claimed as solved.
     Quran (4:164 and 40:78 note other messengers were not mentioned), surah/verse totals are dataset totals, and
     mention counts cover named occurrences only (not pronouns or implied references). The AI never supplies Quran
     text, and the Quran does not state a total number of all prophets or a future return of Isa.
+
+22. **AI Core adds verification and cost guards, not infallibility.** Claims are checked by citation
+    whitelist and translation word-overlap before display, but overlap is a heuristic: a subtly wrong
+    paraphrase can still pass. The deterministic index facts remain the authoritative count/list
+    answer. Daily/monthly limits are protective and can stop AI answers (the app then shows verses).
+    Token streaming is intentionally not used; the answer is revealed only after verification.

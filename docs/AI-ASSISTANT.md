@@ -406,3 +406,17 @@ nothing is persisted.
 `facts` is optional (max 6 items, each ≤ 300 ASCII characters, no Arabic script) and is used only for
 counts/names, never as scripture. The deterministic fact answer is always available offline, so a
 provider failure leaves the count/list and its qualifying verses on screen.
+
+
+## AI Core (1.3.0): router, verifier, cache and cost guards
+
+- **Router:** `AI_MODEL` (fast) for most questions; `AI_DEEP_MODEL` for reasoning cues. Optional
+  `AI_FALLBACK_BASE_URL/API_KEY/MODEL` is tried on 429/5xx/timeout.
+- **Verifier:** the answer call requests `{answer, claims:[{text,verses}], caveats}`. Every cited
+  verse must be in the supplied set, each claim must overlap the cited translation (12% for 2+ verses,
+  18% for one), no Arabic script, answer 80–2200 chars with at least one citation. Failed validation
+  returns 502 and the app keeps the deterministic verses/fact.
+- **Cache:** validated answers cached 30 days under a one-way key; no question text or identity stored.
+- **Cost guards:** `AI_DAILY_ANSWER_CAP` (default 300/day) and `AI_MONTHLY_BUDGET_USD` (default 25)
+  are enforced before the provider call; 429 responses fall back to deterministic answers in the app.
+  The app itself limits AI to 10 answers/day/device.

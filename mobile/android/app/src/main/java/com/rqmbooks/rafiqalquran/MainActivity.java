@@ -13,6 +13,8 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.speech.RecognitionListener;
 import android.speech.RecognitionSupport;
 import android.speech.RecognitionSupportCallback;
@@ -67,7 +69,7 @@ public final class MainActivity extends Activity {
     private static final int REQUEST_HISTORY = 43;
     // A grounded summary is a second AI request per question, so the device cap is
     // slightly higher than the old single-call allowance.
-    private static final int AI_DAILY_LIMIT = 40;
+    private static final int AI_DAILY_LIMIT = 10;
 
     private Dataset dataset;
     private Prefs prefs;
@@ -633,15 +635,31 @@ public final class MainActivity extends Activity {
         TextView label = Ui.text(this, "Quran-only answer", 11f, Ui.GREEN);
         label.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         card.addView(label);
-        TextView text = Ui.text(this, summary, 15f, Ui.INK);
+        boolean animated = summary.length() > 240;
+        TextView text = Ui.text(this, animated ? "" : summary, 15f, Ui.INK);
         text.setPadding(0, Ui.dp(this, 6), 0, 0);
         card.addView(text);
+        if (animated) revealText(text, summary);
         TextView meta = Ui.text(this,
                 "Reasoned only from the verses below \u2014 not tafsir or a fatwa. Consult a qualified scholar for rulings.",
                 11f, Ui.MUTED);
         meta.setPadding(0, Ui.dp(this, 8), 0, 0);
         card.addView(meta);
         return card;
+    }
+
+    /** ChatGPT-style reveal of the already-verified answer (no unverified tokens). */
+    private void revealText(final TextView view, final String full) {
+        final Handler handler = new Handler(Looper.getMainLooper());
+        final int step = Math.max(14, full.length() / 70);
+        handler.post(new Runnable() {
+            private int shown = 0;
+            @Override public void run() {
+                shown = Math.min(full.length(), shown + step);
+                view.setText(full.substring(0, shown));
+                if (shown < full.length() && view.isAttachedToWindow()) handler.postDelayed(this, 24);
+            }
+        });
     }
 
     private View guidanceCard() {

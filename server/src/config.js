@@ -86,8 +86,18 @@ export const config = {
     // The free Gemini tier works through its OpenAI-compatible endpoint, so a
     // model default keeps the feature usable with only AI_PROVIDER/AI_API_KEY.
     model: (process.env.AI_MODEL || "gemini-flash-lite-latest").trim(),
+    // Optional second model for questions that need deeper reasoning.
+    deepModel: (process.env.AI_DEEP_MODEL || process.env.AI_MODEL || "gemini-flash-lite-latest").trim(),
+    // Optional second OpenAI-compatible provider used when the primary fails.
+    fallbackBaseUrl: (process.env.AI_FALLBACK_BASE_URL || "").trim(),
+    fallbackApiKey: (process.env.AI_FALLBACK_API_KEY || "").trim(),
+    fallbackModel: (process.env.AI_FALLBACK_MODEL || "").trim(),
     timeoutMs: int(process.env.AI_TIMEOUT_MS, 8000),
     maxMonthlyCalls: Math.max(0, int(process.env.AI_MAX_MONTHLY_CALLS, 0)),
+    // Cost guards: hard daily cap and a monthly estimated-spend ceiling. Both
+    // fall back to deterministic answers instead of spending without a bound.
+    dailyAnswerCap: Math.max(1, int(process.env.AI_DAILY_ANSWER_CAP, 300)),
+    monthlyBudgetUsd: Math.max(0, Number(process.env.AI_MONTHLY_BUDGET_USD || 25)),
   },
 
   donations: {
@@ -104,6 +114,9 @@ export const config = {
     complianceApproved: bool(process.env.DONATIONS_COMPLIANCE_APPROVED, false),
     successUrl: process.env.DONATIONS_SUCCESS_URL || "",
     cancelUrl: process.env.DONATIONS_CANCEL_URL || "",
+    // Optional public donation page shown on the app's Support screen (leave
+    // empty until the operator has reviewed Play's payments policy for links).
+    url: (process.env.DONATION_URL || "").trim(),
   },
 
   premium: {

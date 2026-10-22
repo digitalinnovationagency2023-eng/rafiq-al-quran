@@ -10,6 +10,14 @@ import { config } from "../config.js";
 import { HttpError } from "../middleware/errors.js";
 import { isSupportedLanguage } from "./languages.js";
 import { detectLanguage } from "./query.js";
+import { chatCompletion, estimateCostMicros, pickModel, providerConfigured } from "./provider.js";
+import {
+  budgetAvailable,
+  cacheKey,
+  getCachedAnswer,
+  putCachedAnswer,
+  recordUsage,
+} from "./aiSupport.js";
 
 export const MAX_SUMMARY_QUESTION_CHARS = 500;
 export const MAX_SUMMARY_PASSAGES = 12;
@@ -27,6 +35,11 @@ export const SUMMARY_NOT_ENABLED_MESSAGE =
 export const SUMMARY_PROVIDER_ERROR_MESSAGE = "AI assistance is temporarily unavailable. Please try again.";
 export const SUMMARY_TIMEOUT_MESSAGE = "AI assistance timed out. Please try again.";
 export const SUMMARY_BUDGET_MESSAGE = "AI assistance monthly limit reached. Please try again next month.";
+export const ANSWER_DAILY_MESSAGE =
+  "The daily AI limit has been reached. Quran verses and reviewed index answers remain available; AI answers return tomorrow.";
+export const ANSWER_BUDGET_MESSAGE =
+  "The monthly AI budget has been reached. Quran verses and reviewed index answers remain available; AI answers return next month.";
+const ANSWER_PROMPT_VERSION = "answer-v2";
 
 const ARABIC_SCRIPT = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/u;
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/g;
@@ -182,8 +195,11 @@ const ANSWER_SYSTEM_PROMPT = [
   "   not mentioned\".",
   "9. If names are available in the index facts for a count/list question, include the full list in",
   "   the answer, comma-separated, before the step-by-step reasoning.",
-  "10. Be concise and neutral: 120-350 words, no markdown headings, no JSON, no preamble.",
-  "    Answer in the user's interface language.",
+  "10. Return ONE JSON object only, no markdown fences, with exactly these keys:",
+  "    {\"answer\":\"<the text the user sees>\",\"claims\":[{\"text\":\"<one factual sentence>\",\"verses\":[\"4:164\"]}],\"caveats\":[\"<optional short caveat>\"]}.",
+  "    The answer field is the final prose (120-350 words, no headings); claims must be 2-12 short sentences,",
+  "    each supported by the verses listed for it, and only provided references may be used.",
+  "11. Answer in the user's interface language.",
 ].join("\n");
 
 const buildAnswerContent = ({ question, language, verses, history, facts }) => {
@@ -209,51 +225,22 @@ const buildAnswerContent = ({ question, language, verses, history, facts }) => {
   return lines.join("\n");
 };
 
-const requestProviderAnswer = async ({ question, language, verses, history, facts }) => {
-  const baseUrl = config.ai.baseUrl.replace(/\/+$/, "");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), providerTimeoutMs());
+const requestProviderAnswer = async ({ question, language, verses, history, facts, model }) => {
   try {
-    const response = await fetch(baseUrl + "/chat/completions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: { "content-type": "application/json", authorization: "Bearer " + config.ai.apiKey },
-      body: JSON.stringify({
-        model: config.ai.model,
-        temperature: 0,
-        max_tokens: 950,
-        messages: [
-          { role: "system", content: ANSWER_SYSTEM_PROMPT },
-          { role: "user", content: buildAnswerContent({ question, language, verses, history, facts }) },
-        ],
-      }),
+    const result = await chatCompletion({
+      messages: [
+        { role: "system", content: ANSWER_SYSTEM_PROMPT },
+        { role: "user", content: buildAnswerContent({ question, language, verses, history, facts }) },
+      ],
+      model,
+      maxTokens: 1000,
     });
-    if (!response.ok) {
-      console.warn("[synthesis] answer provider responded with status " + response.status);
-      throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
-    }
-    const payload = await response.json().catch(() => null);
-    const raw = payload && payload.choices && payload.choices[0] && payload.choices[0].message
-      ? payload.choices[0].message.content
-      : null;
-    const content = Array.isArray(raw)
-      ? raw.map((part) => (typeof part === "string" ? part : (part && part.text) || "")).join("")
-      : raw;
-    if (typeof content !== "string" || !content.trim()) {
-      console.warn("[synthesis] answer provider returned no usable content");
-      throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
-    }
-    return content;
+    return result;
   } catch (error) {
-    if (error instanceof HttpError) throw error;
-    if (error && error.name === "AbortError") {
-      console.warn("[synthesis] answer provider call timed out");
-      throw new HttpError(504, SUMMARY_TIMEOUT_MESSAGE);
-    }
-    console.warn("[synthesis] answer provider request failed (" + ((error && error.name) || "Error") + ")");
-    throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
-  } finally {
-    clearTimeout(timer);
+    const status = error && error.status ? error.status : 502;
+    const message = error && error.message ? error.message : SUMMARY_PROVIDER_ERROR_MESSAGE;
+    console.warn("[synthesis] answer provider error (" + status + ")");
+    throw new HttpError(status, message);
   }
 };
 
@@ -393,9 +380,73 @@ export const sanitizeSummaryOutput = (raw, allowedKeys) => {
   return { summary: result.text, citations: result.citations };
 };
 
-/** Defensive parsing for the long-form, step-by-step answer. */
-export const sanitizeAnswerOutput = (raw, allowedKeys) => {
-  const result = sanitizeGroundedOutput(raw, allowedKeys, MIN_ANSWER_CHARS, MAX_ANSWER_CHARS);
+const STOP_WORDS = new Set(("the a an and or of to in on for with by is are was were be been being this that these those it its as at from he she they we you i his her their our your not no but if then than so such which who whom what when where how also all any each other into over under about after before between during through because while more most some can could should would may might will shall do does did have has had".split(" ")));
+
+const contentWords = (text) => {
+  const words = String(text || "").toLowerCase().replace(/[^a-z0-9'\s]/g, " ").split(/\s+/).filter(Boolean);
+  return [...new Set(words.filter((word) => word.length > 2 && !STOP_WORDS.has(word)))];
+};
+
+const verifyClaims = (claims, allowedKeys, verses) => {
+  if (!Array.isArray(claims) || claims.length === 0 || claims.length > 12) {
+    console.warn("[synthesis] answer claims missing or out of range; dropped");
+    throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
+  }
+  const allowed = new Set([...allowedKeys].map(normalizeKey));
+  const verseWords = new Map(verses.map((verse) => [normalizeKey(verse.verseKey), new Set(contentWords(verse.text))]));
+  for (const claim of claims) {
+    if (!claim || typeof claim.text !== "string" || claim.text.trim().length < 12) {
+      throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
+    }
+    if (ARABIC_SCRIPT.test(claim.text)) throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
+    if (!Array.isArray(claim.verses) || claim.verses.length === 0) throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
+    const keys = [];
+    for (const key of claim.verses) {
+      if (typeof key !== "string" || !REF_PATTERN.test(key)) throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
+      REF_PATTERN.lastIndex = 0;
+      const normalized = normalizeKey(key);
+      if (!allowed.has(normalized)) {
+        console.warn("[synthesis] claim cited a reference outside the supplied set; dropped");
+        throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
+      }
+      keys.push(normalized);
+    }
+    const claimWords = contentWords(claim.text);
+    if (claimWords.length < 3) throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
+    const support = new Set();
+    for (const key of keys) for (const word of (verseWords.get(key) || [])) support.add(word);
+    const matched = claimWords.filter((word) => support.has(word)).length;
+    const overlap = matched / claimWords.length;
+    if ((keys.length >= 2 && overlap < 0.12) || (keys.length === 1 && overlap < 0.18)) {
+      console.warn("[synthesis] claim not supported by its cited verse(s); dropped (overlap " + overlap.toFixed(2) + ")");
+      throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
+    }
+  }
+};
+
+const extractAnswerPayload = (raw) => {
+  let value = String(raw || "").trim();
+  const fenced = value.match(/\u0060{3}(?:json|text)?\s*([\s\S]*?)\u0060{3}/i);
+  if (fenced) value = fenced[1].trim();
+  if (value.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(value);
+      if (typeof parsed.answer === "string") {
+        return { text: parsed.answer, claims: Array.isArray(parsed.claims) ? parsed.claims : null };
+      }
+    } catch {
+      // fall through to plain-text handling
+    }
+  }
+  return { text: value, claims: null };
+};
+
+/** Parses the answer; when the model returns claims, each claim is verified
+ * against the translations of the verses it cites before the answer is accepted. */
+export const sanitizeAnswerOutput = (raw, allowedKeys, verses = []) => {
+  const payload = extractAnswerPayload(raw);
+  const result = sanitizeGroundedOutput(payload.text, allowedKeys, MIN_ANSWER_CHARS, MAX_ANSWER_CHARS);
+  if (payload.claims) verifyClaims(payload.claims, allowedKeys, verses);
   return { answer: result.text, citations: result.citations };
 };
 
@@ -409,8 +460,32 @@ export const runSummary = async ({ db, question, language, verseKeys, history })
 
 /** Deeper reasoning answer over a larger verse set, with app index facts for counts/lists. */
 export const runAnswer = async ({ db, question, language, verseKeys, history, facts }) => {
+  const key = cacheKey({ question, language, verseKeys, version: ANSWER_PROMPT_VERSION });
+  const cached = getCachedAnswer(db, key);
+  if (cached) return { ...cached, cached: true };
+
+  const guard = budgetAvailable(db, config.ai.dailyAnswerCap, config.ai.monthlyBudgetUsd);
+  if (!guard.ok) {
+    console.warn("[synthesis] AI guard stopped the call (" + guard.reason + ")");
+    throw new HttpError(429, guard.reason === "budget" ? ANSWER_BUDGET_MESSAGE : ANSWER_DAILY_MESSAGE);
+  }
+
   const verses = loadSuppliedVerses(db, verseKeys, language);
-  const raw = await requestProviderAnswer({ question, language, verses, history, facts });
-  const result = sanitizeAnswerOutput(raw, verseKeys);
-  return { ...result, verseLanguage: (verses[0] && verses[0].language) || "en" };
+  const model = pickModel(question);
+  const result = await requestProviderAnswer({ question, language, verses, history, facts, model });
+  const validated = sanitizeAnswerOutput(result.content, verseKeys, verses);
+  const cost = estimateCostMicros({
+    usage: result.usage,
+    model: result.model,
+    inputChars: buildAnswerContent({ question, language, verses, history, facts }).length,
+    outputChars: validated.answer.length,
+  });
+  recordUsage(db, cost);
+  const payload = {
+    ...validated,
+    verseLanguage: (verses[0] && verses[0].language) || "en",
+    cached: false,
+  };
+  putCachedAnswer(db, key, { question, language, payload });
+  return payload;
 };

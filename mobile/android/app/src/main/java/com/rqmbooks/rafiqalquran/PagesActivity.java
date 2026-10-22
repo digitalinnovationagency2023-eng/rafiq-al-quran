@@ -172,6 +172,11 @@ public final class PagesActivity extends Activity {
                 "Rafiq Al-Quran is free to read, search and use. There is no account, and nothing on this page is required to use the app.");
         section(parent, "Voluntary only",
                 "Donating is entirely optional and never affects access to reading, search or the conversational experience. No religious reward is promised and no charitable or tax-deductible status is claimed.");
+        section(parent, "What it costs to run",
+                "The Quran, translations, search, recitation and study tools are free. The optional AI layer costs money per "
+                        + "answer: roughly USD 40-60 a month at 1,000 active users and USD 300-400 a month at 10,000. "
+                        + "AI questions are limited to 10 a day per device so this stays bounded. There are no ads and no "
+                        + "data selling; anything given here goes to server and AI costs only.");
 
         // The donation form is only ever built when the server confirms that
         // collection is live. When it is not, this page shows plain copy only.
@@ -181,6 +186,13 @@ public final class PagesActivity extends Activity {
         donations.addView(Ui.text(this, "Checking donation availability…", 12f, Ui.MUTED));
 
         new Thread(() -> {
+            String donationUrl = "";
+            try {
+                donationUrl = Api.assistantStatus(getResources()).optString("donationUrl", "");
+            } catch (Exception ignored) {
+                // donation support is optional; offline devices just see the static copy
+            }
+            final String link = donationUrl == null ? "" : donationUrl.trim();
             try {
                 JSONObject config = Api.get(getResources(), "/api/donations/config");
                 final boolean live = config.optBoolean("live");
@@ -190,8 +202,17 @@ public final class PagesActivity extends Activity {
                 final int maxMinor = config.optInt("maxAmountMinor", DonationRules.MAX_MINOR);
                 runOnUiThread(() -> {
                     donations.removeAllViews();
-                    if (live) renderDonationForm(donations, currency, minMinor, maxMinor, recurringEnabled);
-                    else renderDonationsDisabled(donations);
+                    if (live) {
+                        renderDonationForm(donations, currency, minMinor, maxMinor, recurringEnabled);
+                    } else {
+                        renderDonationsDisabled(donations);
+                        if (!link.isEmpty()) {
+                            Button donate = Ui.button(this, "Donate / support hosting", true);
+                            donate.setLayoutParams(Ui.withTop(this, 8));
+                            donate.setOnClickListener(view -> openDonationLink(link));
+                            donations.addView(donate);
+                        }
+                    }
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
@@ -218,10 +239,18 @@ public final class PagesActivity extends Activity {
         parent.addView(actions);
 
         TextView footnote = Ui.text(this,
-                "No purchase is offered in this app. Reading, search and the study tools stay free.",
+                "No purchase is offered in this app. Reading, search, study tools and a limited number of AI answers stay free.",
                 11f, Ui.MUTED);
         footnote.setPadding(0, Ui.dp(this, 18), 0, 0);
         parent.addView(footnote);
+    }
+
+    private void openDonationLink(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception error) {
+            Toast.makeText(this, "No browser is available to open the donation page.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void renderDonationsDisabled(LinearLayout parent) {

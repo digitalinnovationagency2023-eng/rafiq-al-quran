@@ -72,6 +72,20 @@ a four-item ChatGPT-style menu, a History screen with back navigation, and a con
 
 **Artifacts (1.2.0)** — APK `dist/rafiq-al-quran-1.2.0.apk`: 3,601,339 bytes, SHA-256 `6AC178FD13D698D09308C15296BC1568448AEB56A4EFE93DC3A576524B941AF4`; unsigned AAB `dist/rafiq-al-quran-1.2.0.aab`: 3,591,272 bytes, SHA-256 `9F8DD2A47BCF407E66089CCE47E98BE85028F8EB98CC8022C77F8FAC9F06CE89`; signed upload AAB `dist/rafiq-al-quran-1.2.0-signed.aab`: 3,594,593 bytes, SHA-256 `671076DA0CF8D285418E7D9F8DBD3816056EA3CCC2CD1B2F1CF81EABB969CEE9` (jarsigner verified).
 
+## 1.3.0 AI Core verification — 2026-10-23
+
+Release **1.3.0** (versionCode 15). New: model router/failover, JSON claim-level verifier, semantic
+answer cache (no question text), 10/day app limit, 300/day server cap, USD 25/month estimated budget,
+verified-answer reveal, and Support-page cost/donation transparency.
+
+| Suite | Result |
+|---|---|
+| Server | **92 passed, 0 failed** (11 deep-answer/AI-core tests: existing grounding plus cache hit, daily-cap 429, deep-model routing, unsupported-claim rejection) |
+| Native logic | **114 passed, 0 failed** |
+| Live production | status includes limits/donationUrl; answer with {} -> 400; prophets answer -> 200 with verified claims; repeat -> cached:true with no provider call; Isa answer -> 200 with verified claims |
+
+**Artifacts (1.3.0)** — APK `dist/rafiq-al-quran-1.3.0.apk`: 3,601,338 bytes, SHA-256 `0900DCE6B4CC65E1C07B973DAF8AAF19862CE6FB51EA3CCEB1016966AE9C9542`; signed AAB `dist/rafiq-al-quran-1.3.0-signed.aab`: 3,595,341 bytes, SHA-256 `126D38C627975AB2DEA6DB4A57B764B22413110410E38E247B28AC46149CE71F`.
+
 ## Production deployment — 2026-10-22 (verified)
 
 The 1.1.0 server code was deployed to EC2 `i-09e2608bfa43e70bf` (us-east-1c) via SSM, because the

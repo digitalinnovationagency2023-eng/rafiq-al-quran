@@ -35,7 +35,15 @@ export const createAssistantRoutes = ({ db }) => {
   // Cheap discovery endpoint so the app can decide whether to offer the AI
   // layer at all. It never reveals the provider, model, URL or key.
   router.get("/status", (req, res) => {
-    res.json(assistantStatus());
+    res.json({
+      ...assistantStatus(),
+      limits: {
+        deviceDaily: 10,
+        serverDaily: config.ai.dailyAnswerCap,
+        monthlyBudgetUsd: config.ai.monthlyBudgetUsd,
+      },
+      donationUrl: config.donations.url || "",
+    });
   });
 
   router.post(

@@ -46,6 +46,7 @@ const configureProvider = () => {
   config.ai.baseUrl = mockBaseUrl;
   config.ai.apiKey = TEST_API_KEY;
   config.ai.model = "test-model";
+  config.ai.deepModel = "test-model";
   config.ai.timeoutMs = 8000;
   config.ai.maxMonthlyCalls = 0;
 };
@@ -54,6 +55,7 @@ const unconfigureProvider = () => {
   config.ai.baseUrl = "";
   config.ai.apiKey = "";
   config.ai.model = "gemini-flash-lite-latest";
+  config.ai.deepModel = "gemini-flash-lite-latest";
   config.ai.maxMonthlyCalls = 0;
 };
 const cleanSlate = () => {
@@ -63,6 +65,8 @@ const cleanSlate = () => {
   mock.delayMs = 0;
   mock.content = validAnswer;
   db.prepare("DELETE FROM settings WHERE key LIKE 'ai_assistant_calls:%'").run();
+  try { db.exec("DELETE FROM ai_answer_cache"); } catch {}
+  try { db.exec("DELETE FROM ai_usage"); } catch {}
 };
 const post = (body) => request("POST", "/api/assistant/answer", body);
 const validBody = () => ({
@@ -191,4 +195,60 @@ test("provider failures and timeouts map to 502 and 504", async () => {
   const timedOut = await post(validBody());
   assert.equal(timedOut.status, 504);
   config.ai.timeoutMs = 8000;
+});
+
+
+test("validated answers are cached and the second request does not call the provider", async () => {
+  configureProvider();
+  cleanSlate();
+  mock.content = "The Quran names 25 prophets and says other messengers were not mentioned [4:164], confirming that the list is not exhaustive [40:78]. That count is therefore an index of named prophets rather than a total stated in one verse.";
+  const first = await post(validBody());
+  assert.equal(first.status, 200);
+  assert.equal(first.json.cached, false);
+  const second = await post(validBody());
+  assert.equal(second.status, 200);
+  assert.equal(second.json.cached, true);
+  assert.equal(mock.calls.length, 1);
+});
+
+test("the daily answer cap stops calls before the provider", async () => {
+  configureProvider();
+  cleanSlate();
+  config.ai.dailyAnswerCap = 1;
+  const first = await post(validBody());
+  assert.equal(first.status, 200);
+  const body = validBody();
+  body.question = "List the prophets that the Quran names, with references";
+  const second = await post(body);
+  assert.equal(second.status, 429);
+  assert.match(second.json.error, /daily AI limit/i);
+  assert.equal(mock.calls.length, 1);
+  config.ai.dailyAnswerCap = 300;
+});
+
+test("deep questions are routed to the deep model", async () => {
+  configureProvider();
+  cleanSlate();
+  config.ai.deepModel = "deep-test-model";
+  const body = validBody();
+  body.question = "Is Isa alive or dead, and will he return to earth?";
+  const response = await post(body);
+  assert.equal(response.status, 200, response.text.slice(0, 300));
+  assert.equal(mock.calls[0].body.model, "deep-test-model");
+  config.ai.deepModel = "test-model";
+});
+
+test("a claim that is not supported by its cited verse is rejected", async () => {
+  configureProvider();
+  cleanSlate();
+  mock.content = JSON.stringify({
+    answer: "The Quran names 25 prophets and states that other messengers were not mentioned, so the list is not exhaustive [4:164][40:78].",
+    claims: [
+      { text: "The Quran states that other messengers were not mentioned, so the named list is not exhaustive.", verses: ["4:164"] },
+      { text: "The Quran commands believers to fast for exactly forty days every year in Ramadan.", verses: ["40:78"] },
+    ],
+    caveats: [],
+  });
+  const response = await post(validBody());
+  assert.equal(response.status, 502, response.text.slice(0, 300));
 });

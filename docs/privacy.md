@@ -124,3 +124,7 @@ info@rqmbooks.com for data requests.
 
 ## Changes
 We will update this page when the app changes; the date above shows the latest revision.
+
+- The optional AI layer keeps a 30-day **answer cache** on the server so repeated questions do not
+  call the provider again. Cache keys are one-way hashes and cached rows store **no question text**
+  and no user identity; only the validated answer, language and timestamps.
