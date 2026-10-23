@@ -39,7 +39,7 @@ export const ANSWER_DAILY_MESSAGE =
   "The daily AI limit has been reached. Quran verses and reviewed index answers remain available; AI answers return tomorrow.";
 export const ANSWER_BUDGET_MESSAGE =
   "The monthly AI budget has been reached. Quran verses and reviewed index answers remain available; AI answers return next month.";
-const ANSWER_PROMPT_VERSION = "answer-v2";
+const ANSWER_PROMPT_VERSION = "answer-v3";
 
 const ARABIC_SCRIPT = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/u;
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/g;
@@ -195,10 +195,9 @@ const ANSWER_SYSTEM_PROMPT = [
   "   not mentioned\".",
   "9. If names are available in the index facts for a count/list question, include the full list in",
   "   the answer, comma-separated, before the step-by-step reasoning.",
-  "10. Return ONE JSON object only, no markdown fences, with exactly these keys:",
-  "    {\"answer\":\"<the text the user sees>\",\"claims\":[{\"text\":\"<one factual sentence>\",\"verses\":[\"4:164\"]}],\"caveats\":[\"<optional short caveat>\"]}.",
-  "    The answer field is the final prose (120-350 words, no headings); claims must be 2-12 short sentences,",
-  "    each supported by the verses listed for it, and only provided references may be used.",
+  "10. Write the answer as plain text only: no JSON, no markdown fences, no headings, no preamble.",
+  "    90-220 words, with an inline [s:a] citation after every factual claim, using only the",
+  "    provided references.",
   "11. Answer in the user's interface language.",
 ].join("\n");
 
@@ -233,7 +232,7 @@ const requestProviderAnswer = async ({ question, language, verses, history, fact
         { role: "user", content: buildAnswerContent({ question, language, verses, history, facts }) },
       ],
       model,
-      maxTokens: 1000,
+      maxTokens: 1600,
     });
     return result;
   } catch (error) {
@@ -366,7 +365,7 @@ const sanitizeGroundedOutput = (raw, allowedKeys, minChars, maxChars) => {
     if (!citations.includes(key)) citations.push(key);
   }
   if (citations.length === 0) {
-    console.warn("[synthesis] provider answer had no citations; dropped");
+    console.warn("[synthesis] provider answer had no citations; dropped; text=" + text.slice(0, 220));
     throw new HttpError(502, SUMMARY_PROVIDER_ERROR_MESSAGE);
   }
   if (text.length < minChars || text.length > maxChars) {
@@ -424,28 +423,60 @@ const verifyClaims = (claims, allowedKeys, verses) => {
   }
 };
 
+const JSON_STRING_UNESCAPE = { '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" };
+const extractString = (source, key) => {
+  const match = source.match(new RegExp('"' + key + '"\\s*:\\s*"((?:[^"\\\\]|\\.)*)"'));
+  if (!match) return null;
+  return match[1].replace(/\\(["\\/bfnrt])/g, (whole, ch) => JSON_STRING_UNESCAPE[ch] ?? ch);
+};
+const extractStringArray = (source, key) => {
+  const match = source.match(new RegExp('"' + key + '"\\s*:\\s*\\[([^\\]]*)\\]'));
+  if (!match) return [];
+  return [...match[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+};
+
 const extractAnswerPayload = (raw) => {
-  let value = String(raw || "").trim();
-  const fenced = value.match(/\u0060{3}(?:json|text)?\s*([\s\S]*?)\u0060{3}/i);
+  let value = String(raw || "").replace(/\uFEFF/g, "").trim();
+  const fenced = value.match(/`{3,}[^\n]*\n?([\s\S]*?)\n?`{3,}/);
   if (fenced) value = fenced[1].trim();
-  if (value.startsWith("{")) {
-    try {
-      const parsed = JSON.parse(value);
-      if (typeof parsed.answer === "string") {
-        return { text: parsed.answer, claims: Array.isArray(parsed.claims) ? parsed.claims : null };
+  const start = value.indexOf("{");
+  const end = value.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    const candidate = value.slice(start, end + 1);
+    let parsed = null;
+    try { parsed = JSON.parse(candidate); } catch { parsed = null; }
+    if (parsed && typeof parsed === "object" && typeof parsed.answer === "string") {
+      const refs = [];
+      for (const key of ["citations", "references", "verseKeys"]) {
+        if (Array.isArray(parsed[key])) for (const k of parsed[key]) if (typeof k === "string") refs.push(k);
       }
-    } catch {
-      // fall through to plain-text handling
+      const claims = Array.isArray(parsed.claims) ? parsed.claims : null;
+      if (claims) for (const claim of claims) if (claim && Array.isArray(claim.verses)) for (const k of claim.verses) refs.push(k);
+      return { text: parsed.answer, claims, citations: refs };
+    }
+    const answerText = extractString(candidate, "answer");
+    if (answerText !== null && answerText.trim()) {
+      const refs = [
+        ...extractStringArray(candidate, "citations"),
+        ...extractStringArray(candidate, "references"),
+        ...extractStringArray(candidate, "verseKeys"),
+      ];
+      return { text: answerText, claims: null, citations: refs };
     }
   }
-  return { text: value, claims: null };
+  return { text: value, claims: null, citations: [] };
 };
 
 /** Parses the answer; when the model returns claims, each claim is verified
  * against the translations of the verses it cites before the answer is accepted. */
 export const sanitizeAnswerOutput = (raw, allowedKeys, verses = []) => {
   const payload = extractAnswerPayload(raw);
-  const result = sanitizeGroundedOutput(payload.text, allowedKeys, MIN_ANSWER_CHARS, MAX_ANSWER_CHARS);
+  let text = payload.text;
+  const extra = [...new Set((payload.citations || []).map((key) => String(key).trim()).filter((key) => VERSE_KEY_PATTERN.test(key)))];
+  if (extra.length && !REF_PATTERN.test(text)) {
+    text = (text + "\n\nReferences: " + extra.map((key) => "[" + normalizeKey(key) + "]").join(", ")).trim();
+  }
+  const result = sanitizeGroundedOutput(text, allowedKeys, MIN_ANSWER_CHARS, MAX_ANSWER_CHARS);
   if (payload.claims) verifyClaims(payload.claims, allowedKeys, verses);
   return { answer: result.text, citations: result.citations };
 };
