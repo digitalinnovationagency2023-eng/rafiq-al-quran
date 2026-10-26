@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.rqmbooks.rafiqalquran"
-    android:versionCode="17"
-    android:versionName="1.3.2">
+    android:versionCode="18"
+    android:versionName="1.3.3">
 
     <!-- Android 11+ package visibility: without these entries SpeechRecognizer and
          TextToSpeech cannot discover their system services and report "not available". -->

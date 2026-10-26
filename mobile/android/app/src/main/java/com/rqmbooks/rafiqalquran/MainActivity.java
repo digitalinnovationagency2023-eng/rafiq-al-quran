@@ -195,24 +195,24 @@ public final class MainActivity extends Activity {
         LinearLayout topbar = Ui.row(this);
         topbar.setBackgroundColor(Ui.BAR);
         topbar.setPadding(Ui.dp(this, 8), Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 10));
-        TextView menuIcon = Ui.text(this, "\u2630", 20f, Ui.ON_BAR);
+        TextView menuIcon = Ui.text(this, "\u2630", 22f, Ui.ON_BAR);
         menuIcon.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
         menuIcon.setContentDescription("Menu");
         menuIcon.setOnClickListener(this::showMenu);
         topbar.addView(menuIcon);
-        TextView heading = Ui.text(this, "Rafiq Al-Quran", 13.8f, Ui.ON_BAR);
+        TextView heading = Ui.text(this, "Rafiq Al-Quran", 15.5f, Ui.ON_BAR);
         heading.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         heading.setGravity(Gravity.CENTER);
         heading.setSingleLine(true);
         heading.setEllipsize(android.text.TextUtils.TruncateAt.END);
         heading.setPadding(Ui.dp(this, 2), 0, Ui.dp(this, 2), 0);
         topbar.addView(heading, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView historyIcon = Ui.text(this, "\u25F7", 21f, Ui.ON_BAR);
+        TextView historyIcon = Ui.text(this, "\u25F7", 23f, Ui.ON_BAR);
         historyIcon.setPadding(Ui.dp(this, 7), Ui.dp(this, 2), Ui.dp(this, 7), Ui.dp(this, 2));
         historyIcon.setContentDescription("History");
         historyIcon.setOnClickListener(view -> openHistory());
         topbar.addView(historyIcon);
-        TextView newChat = Ui.text(this, "\uFF0B", 22f, Ui.ON_BAR);
+        TextView newChat = Ui.text(this, "\uFF0B", 24f, Ui.ON_BAR);
         newChat.setPadding(Ui.dp(this, 7), Ui.dp(this, 2), Ui.dp(this, 7), Ui.dp(this, 2));
         newChat.setContentDescription("New conversation");
         newChat.setOnClickListener(view -> newConversation());
@@ -263,7 +263,7 @@ public final class MainActivity extends Activity {
         voiceChatButton.setContentDescription("Hands-free voice chat");
         pill.addView(voiceChatButton);
         pill.addView(Ui.glyph(this, "\uD83C\uDFA4", this::startListening));
-        pill.addView(Ui.circle(this, "\u2191", Ui.GREEN, Color.WHITE, 38, () -> submit()));
+        pill.addView(Ui.circle(this, "\u2191", Ui.GREEN, Color.WHITE, 42, () -> submit()));
         composer.addView(pill);
 
         root.addView(topbar);
@@ -355,11 +355,11 @@ public final class MainActivity extends Activity {
         drawer.setBackgroundColor(Ui.PAPER);
         drawer.setPadding(Ui.dp(this, 20), Ui.dp(this, 36), Ui.dp(this, 20), Ui.dp(this, 48));
 
-        TextView title = Ui.text(this, "Rafiq Al-Quran", 22f, Ui.INK);
+        TextView title = Ui.text(this, "Rafiq Al-Quran", 24f, Ui.INK);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         drawer.addView(title);
-        TextView subtitle = Ui.text(this, "Quran-only assistant", 12f, Ui.MUTED);
-        subtitle.setPadding(0, Ui.dp(this, 2), 0, Ui.dp(this, 16));
+        TextView subtitle = Ui.text(this, "Quran-only assistant", 13.5f, Ui.MUTED);
+        subtitle.setPadding(0, Ui.dp(this, 3), 0, Ui.dp(this, 18));
         drawer.addView(subtitle);
 
         drawer.addView(drawerRow("\uFF0B", "New chat", null, () -> {
@@ -414,24 +414,24 @@ public final class MainActivity extends Activity {
         row.setBackground(Ui.rounded(Ui.PAPER, 0, 14, this));
         row.setClickable(true);
 
-        TextView icon = Ui.text(this, glyph, 19f, Ui.INK);
+        TextView icon = Ui.text(this, glyph, 22f, Ui.INK);
         icon.setGravity(Gravity.CENTER);
-        icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 42),
+        icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 48),
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         row.addView(icon);
 
         LinearLayout labels = Ui.column(this);
-        TextView main = Ui.text(this, label, 16f, Ui.INK);
+        TextView main = Ui.text(this, label, 18f, Ui.INK);
         main.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         labels.addView(main);
         if (detail != null && !detail.isEmpty()) {
-            TextView sub = Ui.text(this, detail, 12f, Ui.MUTED);
+            TextView sub = Ui.text(this, detail, 13.5f, Ui.MUTED);
             sub.setPadding(0, Ui.dp(this, 2), 0, 0);
             labels.addView(sub);
         }
         row.addView(labels, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView chevron = Ui.text(this, "\u203A", 18f, Ui.MUTED);
+        TextView chevron = Ui.text(this, "\u203A", 22f, Ui.MUTED);
         chevron.setPadding(Ui.dp(this, 6), 0, Ui.dp(this, 2), 0);
         row.addView(chevron);
         row.setOnClickListener(view -> action.run());
@@ -445,12 +445,12 @@ public final class MainActivity extends Activity {
         sheet.setBackgroundColor(Ui.PAPER);
         sheet.setPadding(Ui.dp(this, 20), Ui.dp(this, 24), Ui.dp(this, 20), Ui.dp(this, 44));
 
-        TextView title = Ui.text(this, "Settings", 22f, Ui.INK);
+        TextView title = Ui.text(this, "Settings", 24f, Ui.INK);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         sheet.addView(title);
 
         settingsSection(sheet, "Assistant");
-        settingsRow(sheet, "Interface language", Language.byCode(prefs.language()).englishName, dialog,
+        settingsRow(sheet, "Language", Language.byCode(prefs.language()).englishName, dialog,
                 this::showLanguageDialog);
         settingsRow(sheet, "AI answers", prefs.aiAssistEnabled() ? "On" : "Off", dialog, () -> {
             prefs.setAiAssistEnabled(!prefs.aiAssistEnabled());
@@ -458,7 +458,7 @@ public final class MainActivity extends Activity {
                     ? (aiAvailable ? "AI answers on" : "AI answers on \u2014 server AI is not configured yet; local replies are used")
                     : "AI answers off \u2014 Quran verses and index facts only");
         });
-        settingsRow(sheet, "Hands-free voice chat", handsFree ? "On" : "Off", dialog, this::toggleHandsFree);
+        settingsRow(sheet, "Voice chat", handsFree ? "On" : "Off", dialog, this::toggleHandsFree);
 
         settingsSection(sheet, "Voice & reading");
         settingsRow(sheet, "Voice features", prefs.voiceEnabled() ? "On" : "Off", dialog, () -> {
@@ -519,7 +519,7 @@ public final class MainActivity extends Activity {
     }
 
     private void settingsSection(LinearLayout sheet, String label) {
-        TextView section = Ui.text(this, label.toUpperCase(Locale.ROOT), 11f, Ui.GREEN);
+        TextView section = Ui.text(this, label.toUpperCase(Locale.ROOT), 12f, Ui.GREEN);
         section.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         section.setLetterSpacing(0.08f);
         section.setPadding(0, Ui.dp(this, 18), 0, Ui.dp(this, 4));
@@ -530,13 +530,13 @@ public final class MainActivity extends Activity {
         LinearLayout row = Ui.row(this);
         row.setPadding(Ui.dp(this, 2), Ui.dp(this, 13), Ui.dp(this, 2), Ui.dp(this, 13));
         row.setClickable(true);
-        TextView main = Ui.text(this, label, 15f, Ui.INK);
+        TextView main = Ui.text(this, label, 17f, Ui.INK);
         main.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         row.addView(main, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView detail = Ui.text(this, value == null ? "" : value, 13f, Ui.MUTED);
+        TextView detail = Ui.text(this, value == null ? "" : value, 14f, Ui.MUTED);
         detail.setPadding(Ui.dp(this, 8), 0, Ui.dp(this, 8), 0);
         row.addView(detail);
-        row.addView(Ui.text(this, "\u203A", 18f, Ui.MUTED));
+        row.addView(Ui.text(this, "\u203A", 21f, Ui.MUTED));
         row.setOnClickListener(view -> {
             dialog.dismiss();
             action.run();
@@ -555,10 +555,10 @@ public final class MainActivity extends Activity {
         LinearLayout sheet = Ui.column(this);
         sheet.setBackgroundColor(Ui.PAPER);
         sheet.setPadding(Ui.dp(this, 20), Ui.dp(this, 26), Ui.dp(this, 20), Ui.dp(this, 44));
-        TextView title = Ui.text(this, "About & legal", 22f, Ui.INK);
+        TextView title = Ui.text(this, "About & legal", 24f, Ui.INK);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         sheet.addView(title);
-        TextView sub = Ui.text(this, "Transparency, sources and support", 12f, Ui.MUTED);
+        TextView sub = Ui.text(this, "Transparency, sources and support", 13.5f, Ui.MUTED);
         sub.setPadding(0, Ui.dp(this, 2), 0, Ui.dp(this, 12));
         sheet.addView(sub);
 
