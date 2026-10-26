@@ -105,8 +105,8 @@ export const createPublicRoutes = ({ db, index }) => {
   // version before offering an update. No user data is involved.
   router.get("/app/version", (req, res) => {
     res.json({
-      versionCode: Number(process.env.APP_LATEST_VERSION_CODE || 18),
-      versionName: process.env.APP_LATEST_VERSION_NAME || "1.3.3",
+      versionCode: Number(process.env.APP_LATEST_VERSION_CODE || 19),
+      versionName: process.env.APP_LATEST_VERSION_NAME || "1.3.4",
       url: process.env.APP_UPDATE_URL
         || "https://play.google.com/store/apps/details?id=com.rqmbooks.rafiqalquran",
     });

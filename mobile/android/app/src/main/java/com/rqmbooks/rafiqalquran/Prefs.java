@@ -27,6 +27,10 @@ public final class Prefs {
     public boolean handsFree() { return prefs.getBoolean("handsFree", false); }
     public void setHandsFree(boolean value) { prefs.edit().putBoolean("handsFree", value).apply(); }
 
+    /** The three-card introduction is shown only once. */
+    public boolean onboardingSeen() { return prefs.getBoolean("onboardingSeen", false); }
+    public void setOnboardingSeen(boolean value) { prefs.edit().putBoolean("onboardingSeen", value).apply(); }
+
     public String history() { return prefs.getString("history", "[]"); }
     public void setHistory(JSONArray array) { prefs.edit().putString("history", array.toString()).apply(); }
     public void clearHistory() { prefs.edit().putString("history", "[]").apply(); }
