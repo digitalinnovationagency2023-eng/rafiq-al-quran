@@ -195,24 +195,19 @@ public final class MainActivity extends Activity {
         LinearLayout topbar = Ui.row(this);
         topbar.setBackgroundColor(Ui.BAR);
         topbar.setPadding(Ui.dp(this, 8), Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 10));
-        TextView menuIcon = Ui.text(this, "\u2630", 22f, Ui.ON_BAR);
+        TextView menuIcon = Ui.text(this, "\u2630", 26f, Ui.ON_BAR);
         menuIcon.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
         menuIcon.setContentDescription("Menu");
         menuIcon.setOnClickListener(this::showMenu);
         topbar.addView(menuIcon);
-        TextView heading = Ui.text(this, "Rafiq Al-Quran", 15.5f, Ui.ON_BAR);
+        TextView heading = Ui.text(this, "Rafiq Al-Quran", 16f, Ui.ON_BAR);
         heading.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         heading.setGravity(Gravity.CENTER);
         heading.setSingleLine(true);
         heading.setEllipsize(android.text.TextUtils.TruncateAt.END);
         heading.setPadding(Ui.dp(this, 2), 0, Ui.dp(this, 2), 0);
         topbar.addView(heading, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView historyIcon = Ui.text(this, "\u25F7", 23f, Ui.ON_BAR);
-        historyIcon.setPadding(Ui.dp(this, 7), Ui.dp(this, 2), Ui.dp(this, 7), Ui.dp(this, 2));
-        historyIcon.setContentDescription("History");
-        historyIcon.setOnClickListener(view -> openHistory());
-        topbar.addView(historyIcon);
-        TextView newChat = Ui.text(this, "\uFF0B", 24f, Ui.ON_BAR);
+        TextView newChat = Ui.text(this, "\uFF0B", 28f, Ui.ON_BAR);
         newChat.setPadding(Ui.dp(this, 7), Ui.dp(this, 2), Ui.dp(this, 7), Ui.dp(this, 2));
         newChat.setContentDescription("New conversation");
         newChat.setOnClickListener(view -> newConversation());
@@ -249,8 +244,8 @@ public final class MainActivity extends Activity {
         pill.setPadding(Ui.dp(this, 6), Ui.dp(this, 4), Ui.dp(this, 6), Ui.dp(this, 4));
         pill.addView(Ui.glyph(this, "\uD83D\uDCCE", this::pickAttachment));
         input = new EditText(this);
-        input.setHint("Ask the Quran\u2026");
-        input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14.5f);
+        input.setHint("Ask Quran\u2026");
+        input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
         input.setMinLines(1);
         input.setMaxLines(5);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
@@ -263,7 +258,7 @@ public final class MainActivity extends Activity {
         voiceChatButton.setContentDescription("Hands-free voice chat");
         pill.addView(voiceChatButton);
         pill.addView(Ui.glyph(this, "\uD83C\uDFA4", this::startListening));
-        pill.addView(Ui.circle(this, "\u2191", Ui.GREEN, Color.WHITE, 42, () -> submit()));
+        pill.addView(Ui.circle(this, "\u2191", Ui.GREEN, Color.WHITE, 46, () -> submit()));
         composer.addView(pill);
 
         root.addView(topbar);
@@ -403,25 +398,25 @@ public final class MainActivity extends Activity {
             WindowManager.LayoutParams params = window.getAttributes();
             params.dimAmount = 0.45f;
             window.setAttributes(params);
-            window.setLayout((int) (getResources().getDisplayMetrics().widthPixels * 0.86),
+            window.setLayout((int) (getResources().getDisplayMetrics().widthPixels * 0.90),
                     ViewGroup.LayoutParams.MATCH_PARENT);
         }
     }
 
     private LinearLayout drawerRow(String glyph, String label, String detail, Runnable action) {
         LinearLayout row = Ui.row(this);
-        row.setPadding(Ui.dp(this, 6), Ui.dp(this, 15), Ui.dp(this, 6), Ui.dp(this, 15));
+        row.setPadding(Ui.dp(this, 6), Ui.dp(this, 9), Ui.dp(this, 6), Ui.dp(this, 9));
         row.setBackground(Ui.rounded(Ui.PAPER, 0, 14, this));
         row.setClickable(true);
 
-        TextView icon = Ui.text(this, glyph, 22f, Ui.INK);
+        TextView icon = Ui.text(this, glyph, 28f, Ui.INK);
         icon.setGravity(Gravity.CENTER);
-        icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 48),
+        icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 52),
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         row.addView(icon);
 
         LinearLayout labels = Ui.column(this);
-        TextView main = Ui.text(this, label, 18f, Ui.INK);
+        TextView main = Ui.text(this, label, 17.5f, Ui.INK);
         main.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         labels.addView(main);
         if (detail != null && !detail.isEmpty()) {
@@ -431,7 +426,7 @@ public final class MainActivity extends Activity {
         }
         row.addView(labels, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView chevron = Ui.text(this, "\u203A", 22f, Ui.MUTED);
+        TextView chevron = Ui.text(this, "\u203A", 24f, Ui.MUTED);
         chevron.setPadding(Ui.dp(this, 6), 0, Ui.dp(this, 2), 0);
         row.addView(chevron);
         row.setOnClickListener(view -> action.run());

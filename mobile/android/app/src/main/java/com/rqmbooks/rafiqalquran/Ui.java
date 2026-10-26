@@ -292,7 +292,7 @@ public final class Ui {
 
     /** Small glyph shown inside the composer (attach / voice). */
     public static TextView glyph(Context context, String value, Runnable onClick) {
-        TextView view = text(context, value, 18f, MUTED);
+        TextView view = text(context, value, 22f, MUTED);
         view.setPadding(dp(context, 2), dp(context, 9), dp(context, 2), dp(context, 9));
         view.setGravity(Gravity.CENTER);
         if (onClick != null) view.setOnClickListener(v -> onClick.run());
@@ -301,7 +301,7 @@ public final class Ui {
 
     /** Moon/sun control that flips the light/dark theme. */
     public static TextView themeToggle(Activity activity) {
-        TextView view = text(activity, dark ? "\u2600" : "\u263E", 20f, GOLD_BRIGHT);
+        TextView view = text(activity, dark ? "\u2600" : "\u263E", 24f, GOLD_BRIGHT);
         view.setPadding(dp(activity, 10), dp(activity, 4), dp(activity, 10), dp(activity, 4));
         view.setContentDescription(dark ? "Switch to light theme" : "Switch to dark theme");
         view.setOnClickListener(v -> toggleTheme(activity));
