@@ -3,6 +3,7 @@ package com.rqmbooks.rafiqalquran;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -10,6 +11,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -18,6 +20,7 @@ import android.os.Looper;
 import android.speech.RecognitionListener;
 import android.speech.RecognitionSupport;
 import android.speech.RecognitionSupportCallback;
+import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
@@ -27,6 +30,8 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
@@ -67,6 +72,7 @@ public final class MainActivity extends Activity {
     private static final int MIC_REQUEST = 41;
     private static final int ATTACH_REQUEST = 42;
     private static final int REQUEST_HISTORY = 43;
+    private static final int VOICE_FALLBACK_REQUEST = 44;
     // A grounded summary is a second AI request per question, so the device cap is
     // slightly higher than the old single-call allowance.
     private static final int AI_DAILY_LIMIT = 10;
@@ -89,6 +95,9 @@ public final class MainActivity extends Activity {
     private Answer pendingSpeech;
     private boolean listening;
     private Answer speakingAnswer;
+    private boolean handsFree;
+    private boolean systemVoiceAttempted;
+    private TextView voiceChatButton;
 
     private LinearLayout attachmentRow;
     private TextView attachmentLabel;
@@ -104,6 +113,7 @@ public final class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         Ui.init(this);
         prefs = new Prefs(this);
+        handsFree = prefs.handsFree();
         store = new StudyStore(this);
         View root = buildRoot();
         setContentView(root, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -141,10 +151,14 @@ public final class MainActivity extends Activity {
     protected void onStop() {
         super.onStop();
         // Leaving the screen must not keep reading aloud or recording.
-        Voice.stop(tts);
-        speakingAnswer = null;
-        pendingSpeech = null;
-        stopListening();
+        if (handsFree) {
+            stopHandsFree(false);
+        } else {
+            Voice.stop(tts);
+            speakingAnswer = null;
+            pendingSpeech = null;
+            stopListening();
+        }
     }
 
     @Override
@@ -245,8 +259,11 @@ public final class MainActivity extends Activity {
         input.setTextColor(Ui.INK);
         input.setHintTextColor(Ui.MUTED);
         pill.addView(input, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        voiceChatButton = Ui.glyph(this, "\u25C9", this::toggleHandsFree);
+        voiceChatButton.setContentDescription("Hands-free voice chat");
+        pill.addView(voiceChatButton);
         pill.addView(Ui.glyph(this, "\uD83C\uDFA4", this::startListening));
-        pill.addView(Ui.circle(this, "\u2191", Ui.GREEN, Color.WHITE, 40, () -> submit()));
+        pill.addView(Ui.circle(this, "\u2191", Ui.GREEN, Color.WHITE, 38, () -> submit()));
         composer.addView(pill);
 
         root.addView(topbar);
@@ -267,7 +284,15 @@ public final class MainActivity extends Activity {
         root.addView(composer);
         renderEmptyState();
         scroll = outer;
+        updateVoiceChatButton();
         return root;
+    }
+
+    private void updateVoiceChatButton() {
+        if (voiceChatButton == null) return;
+        voiceChatButton.setTextColor(handsFree ? Ui.GREEN : Ui.MUTED);
+        voiceChatButton.setContentDescription(handsFree
+                ? "End hands-free voice chat" : "Start hands-free voice chat");
     }
 
     private String languageButtonLabel() {
@@ -324,91 +349,259 @@ public final class MainActivity extends Activity {
 
     // ------------------------------------------------------------------ menu
     private void showMenu(View anchor) {
-        PopupMenu menu = new PopupMenu(this, anchor);
-        menu.getMenu().add(0, 1, 0, "New chat");
-        menu.getMenu().add(0, 18, 1, "History");
-        menu.getMenu().add(0, 19, 2, "Settings");
-        menu.getMenu().add(0, 20, 3, "About & legal");
-        menu.setOnMenuItemClickListener(item -> {
-            switch (item.getItemId()) {
-                case 1: newConversation(); return true;
-                case 18: openHistory(); return true;
-                case 19: showSettings(); return true;
-                case 20: showLegal(); return true;
-                default: return false;
-            }
-        });
-        menu.show();
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        LinearLayout drawer = Ui.column(this);
+        drawer.setBackgroundColor(Ui.PAPER);
+        drawer.setPadding(Ui.dp(this, 20), Ui.dp(this, 36), Ui.dp(this, 20), Ui.dp(this, 48));
+
+        TextView title = Ui.text(this, "Rafiq Al-Quran", 22f, Ui.INK);
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        drawer.addView(title);
+        TextView subtitle = Ui.text(this, "Quran-only assistant", 12f, Ui.MUTED);
+        subtitle.setPadding(0, Ui.dp(this, 2), 0, Ui.dp(this, 16));
+        drawer.addView(subtitle);
+
+        drawer.addView(drawerRow("\uFF0B", "New chat", null, () -> {
+            dialog.dismiss();
+            newConversation();
+        }));
+        drawer.addView(drawerRow("\u25F7", "History", null, () -> {
+            dialog.dismiss();
+            openHistory();
+        }));
+        drawer.addView(drawerRow("\u25C9", "Voice chat",
+                handsFree ? "Hands-free \u00B7 On" : "Hands-free \u00B7 Off",
+                () -> {
+                    dialog.dismiss();
+                    toggleHandsFree();
+                }));
+        drawer.addView(drawerRow("\u2699", "Settings", null, () -> {
+            dialog.dismiss();
+            showSettings();
+        }));
+        drawer.addView(drawerRow("\u21BB", "Update app", null, () -> {
+            dialog.dismiss();
+            checkForUpdates();
+        }));
+        drawer.addView(drawerRow("\u24D8", "About & legal", null, () -> {
+            dialog.dismiss();
+            showLegal();
+        }));
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.addView(drawer);
+        dialog.setContentView(scroll);
+        dialog.setCanceledOnTouchOutside(true);
+        dialog.show();
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setGravity(Gravity.START);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.dimAmount = 0.45f;
+            window.setAttributes(params);
+            window.setLayout((int) (getResources().getDisplayMetrics().widthPixels * 0.86),
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+        }
+    }
+
+    private LinearLayout drawerRow(String glyph, String label, String detail, Runnable action) {
+        LinearLayout row = Ui.row(this);
+        row.setPadding(Ui.dp(this, 6), Ui.dp(this, 15), Ui.dp(this, 6), Ui.dp(this, 15));
+        row.setBackground(Ui.rounded(Ui.PAPER, 0, 14, this));
+        row.setClickable(true);
+
+        TextView icon = Ui.text(this, glyph, 19f, Ui.INK);
+        icon.setGravity(Gravity.CENTER);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 42),
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        row.addView(icon);
+
+        LinearLayout labels = Ui.column(this);
+        TextView main = Ui.text(this, label, 16f, Ui.INK);
+        main.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        labels.addView(main);
+        if (detail != null && !detail.isEmpty()) {
+            TextView sub = Ui.text(this, detail, 12f, Ui.MUTED);
+            sub.setPadding(0, Ui.dp(this, 2), 0, 0);
+            labels.addView(sub);
+        }
+        row.addView(labels, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView chevron = Ui.text(this, "\u203A", 18f, Ui.MUTED);
+        chevron.setPadding(Ui.dp(this, 6), 0, Ui.dp(this, 2), 0);
+        row.addView(chevron);
+        row.setOnClickListener(view -> action.run());
+        return row;
     }
 
     private void showSettings() {
-        List<String> items = new ArrayList<>();
-        items.add("Interface language \u2014 " + prefs.language());
-        items.add("Text size smaller (A\u2212)");
-        items.add("Text size larger (A+)");
-        items.add(Ui.isDark() ? "Switch to light theme" : "Switch to dark theme");
-        items.add(prefs.aiAssistEnabled() ? "AI answers: on" : "AI answers: off");
-        items.add(prefs.voiceEnabled() ? "Voice: on" : "Voice: off");
-        items.add("Study tools");
-        items.add("Browse surahs");
-        items.add("Verse audio \u2014 Quran.com");
-        items.add("Sources & licences");
-        items.add("Report an issue");
-        items.add("Privacy");
-        items.add("Support the app");
-        if (operatorUnlocked) items.add("Operator admin");
-        new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
-                .setTitle("Settings")
-                .setItems(items.toArray(new String[0]), (dialog, which) -> {
-                    switch (which) {
-                        case 0: showLanguageDialog(); break;
-                        case 1: changeTextScale(-0.05f); break;
-                        case 2: changeTextScale(0.05f); break;
-                        case 3: Ui.toggleTheme(this); break;
-                        case 4:
-                            prefs.setAiAssistEnabled(!prefs.aiAssistEnabled());
-                            toast(prefs.aiAssistEnabled()
-                                    ? (aiAvailable ? "AI answers on" : "AI answers on \u2014 server AI is not configured yet; local replies are used")
-                                    : "AI answers off \u2014 Quran verses and index facts only");
-                            break;
-                        case 5:
-                            prefs.setVoiceEnabled(!prefs.voiceEnabled());
-                            if (prefs.voiceEnabled()) ensureTts();
-                            else if (tts != null) Voice.stop(tts);
-                            toast(prefs.voiceEnabled() ? "Voice features on" : "Voice features off");
-                            break;
-                        case 6: startActivity(new Intent(this, StudyActivity.class)); break;
-                        case 7: startActivity(new Intent(this, SurahActivity.class)); break;
-                        case 8:
-                            startActivity(PlayerActivity.intent(this,
-                                    store.hasProgress() ? store.lastChapter() : 1,
-                                    store.hasProgress() ? store.lastVerseKey() : null));
-                            break;
-                        case 9: openPage("sources"); break;
-                        case 10: openPage("report"); break;
-                        case 11: openPage("privacy"); break;
-                        case 12: openPage("support"); break;
-                        case 13: startActivity(new Intent(this, AdminActivity.class)); break;
-                        default: break;
-                    }
-                })
-                .show();
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        LinearLayout sheet = Ui.column(this);
+        sheet.setBackgroundColor(Ui.PAPER);
+        sheet.setPadding(Ui.dp(this, 20), Ui.dp(this, 24), Ui.dp(this, 20), Ui.dp(this, 44));
+
+        TextView title = Ui.text(this, "Settings", 22f, Ui.INK);
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        sheet.addView(title);
+
+        settingsSection(sheet, "Assistant");
+        settingsRow(sheet, "Interface language", Language.byCode(prefs.language()).englishName, dialog,
+                this::showLanguageDialog);
+        settingsRow(sheet, "AI answers", prefs.aiAssistEnabled() ? "On" : "Off", dialog, () -> {
+            prefs.setAiAssistEnabled(!prefs.aiAssistEnabled());
+            toast(prefs.aiAssistEnabled()
+                    ? (aiAvailable ? "AI answers on" : "AI answers on \u2014 server AI is not configured yet; local replies are used")
+                    : "AI answers off \u2014 Quran verses and index facts only");
+        });
+        settingsRow(sheet, "Hands-free voice chat", handsFree ? "On" : "Off", dialog, this::toggleHandsFree);
+
+        settingsSection(sheet, "Voice & reading");
+        settingsRow(sheet, "Voice features", prefs.voiceEnabled() ? "On" : "Off", dialog, () -> {
+            prefs.setVoiceEnabled(!prefs.voiceEnabled());
+            if (prefs.voiceEnabled()) ensureTts();
+            else if (tts != null) Voice.stop(tts);
+            toast(prefs.voiceEnabled() ? "Voice features on" : "Voice features off");
+        });
+        settingsRow(sheet, "Text size", Math.round(prefs.textScale() * 100) + "%", dialog, () -> toast("Use the A\u2212 and A+ rows below."));
+        settingsRow(sheet, "Text size smaller", "A\u2212", dialog, () -> changeTextScale(-0.05f));
+        settingsRow(sheet, "Text size larger", "A+", dialog, () -> changeTextScale(0.05f));
+        settingsRow(sheet, "Theme", Ui.isDark() ? "Dark" : "Light", dialog, () -> Ui.toggleTheme(this));
+        settingsRow(sheet, "Study tools", "Bookmarks", dialog,
+                () -> startActivity(new Intent(this, StudyActivity.class)));
+        settingsRow(sheet, "Browse surahs", "114 surahs", dialog,
+                () -> startActivity(new Intent(this, SurahActivity.class)));
+        settingsRow(sheet, "Verse audio", "Quran.com", dialog,
+                () -> startActivity(PlayerActivity.intent(this,
+                        store.hasProgress() ? store.lastChapter() : 1,
+                        store.hasProgress() ? store.lastVerseKey() : null)));
+
+        settingsSection(sheet, "Support & legal");
+        settingsRow(sheet, "Sources & licences", null, dialog, () -> openPage("sources"));
+        settingsRow(sheet, "Report an issue", null, dialog, () -> openPage("report"));
+        settingsRow(sheet, "Privacy", "Data handling", dialog, () -> openPage("privacy"));
+        settingsRow(sheet, "Support the app", "Donation", dialog, () -> openPage("support"));
+        settingsRow(sheet, "Check for updates", "v" + installedVersionName(), dialog, this::checkForUpdates);
+        if (operatorUnlocked) {
+            settingsRow(sheet, "Operator admin", "Restricted", dialog,
+                    () -> startActivity(new Intent(this, AdminActivity.class)));
+        }
+
+        android.widget.Button done = Ui.button(this, "Done", true);
+        LinearLayout.LayoutParams doneParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        doneParams.topMargin = Ui.dp(this, 18);
+        done.setLayoutParams(doneParams);
+        done.setOnClickListener(view -> dialog.dismiss());
+        sheet.addView(done);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.addView(sheet);
+        dialog.setContentView(scroll);
+        dialog.setCanceledOnTouchOutside(true);
+        dialog.show();
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setGravity(Gravity.CENTER);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            WindowManager.LayoutParams params = window.getAttributes();
+            params.dimAmount = 0.45f;
+            window.setAttributes(params);
+            window.setLayout((int) (getResources().getDisplayMetrics().widthPixels * 0.92),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
+    private void settingsSection(LinearLayout sheet, String label) {
+        TextView section = Ui.text(this, label.toUpperCase(Locale.ROOT), 11f, Ui.GREEN);
+        section.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        section.setLetterSpacing(0.08f);
+        section.setPadding(0, Ui.dp(this, 18), 0, Ui.dp(this, 4));
+        sheet.addView(section);
+    }
+
+    private void settingsRow(LinearLayout sheet, String label, String value, Dialog dialog, Runnable action) {
+        LinearLayout row = Ui.row(this);
+        row.setPadding(Ui.dp(this, 2), Ui.dp(this, 13), Ui.dp(this, 2), Ui.dp(this, 13));
+        row.setClickable(true);
+        TextView main = Ui.text(this, label, 15f, Ui.INK);
+        main.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        row.addView(main, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView detail = Ui.text(this, value == null ? "" : value, 13f, Ui.MUTED);
+        detail.setPadding(Ui.dp(this, 8), 0, Ui.dp(this, 8), 0);
+        row.addView(detail);
+        row.addView(Ui.text(this, "\u203A", 18f, Ui.MUTED));
+        row.setOnClickListener(view -> {
+            dialog.dismiss();
+            action.run();
+        });
+        sheet.addView(row);
+        View line = new View(this);
+        line.setBackgroundColor(Ui.LINE);
+        line.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 1)));
+        sheet.addView(line);
     }
 
     private void showLegal() {
-        String[] items = {"About", "Privacy", "Sources & licences", "Report an issue", "Support the app"};
-        new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert)
-                .setTitle("About & legal")
-                .setItems(items, (dialog, which) -> {
-                    switch (which) {
-                        case 0: openPage("about"); break;
-                        case 1: openPage("privacy"); break;
-                        case 2: openPage("sources"); break;
-                        case 3: openPage("report"); break;
-                        default: openPage("support"); break;
-                    }
-                })
-                .show();
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        LinearLayout sheet = Ui.column(this);
+        sheet.setBackgroundColor(Ui.PAPER);
+        sheet.setPadding(Ui.dp(this, 20), Ui.dp(this, 26), Ui.dp(this, 20), Ui.dp(this, 44));
+        TextView title = Ui.text(this, "About & legal", 22f, Ui.INK);
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        sheet.addView(title);
+        TextView sub = Ui.text(this, "Transparency, sources and support", 12f, Ui.MUTED);
+        sub.setPadding(0, Ui.dp(this, 2), 0, Ui.dp(this, 12));
+        sheet.addView(sub);
+
+        sheet.addView(drawerRow("\u24D8", "About", "What Rafiq Al-Quran is", () -> {
+            dialog.dismiss();
+            openPage("about");
+        }));
+        sheet.addView(drawerRow("\u26BF", "Privacy", "How data is handled", () -> {
+            dialog.dismiss();
+            openPage("privacy");
+        }));
+        sheet.addView(drawerRow("\u2713", "Sources & licences", "Dataset provenance and checksums", () -> {
+            dialog.dismiss();
+            openPage("sources");
+        }));
+        sheet.addView(drawerRow("\u2709", "Report an issue", "Send feedback to the team", () -> {
+            dialog.dismiss();
+            openPage("report");
+        }));
+        sheet.addView(drawerRow("\u2661", "Support the app", "Voluntary donation", () -> {
+            dialog.dismiss();
+            openPage("support");
+        }));
+        android.widget.Button done = Ui.button(this, "Done", true);
+        LinearLayout.LayoutParams doneParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        doneParams.topMargin = Ui.dp(this, 16);
+        done.setLayoutParams(doneParams);
+        done.setOnClickListener(view -> dialog.dismiss());
+        sheet.addView(done);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.addView(sheet);
+        dialog.setContentView(scroll);
+        dialog.show();
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setGravity(Gravity.CENTER);
+            window.setLayout((int) (getResources().getDisplayMetrics().widthPixels * 0.92),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
     }
 
     private void attachOperatorUnlock(LinearLayout topbar) {
@@ -463,6 +656,68 @@ public final class MainActivity extends Activity {
         Intent intent = new Intent(this, PagesActivity.class);
         intent.putExtra("page", page);
         startActivity(intent);
+    }
+
+    // ------------------------------------------------------------- updates
+    private String installedVersionName() {
+        try {
+            android.content.pm.PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return info.versionName == null ? "1.3.2" : info.versionName;
+        } catch (Exception ignored) {
+            return "1.3.2";
+        }
+    }
+
+    private int installedVersionCode() {
+        try {
+            android.content.pm.PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return info.versionCode;
+        } catch (Exception ignored) {
+            return 17;
+        }
+    }
+
+    private void checkForUpdates() {
+        toast("Checking for updates\u2026");
+        new Thread(() -> {
+            try {
+                JSONObject remote = Api.appVersion(getResources());
+                final int latestCode = remote.optInt("versionCode", installedVersionCode());
+                final String latestName = remote.optString("versionName", "");
+                final String storeUrl = remote.optString("url",
+                        "https://play.google.com/store/apps/details?id=" + getPackageName());
+                runOnUiThread(() -> {
+                    if (latestCode > installedVersionCode()) {
+                        new AlertDialog.Builder(MainActivity.this,
+                                android.R.style.Theme_Material_Light_Dialog_Alert)
+                                .setTitle("Update available")
+                                .setMessage("Rafiq Al-Quran " + latestName + " is available. You have "
+                                        + installedVersionName() + ". Update for the latest voice features and fixes.")
+                                .setPositiveButton("Update", (dialog, which) -> openStore(storeUrl))
+                                .setNegativeButton("Later", null)
+                                .show();
+                    } else {
+                        toast("You're on the latest version (" + installedVersionName() + ").");
+                    }
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> toast("Couldn't check for updates. Check your connection and try again."));
+            }
+        }).start();
+    }
+
+    private void openStore(String webUrl) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + getPackageName())));
+            return;
+        } catch (Exception ignored) {
+            // Fall back to the web listing.
+        }
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl)));
+        } catch (Exception ignored) {
+            toast("Couldn't open the store. Search for Rafiq Al-Quran on Google Play.");
+        }
     }
 
     // ------------------------------------------------------------- messages
@@ -914,6 +1169,10 @@ public final class MainActivity extends Activity {
             View last = messages.getChildAt(messages.getChildCount() - 1);
             if (last != null) scroll.smoothScrollTo(0, Math.max(0, last.getTop() - Ui.dp(this, 8)));
         });
+        if (handsFree && answer != null) {
+            status.setText("Thinking\u2026");
+            messages.postDelayed(() -> speakAnswer(answer, true), 350);
+        }
     }
 
     /**
@@ -1099,6 +1358,7 @@ public final class MainActivity extends Activity {
     }
 
     private void newConversation() {
+        if (handsFree) stopHandsFree(false);
         archiveCurrentConversation();
         conversationId = java.util.UUID.randomUUID().toString();
         turns.clear();
@@ -1236,6 +1496,24 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == VOICE_FALLBACK_REQUEST) {
+            if (resultCode == RESULT_OK && data != null) {
+                ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                if (matches != null && !matches.isEmpty()) {
+                    input.setText(matches.get(0));
+                    input.setSelection(input.getText().length());
+                    if (handsFree) {
+                        status.setText("Thinking\u2026");
+                        input.postDelayed(this::submit, 300);
+                    } else {
+                        toast("You can edit the transcript before sending.");
+                    }
+                }
+            } else if (handsFree) {
+                status.setText("Voice input cancelled. Tap \u25C9 to try again.");
+            }
+            return;
+        }
         if (requestCode == REQUEST_HISTORY) {
             if (resultCode == RESULT_OK && data != null) {
                 loadArchivedConversation(data.getStringExtra(HistoryActivity.EXTRA_CONVERSATION));
@@ -1280,6 +1558,38 @@ public final class MainActivity extends Activity {
     }
 
     // --------------------------------------------------------------- speech
+    private void toggleHandsFree() {
+        if (handsFree) {
+            stopHandsFree(true);
+            return;
+        }
+        if (!prefs.voiceEnabled()) {
+            prefs.setVoiceEnabled(true);
+            toast("Voice features enabled.");
+        }
+        handsFree = true;
+        prefs.setHandsFree(true);
+        systemVoiceAttempted = false;
+        updateVoiceChatButton();
+        ensureTts();
+        status.setText("Listening\u2026 speak your question.");
+        toast("Voice chat on. Speak, and the answer will be read aloud.");
+        startListening();
+    }
+
+    private void stopHandsFree(boolean notify) {
+        boolean was = handsFree;
+        handsFree = false;
+        prefs.setHandsFree(false);
+        updateVoiceChatButton();
+        stopListening();
+        Voice.stop(tts);
+        speakingAnswer = null;
+        pendingSpeech = null;
+        if (status != null) status.setText("");
+        if (notify && was) toast("Voice chat off. You can type instead.");
+    }
+
     private void ensureTts() {
         if (ttsFailed) {
             // A failed engine is shut down so the next tap can try a fresh one.
@@ -1309,7 +1619,7 @@ public final class MainActivity extends Activity {
         if (tts != null) {
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override public void onStart(String utteranceId) { Log.i(TAG, "tts utterance start"); }
-                @Override public void onDone(String utteranceId) { Log.i(TAG, "tts utterance done"); speakingAnswer = null; }
+                @Override public void onDone(String utteranceId) { onTtsDone(); }
                 @Override public void onError(String utteranceId) { onTtsUtteranceError(0); }
                 @Override public void onError(String utteranceId, int errorCode) { onTtsUtteranceError(errorCode); }
             });
@@ -1317,8 +1627,18 @@ public final class MainActivity extends Activity {
         if (pendingSpeech != null) {
             Answer answer = pendingSpeech;
             pendingSpeech = null;
-            speakAnswer(answer);
+            speakAnswer(answer, handsFree);
         }
+    }
+
+    private void onTtsDone() {
+        Log.i(TAG, "tts utterance done");
+        speakingAnswer = null;
+        if (!handsFree || isFinishing() || isDestroyed()) return;
+        if (status != null) status.setText("Listening\u2026");
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (handsFree) startListening();
+        }, 500);
     }
 
     /** Synthesis failures arrive after queuing; tell the user instead of failing silently. */
@@ -1331,28 +1651,29 @@ public final class MainActivity extends Activity {
     }
 
     private void speakAnswer(Answer answer) {
+        speakAnswer(answer, false);
+    }
+
+    private void speakAnswer(Answer answer, boolean automatic) {
+        if (answer == null) return;
         if (!prefs.voiceEnabled()) {
-            toast("Voice features are disabled in the menu.");
+            if (!automatic) toast("Voice features are disabled in the menu.");
             return;
         }
         if (listening) stopListening();
         if (Voice.isSpeaking(tts)) {
             Voice.stop(tts);
-            if (answer == speakingAnswer) {
+            if (!automatic && answer == speakingAnswer) {
                 speakingAnswer = null;
                 toast("Stopped reading aloud.");
                 return;
             }
         }
-        if (tts == null || ttsFailed) {
+        if (tts == null || ttsFailed || !ttsReady) {
             pendingSpeech = answer;
             ensureTts();
-            toast("Preparing the device voice\u2026");
-            return;
-        }
-        if (!ttsReady) {
-            pendingSpeech = answer;
-            toast("Preparing the device voice\u2026");
+            if (automatic) status.setText("Preparing the voice\u2026");
+            else toast("Preparing the device voice\u2026");
             return;
         }
         // Never read the text with the UI language's voice: the voice follows the
@@ -1362,9 +1683,11 @@ public final class MainActivity extends Activity {
         if (error != null) {
             speakingAnswer = null;
             toast(error);
+            if (automatic) status.setText("Tap \u25C9 to try again.");
         } else {
             speakingAnswer = answer;
-            toast("Reading the translation and summary aloud. This is not a Quranic recitation.");
+            if (automatic) status.setText("Speaking\u2026");
+            else toast("Reading the translation and summary aloud. This is not a Quranic recitation.");
         }
     }
 
@@ -1372,7 +1695,7 @@ public final class MainActivity extends Activity {
         if (recognizer != null) return;
         recognizer = SpeechRecognizer.createSpeechRecognizer(this);
         recognizer.setRecognitionListener(new RecognitionListener() {
-            @Override public void onReadyForSpeech(Bundle params) { status.setText("\u25CF Listening\u2026 speak your question."); }
+            @Override public void onReadyForSpeech(Bundle params) { status.setText("\u25CF Listening\u2026 speak your question. Tap the mic to stop."); }
             @Override public void onBeginningOfSpeech() { }
             @Override public void onRmsChanged(float rmsdB) { }
             @Override public void onBufferReceived(byte[] buffer) { }
@@ -1381,10 +1704,21 @@ public final class MainActivity extends Activity {
                 status.setText("");
                 listening = false;
                 Log.w(TAG, "asr error=" + error + " ui=" + prefs.language());
-                if (error == SpeechRecognizer.ERROR_CLIENT || error == SpeechRecognizer.ERROR_SERVER_DISCONNECTED) {
+                boolean fallback = error == SpeechRecognizer.ERROR_CLIENT
+                        || error == SpeechRecognizer.ERROR_SERVER
+                        || error == SpeechRecognizer.ERROR_SERVER_DISCONNECTED
+                        || error == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE
+                        || error == SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED;
+                if (fallback && !systemVoiceAttempted) {
+                    systemVoiceAttempted = true;
                     abandonRecognizer();
+                    toast("Trying the system voice input\u2026");
+                    launchSystemVoice();
+                    return;
                 }
+                if (fallback) abandonRecognizer();
                 toast(voiceErrorMessage(error));
+                if (handsFree) status.setText("Tap \u25C9 to try again, or type instead.");
             }
             @Override public void onResults(Bundle results) {
                 status.setText("");
@@ -1393,7 +1727,14 @@ public final class MainActivity extends Activity {
                 if (matches != null && !matches.isEmpty()) {
                     input.setText(matches.get(0));
                     input.setSelection(input.getText().length());
-                    toast("You can edit the transcript before sending.");
+                    if (handsFree) {
+                        status.setText("Thinking\u2026");
+                        input.postDelayed(MainActivity.this::submit, 300);
+                    } else {
+                        toast("You can edit the transcript before sending.");
+                    }
+                } else if (handsFree) {
+                    status.setText("I didn't catch that. Speak again, or type instead.");
                 }
             }
             @Override public void onPartialResults(Bundle partialResults) {
@@ -1409,8 +1750,14 @@ public final class MainActivity extends Activity {
             toast("Voice features are disabled in the menu.");
             return;
         }
+        if (listening) {
+            stopListening();
+            if (status != null) status.setText("");
+            return;
+        }
+        systemVoiceAttempted = false;
         if (!Voice.recognizerAvailable(this)) {
-            toast("Speech recognition is not available on this device. You can type instead.");
+            launchSystemVoice();
             return;
         }
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -1462,6 +1809,19 @@ public final class MainActivity extends Activity {
             }
         }
         beginListening(intent);
+    }
+
+    /** Fallback to the system's own voice UI when the in-app recognizer fails. */
+    private void launchSystemVoice() {
+        if (status != null) status.setText("Opening voice input\u2026");
+        Intent intent = Voice.recognitionIntent(prefs.language());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Ask the Quran\u2026");
+        try {
+            startActivityForResult(intent, VOICE_FALLBACK_REQUEST);
+        } catch (Exception error) {
+            if (status != null) status.setText("");
+            toast("Voice input is not available on this device. You can type instead.");
+        }
     }
 
     private void beginListening(Intent intent) {
@@ -1527,6 +1887,9 @@ public final class MainActivity extends Activity {
             case SpeechRecognizer.ERROR_NETWORK:
             case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
                 return "Voice input needs a network connection right now. You can type instead.";
+            case SpeechRecognizer.ERROR_SERVER:
+            case SpeechRecognizer.ERROR_SERVER_DISCONNECTED:
+                return "The voice service had a problem. Try again, or type instead.";
             case SpeechRecognizer.ERROR_AUDIO:
                 return "The microphone could not be used. Check the device microphone and try again.";
             case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:

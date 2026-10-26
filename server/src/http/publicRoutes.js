@@ -101,6 +101,17 @@ export const createPublicRoutes = ({ db, index }) => {
     });
   });
 
+  // Latest published Android build; the app compares this with its installed
+  // version before offering an update. No user data is involved.
+  router.get("/app/version", (req, res) => {
+    res.json({
+      versionCode: Number(process.env.APP_LATEST_VERSION_CODE || 17),
+      versionName: process.env.APP_LATEST_VERSION_NAME || "1.3.2",
+      url: process.env.APP_UPDATE_URL
+        || "https://play.google.com/store/apps/details?id=com.rqmbooks.rafiqalquran",
+    });
+  });
+
   router.get("/meta", (req, res) => {
     res.json({
       languages: LANGUAGES,

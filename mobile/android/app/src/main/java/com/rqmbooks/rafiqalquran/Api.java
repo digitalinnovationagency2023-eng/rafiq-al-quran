@@ -47,6 +47,11 @@ public final class Api {
         return request(resources, "GET", "/api/assistant/status", null, null, 8000);
     }
 
+    /** Latest published app version, used only for the in-app update prompt. */
+    public static JSONObject appVersion(Resources resources) throws Exception {
+        return request(resources, "GET", "/api/app/version", null, null, 8000);
+    }
+
     /**
      * Optional AI assistance: the model only returns a short chat reply, search
      * terms and/or OCR text for an attached image. Quran text is never requested

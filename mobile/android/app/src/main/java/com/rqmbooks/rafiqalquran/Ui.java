@@ -292,8 +292,8 @@ public final class Ui {
 
     /** Small glyph shown inside the composer (attach / voice). */
     public static TextView glyph(Context context, String value, Runnable onClick) {
-        TextView view = text(context, value, 17f, MUTED);
-        view.setPadding(dp(context, 6), dp(context, 10), dp(context, 6), dp(context, 10));
+        TextView view = text(context, value, 16f, MUTED);
+        view.setPadding(dp(context, 3), dp(context, 10), dp(context, 3), dp(context, 10));
         view.setGravity(Gravity.CENTER);
         if (onClick != null) view.setOnClickListener(v -> onClick.run());
         return view;

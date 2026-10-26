@@ -23,6 +23,10 @@ public final class Prefs {
     public boolean voiceEnabled() { return prefs.getBoolean("voiceEnabled", true); }
     public void setVoiceEnabled(boolean value) { prefs.edit().putBoolean("voiceEnabled", value).apply(); }
 
+    /** Hands-free conversation: listen, answer aloud, then listen again. */
+    public boolean handsFree() { return prefs.getBoolean("handsFree", false); }
+    public void setHandsFree(boolean value) { prefs.edit().putBoolean("handsFree", value).apply(); }
+
     public String history() { return prefs.getString("history", "[]"); }
     public void setHistory(JSONArray array) { prefs.edit().putString("history", array.toString()).apply(); }
     public void clearHistory() { prefs.edit().putString("history", "[]").apply(); }

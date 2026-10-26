@@ -110,8 +110,10 @@ for (const dir of ["res", "assets"]) {
 
 const moduleZip = path.join(outDir, "base.zip");
 if (isWin) {
-  run("Zip base module", "powershell", ["-NoProfile", "-Command",
-    `Compress-Archive -Force -Path '${path.join(base, "*")}' -DestinationPath '${moduleZip}'`]);
+  // jar cfM creates forward-slash entries and omits META-INF/MANIFEST.MF,
+  // which bundletool rejects inside a module zip.
+  fs.rmSync(moduleZip, { force: true });
+  run("Zip base module", "jar", ["cfM", moduleZip, "."], { cwd: base });
 } else {
   run("Zip base module", "zip", ["-q", "-r", moduleZip, "."], { cwd: base });
 }
