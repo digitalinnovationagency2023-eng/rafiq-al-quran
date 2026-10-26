@@ -30,9 +30,12 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.ScrollView;
@@ -189,26 +192,32 @@ public final class MainActivity extends Activity {
     // ---------------------------------------------------------------- layout
     private View buildRoot() {
         LinearLayout root = Ui.column(this);
-        root.setBackgroundColor(Ui.PAPER);
+        root.setBackground(Ui.pageBackground(this));
 
-        // Minimal ChatGPT-like top bar: menu, app/model name, new chat, theme.
+        // Editorial top bar: menu, wordmark, new conversation, theme.
         LinearLayout topbar = Ui.row(this);
-        topbar.setBackgroundColor(Ui.BAR);
-        topbar.setPadding(Ui.dp(this, 8), Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 10));
-        TextView menuIcon = Ui.text(this, "\u2630", 26f, Ui.ON_BAR);
-        menuIcon.setPadding(Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6));
+        topbar.setBackground(Ui.headerBackground(this));
+        topbar.setPadding(Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14));
+        TextView menuIcon = Ui.text(this, "\u2630", 30f, Ui.ON_BAR);
+        menuIcon.setPadding(Ui.dp(this, 10), Ui.dp(this, 4), Ui.dp(this, 12), Ui.dp(this, 4));
         menuIcon.setContentDescription("Menu");
         menuIcon.setOnClickListener(this::showMenu);
         topbar.addView(menuIcon);
-        TextView heading = Ui.text(this, "Rafiq Al-Quran", 16f, Ui.ON_BAR);
-        heading.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        heading.setGravity(Gravity.CENTER);
-        heading.setSingleLine(true);
-        heading.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        heading.setPadding(Ui.dp(this, 2), 0, Ui.dp(this, 2), 0);
-        topbar.addView(heading, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView newChat = Ui.text(this, "\uFF0B", 28f, Ui.ON_BAR);
-        newChat.setPadding(Ui.dp(this, 7), Ui.dp(this, 2), Ui.dp(this, 7), Ui.dp(this, 2));
+
+        LinearLayout brand = Ui.column(this);
+        TextView heading = Ui.display(this, "Rafiq", 23f);
+        heading.setTextColor(Ui.ON_BAR);
+        brand.addView(heading);
+        TextView brandLine = Ui.text(this, "QUR\u2019AN COMPANION", 8.5f, Ui.GOLD_BRIGHT);
+        brandLine.setLetterSpacing(0.11f);
+        brandLine.setSingleLine(true);
+        brandLine.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        brandLine.setPadding(0, Ui.dp(this, 1), 0, 0);
+        brand.addView(brandLine);
+        topbar.addView(brand, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView newChat = Ui.text(this, "\uFF0B", 30f, Ui.ON_BAR);
+        newChat.setPadding(Ui.dp(this, 9), Ui.dp(this, 2), Ui.dp(this, 9), Ui.dp(this, 2));
         newChat.setContentDescription("New conversation");
         newChat.setOnClickListener(view -> newConversation());
         topbar.addView(newChat);
@@ -216,15 +225,15 @@ public final class MainActivity extends Activity {
         attachOperatorUnlock(topbar);
 
         messages = Ui.column(this);
-        messages.setPadding(Ui.dp(this, 16), Ui.dp(this, 6), Ui.dp(this, 16), Ui.dp(this, 12));
+        messages.setPadding(Ui.dp(this, 20), Ui.dp(this, 12), Ui.dp(this, 20), Ui.dp(this, 18));
 
-        status = Ui.text(this, "", 12f, Ui.MUTED);
+        status = Ui.text(this, "", 12.5f, Ui.MUTED);
         status.setGravity(Gravity.CENTER);
         status.setPadding(0, 0, 0, Ui.dp(this, 4));
 
         LinearLayout composer = Ui.column(this);
-        composer.setPadding(Ui.dp(this, 12), Ui.dp(this, 6), Ui.dp(this, 12), Ui.dp(this, 10));
-        composer.setBackgroundColor(Ui.PAPER);
+        composer.setPadding(Ui.dp(this, 14), Ui.dp(this, 8), Ui.dp(this, 14), Ui.dp(this, 12));
+        composer.setBackgroundColor(Color.TRANSPARENT);
 
         attachmentRow = Ui.row(this);
         attachmentRow.setBackground(Ui.rounded(Ui.GREEN_SOFT, 0, 12, this));
@@ -240,24 +249,30 @@ public final class MainActivity extends Activity {
         composer.addView(attachmentRow);
 
         LinearLayout pill = Ui.row(this);
-        pill.setBackground(Ui.rounded(Ui.CARD, Ui.LINE, 28, this));
-        pill.setPadding(Ui.dp(this, 6), Ui.dp(this, 4), Ui.dp(this, 6), Ui.dp(this, 4));
-        pill.addView(Ui.glyph(this, "\uD83D\uDCCE", this::pickAttachment));
+        pill.setBackground(Ui.rounded(Ui.CARD, Ui.LINE, 30, this));
+        pill.setElevation(Ui.dp(this, 4));
+        pill.setPadding(Ui.dp(this, 5), Ui.dp(this, 6), Ui.dp(this, 5), Ui.dp(this, 6));
+        TextView attach = Ui.text(this, "\uD83D\uDCCE", 19f, Ui.MUTED);
+        attach.setGravity(Gravity.CENTER);
+        attach.setContentDescription("Attach an image");
+        attach.setOnClickListener(view -> pickAttachment());
+        pill.addView(attach, new LinearLayout.LayoutParams(Ui.dp(this, 36), Ui.dp(this, 46)));
         input = new EditText(this);
-        input.setHint("Ask Quran\u2026");
-        input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+        input.setHint("Ask Qur\u2019an\u2026");
+        input.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15.5f);
         input.setMinLines(1);
         input.setMaxLines(5);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         input.setBackground(null);
-        input.setPadding(Ui.dp(this, 6), Ui.dp(this, 10), Ui.dp(this, 6), Ui.dp(this, 10));
+        input.setPadding(Ui.dp(this, 7), Ui.dp(this, 11), Ui.dp(this, 7), Ui.dp(this, 11));
         input.setTextColor(Ui.INK);
         input.setHintTextColor(Ui.MUTED);
         pill.addView(input, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        voiceChatButton = Ui.glyph(this, "\u25C9", this::toggleHandsFree);
-        voiceChatButton.setContentDescription("Hands-free voice chat");
-        pill.addView(voiceChatButton);
-        pill.addView(Ui.glyph(this, "\uD83C\uDFA4", this::startListening));
+        TextView mic = Ui.text(this, "\uD83C\uDFA4", 21f, Ui.MUTED);
+        mic.setGravity(Gravity.CENTER);
+        mic.setContentDescription("Speak your question");
+        mic.setOnClickListener(view -> startListening());
+        pill.addView(mic, new LinearLayout.LayoutParams(Ui.dp(this, 38), Ui.dp(this, 46)));
         pill.addView(Ui.circle(this, "\u2191", Ui.GREEN, Color.WHITE, 46, () -> submit()));
         composer.addView(pill);
 
@@ -347,16 +362,31 @@ public final class MainActivity extends Activity {
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout drawer = Ui.column(this);
-        drawer.setBackgroundColor(Ui.PAPER);
+        drawer.setBackground(Ui.pageBackground(this));
         drawer.setPadding(Ui.dp(this, 20), Ui.dp(this, 36), Ui.dp(this, 20), Ui.dp(this, 48));
 
-        TextView title = Ui.text(this, "Rafiq Al-Quran", 24f, Ui.INK);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        TextView menuMark = Ui.arabic(this, "\uFDFD", 54f, Ui.LAVENDER);
+        menuMark.setAlpha(0.22f);
+        menuMark.setGravity(Gravity.END);
+        menuMark.setPadding(0, 0, 0, Ui.dp(this, 6));
+        drawer.addView(menuMark);
+        TextView title = Ui.display(this, "Rafiq", 31f);
         drawer.addView(title);
-        TextView subtitle = Ui.text(this, "Quran-only assistant", 13.5f, Ui.MUTED);
-        subtitle.setPadding(0, Ui.dp(this, 3), 0, Ui.dp(this, 18));
+        TextView subtitle = Ui.text(this, "A quiet Qur\u2019an companion", 14f, Ui.MUTED);
+        subtitle.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 14));
         drawer.addView(subtitle);
+        drawer.addView(Ui.goldRule(this));
 
+        drawer.addView(drawerRow("\u266B", "Listen to Qur\u2019an",
+                "Car & home", () -> {
+            dialog.dismiss();
+            startActivity(new Intent(this, ListenActivity.class));
+        }));
+        drawer.addView(drawerRow("\u25A4", "Read the Qur\u2019an",
+                "114 surahs \u00B7 offline", () -> {
+            dialog.dismiss();
+            startActivity(new Intent(this, SurahActivity.class));
+        }));
         drawer.addView(drawerRow("\uFF0B", "New chat", null, () -> {
             dialog.dismiss();
             newConversation();
@@ -416,11 +446,15 @@ public final class MainActivity extends Activity {
         row.addView(icon);
 
         LinearLayout labels = Ui.column(this);
-        TextView main = Ui.text(this, label, 17.5f, Ui.INK);
+        TextView main = Ui.text(this, label, 16.5f, Ui.INK);
         main.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        main.setSingleLine(true);
+        main.setEllipsize(android.text.TextUtils.TruncateAt.END);
         labels.addView(main);
         if (detail != null && !detail.isEmpty()) {
-            TextView sub = Ui.text(this, detail, 13.5f, Ui.MUTED);
+            TextView sub = Ui.text(this, detail, 12.5f, Ui.MUTED);
+            sub.setSingleLine(true);
+            sub.setEllipsize(android.text.TextUtils.TruncateAt.END);
             sub.setPadding(0, Ui.dp(this, 2), 0, 0);
             labels.addView(sub);
         }
@@ -470,10 +504,6 @@ public final class MainActivity extends Activity {
                 () -> startActivity(new Intent(this, StudyActivity.class)));
         settingsRow(sheet, "Browse surahs", "114 surahs", dialog,
                 () -> startActivity(new Intent(this, SurahActivity.class)));
-        settingsRow(sheet, "Verse audio", "Quran.com", dialog,
-                () -> startActivity(PlayerActivity.intent(this,
-                        store.hasProgress() ? store.lastChapter() : 1,
-                        store.hasProgress() ? store.lastVerseKey() : null)));
 
         settingsSection(sheet, "Support & legal");
         settingsRow(sheet, "Sources & licences", null, dialog, () -> openPage("sources"));
@@ -718,36 +748,132 @@ public final class MainActivity extends Activity {
     // ------------------------------------------------------------- messages
     private void renderEmptyState() {
         messages.removeAllViews();
+        boolean tablet = getResources().getConfiguration().screenWidthDp >= 600;
         LinearLayout box = Ui.column(this);
-        box.setPadding(0, Ui.dp(this, 44), 0, 0);
+        box.setPadding(0, Ui.dp(this, tablet ? 16 : 8), 0, Ui.dp(this, tablet ? 18 : 10));
+        String[] quickGlyphs = {"\u2726", "\u25A4", "\u266B", "\u270E"};
+        String[] quickLabels = {"Ask", "Read", "Listen", "Study"};
+        int[] quickAccents = {Ui.CORAL, Ui.TEAL, Ui.PURPLE, Ui.AMBER};
+        Runnable[] quickActions = {
+                () -> { input.requestFocus(); input.setSelection(input.getText().length()); },
+                () -> startActivity(new Intent(this, SurahActivity.class)),
+                () -> startActivity(new Intent(this, ListenActivity.class)),
+                () -> startActivity(new Intent(this, StudyActivity.class))
+        };
+        LinearLayout quickStrip = Ui.row(this);
+        quickStrip.setPadding(0, 0, 0, Ui.dp(this, 12));
+        for (int index = 0; index < quickGlyphs.length; index++) {
+            LinearLayout item = Ui.column(this);
+            item.setGravity(Gravity.CENTER);
+            item.setPadding(0, 0, 0, Ui.dp(this, 2));
+            item.setClickable(true);
+            int iconSize = tablet ? 46 : 42;
+            TextView icon = Ui.text(this, quickGlyphs[index], tablet ? 20f : 18f, Color.WHITE);
+            icon.setGravity(Gravity.CENTER);
+            icon.setBackground(Ui.rounded(quickAccents[index], 0, iconSize, this));
+            icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, iconSize), Ui.dp(this, iconSize)));
+            item.addView(icon);
+            TextView quickLabel = Ui.text(this, quickLabels[index], tablet ? 13f : 11.5f, Ui.INK);
+            quickLabel.setSingleLine(true);
+            quickLabel.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            quickLabel.setGravity(Gravity.CENTER);
+            quickLabel.setPadding(0, Ui.dp(this, 5), 0, 0);
+            item.addView(quickLabel);
+            final int choice = index;
+            item.setOnClickListener(view -> quickActions[choice].run());
+            quickStrip.addView(item, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        }
+        box.addView(quickStrip);
 
-        TextView heading = Ui.text(this, "What can I help with?", 23f, Ui.INK);
-        heading.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        heading.setGravity(Gravity.CENTER);
-        box.addView(heading);
+        // Illustrated hero: geometric art, crescent, and an Amiri calligraphy watermark.
+        FrameLayout hero = new FrameLayout(this);
+        hero.setBackground(Ui.heroBackground(this));
+        hero.setClipToOutline(true);
+        hero.setOutlineProvider(new ViewOutlineProvider() {
+            @Override public void getOutline(View view, android.graphics.Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), Ui.dp(MainActivity.this, 26));
+            }
+        });
+        ImageView art = new ImageView(this);
+        art.setImageResource(R.drawable.bg_hero);
+        art.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        art.setAlpha(0.92f);
+        hero.addView(art, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        ImageView calligraphy = new ImageView(this);
+        calligraphy.setImageResource(R.drawable.calligraphy);
+        calligraphy.setAlpha(0.22f);
+        calligraphy.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        FrameLayout.LayoutParams markParams = new FrameLayout.LayoutParams(
+                Ui.dp(this, 190), Ui.dp(this, 135), Gravity.TOP | Gravity.END);
+        markParams.topMargin = Ui.dp(this, 2);
+        markParams.rightMargin = Ui.dp(this, 2);
+        hero.addView(calligraphy, markParams);
+
+        LinearLayout heroContent = Ui.column(this);
+        heroContent.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
+        TextView welcome = Ui.text(this, "ASSALAMU ALAYKUM", 11.5f, Ui.SUN);
+        welcome.setLetterSpacing(0.16f);
+        welcome.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        heroContent.addView(welcome);
+
+        TextView heading = Ui.display(this, "How can I help?", tablet ? 30f : 26f);
+        heading.setTextColor(Color.WHITE);
+        heading.setPadding(0, Ui.dp(this, 6), 0, 0);
+        heroContent.addView(heading);
 
         TextView sub = Ui.text(this,
-                "Quran-only answers \u2014 in English, Roman Urdu/Arabic, or with typos.",
-                13f, Ui.MUTED);
-        sub.setGravity(Gravity.CENTER);
-        sub.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 22));
-        box.addView(sub);
+                "Ask, read or listen.",
+                tablet ? 16f : 14f, Color.parseColor("#EAF8FF"));
+        sub.setLineSpacing(Ui.dp(this, 3), 1.35f);
+        sub.setPadding(0, Ui.dp(this, 6), 0, 0);
+        if (tablet) heroContent.addView(sub);
+
+        TextView stars = Ui.text(this, "\u2726   \u2727   \u2726", 18f, Ui.SUN);
+        stars.setLetterSpacing(0.2f);
+        stars.setPadding(0, Ui.dp(this, 8), 0, 0);
+        heroContent.addView(stars);
+
+        hero.addView(heroContent, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams heroParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, tablet ? 300 : 150));
+        heroParams.bottomMargin = Ui.dp(this, 14);
+        box.addView(hero, heroParams);
+        if (!tablet) {
+            LinearLayout quote = Ui.cardBox(this);
+            quote.setBackground(Ui.rounded(Ui.GOLD_SOFT, Ui.alpha(Ui.PURPLE, 90), 22, this));
+            quote.setPadding(Ui.dp(this, 18), Ui.dp(this, 12), Ui.dp(this, 18), Ui.dp(this, 12));
+            LinearLayout quoteHead = Ui.row(this);
+            TextView quoteLabel = Ui.label(this, "DUA FOR KNOWLEDGE");
+            quoteLabel.setTextColor(Ui.PURPLE);
+            quoteHead.addView(quoteLabel, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+            TextView quoteRef = Ui.text(this, "20:114", 11.5f, Ui.MUTED);
+            quoteHead.addView(quoteRef);
+            quote.addView(quoteHead);
+            TextView quoteArabic = Ui.arabic(this, "\u0648\u064E\u0642\u064F\u0644 \u0631\u064E\u0651\u0628\u0650\u0651 \u0632\u0650\u062F\u0646\u0650\u064A \u0639\u0650\u0644\u0645\u064B\u0627", 23f, Ui.INK);
+            quoteArabic.setTextDirection(View.TEXT_DIRECTION_RTL);
+            quoteArabic.setGravity(Gravity.RIGHT);
+            quoteArabic.setPadding(0, Ui.dp(this, 4), 0, 0);
+            quote.addView(quoteArabic);
+            quote.setOnClickListener(view -> startActivity(ReaderActivity.intent(this, 20, "20:114")));
+            box.addView(quote);
+        }
+
+        if (tablet) {
+        TextView tryLabel = Ui.label(this, "TRY ASKING");
+        tryLabel.setTextColor(Ui.GOLD_DEEP);
+        tryLabel.setPadding(0, Ui.dp(this, 16), 0, Ui.dp(this, 2));
+        box.addView(tryLabel);
 
         String[][] suggestions = {
                 {"Who is Hazrat Essa?", "Prophets and their stories"},
-                {"What is the law about theft?", "Quranic guidance, verse by verse"},
-                {"What does the Quran say about sabr and shukr?", "Patience and gratitude \u00b7 Roman Urdu works"},
+                {"What does the Qur\u2019an say about sabr and shukr?", "Patience and gratitude \u00B7 Roman Urdu works"},
                 {"Show me 2:255", "Open a verse by reference"}
         };
         for (String[] suggestion : suggestions) {
-            LinearLayout card = Ui.cardBox(this);
-            card.setLayoutParams(Ui.withTop(this, 8));
-            TextView title = Ui.text(this, suggestion[0], 14.5f, Ui.INK);
-            title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            card.addView(title);
-            TextView hint = Ui.text(this, suggestion[1], 11f, Ui.MUTED);
-            hint.setPadding(0, Ui.dp(this, 4), 0, 0);
-            card.addView(hint);
+            LinearLayout card = suggestionCard(suggestion[0], suggestion[1]);
             card.setOnClickListener(view -> {
                 input.setText(suggestion[0]);
                 submit();
@@ -755,51 +881,94 @@ public final class MainActivity extends Activity {
             box.addView(card);
         }
 
-        LinearLayout links = Ui.row(this);
-        links.setPadding(0, Ui.dp(this, 14), 0, 0);
-        links.addView(Ui.textAction(this, "Study tools", () -> startActivity(new Intent(this, StudyActivity.class))));
-        links.addView(Ui.textAction(this, "Browse surahs", () -> startActivity(new Intent(this, SurahActivity.class))));
-        if (store.hasProgress()) {
-            links.addView(Ui.textAction(this, "Resume reading",
-                    () -> startActivity(ReaderActivity.intent(this, store.lastChapter(), store.lastVerseKey()))));
         }
-        box.addView(links);
-        messages.addView(box);
-
         if (store.hasProgress() && dataset != null) {
             Chapter chapter = dataset.chapter(store.lastChapter());
             String key = store.lastVerseKey();
             Verse last = key == null || key.isEmpty() ? null : dataset.verse(key);
             LinearLayout card = Ui.cardBox(this);
-            card.setLayoutParams(Ui.withTop(this, 22));
-            card.addView(Ui.label(this, "Continue reading"));
-            String label = chapter == null ? (key == null ? "" : key) : chapter.nameEnglish + "  \u00b7  " + key;
-            TextView big = Ui.text(this, label, 17f, Ui.INK);
-            big.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-            big.setPadding(0, Ui.dp(this, 2), 0, Ui.dp(this, 2));
+            card.setLayoutParams(Ui.withTop(this, 18));
+            TextView label = Ui.label(this, "CONTINUE READING");
+            label.setTextColor(Ui.GOLD_DEEP);
+            card.addView(label);
+            String labelText = chapter == null ? (key == null ? "Saved reading position" : key)
+                    : chapter.nameEnglish + "  \u00B7  " + key;
+            TextView big = Ui.display(this, labelText, 21f);
+            big.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 2));
             card.addView(big);
             StringBuilder metaLine = new StringBuilder();
             if (last != null) {
                 try {
                     metaLine.append(Assets.meta(this).indicator(last.id));
-                    metaLine.append("  \u00b7  ");
+                    metaLine.append("  \u00B7  ");
                 } catch (Exception ignored) {
-                    // page metadata is optional for this card
+                    // page metadata is optional
                 }
-                metaLine.append("about ").append(Math.max(1, Math.round(last.id * 100f / 6236f))).append("% of the Quran read");
+                metaLine.append("about ").append(Math.max(1, Math.round(last.id * 100f / 6236f))).append("% of the Qur\u2019an read");
             } else {
                 metaLine.append("Saved on this device");
             }
-            card.addView(Ui.text(this, metaLine.toString(), 11f, Ui.MUTED));
-            android.widget.Button resume = Ui.button(this, "Resume reading", true);
-            LinearLayout.LayoutParams resumeParams = Ui.withTop(this, 10);
+            card.addView(Ui.text(this, metaLine.toString(), 13f, Ui.MUTED));
+            android.widget.Button resume = Ui.button(this, "Resume reading \u2192", true);
+            LinearLayout.LayoutParams resumeParams = Ui.withTop(this, 12);
             resume.setLayoutParams(resumeParams);
             resume.setOnClickListener(view -> startActivity(ReaderActivity.intent(this, store.lastChapter(), store.lastVerseKey())));
             card.addView(resume);
-            messages.addView(card);
+            box.addView(card);
         }
+
+        messages.addView(box);
     }
 
+    private LinearLayout emptyTile(String glyph, String title, String hint, Runnable action, int accent,
+                                   LinearLayout.LayoutParams params) {
+        boolean wide = getResources().getConfiguration().screenWidthDp >= 600;
+        LinearLayout card = Ui.column(this);
+        card.setBackground(Ui.rounded(Ui.CARD, Ui.alpha(accent, 85), 18, this));
+        card.setElevation(Ui.dp(this, 2));
+        card.setPadding(Ui.dp(this, wide ? 10 : 12), Ui.dp(this, wide ? 10 : 11), Ui.dp(this, wide ? 10 : 12), Ui.dp(this, wide ? 10 : 11));
+        card.setClickable(true);
+        card.setLayoutParams(params);
+
+        TextView badge = Ui.text(this, glyph, 18f, accent);
+        badge.setGravity(Gravity.CENTER);
+        badge.setBackground(Ui.rounded(Ui.alpha(accent, 34), 0, 18, this));
+        badge.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 30), Ui.dp(this, 30)));
+        card.addView(badge);
+
+        TextView cardTitle = Ui.text(this, title, wide ? 13.5f : 15.5f, Ui.INK);
+        cardTitle.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        cardTitle.setSingleLine(true);
+        cardTitle.setPadding(0, Ui.dp(this, 6), 0, 0);
+        card.addView(cardTitle);
+        TextView cardHint = Ui.text(this, hint, wide ? 10.5f : 11.5f, Ui.MUTED);
+        cardHint.setSingleLine(true);
+        cardHint.setPadding(0, Ui.dp(this, 2), 0, 0);
+        card.addView(cardHint);
+        card.setOnClickListener(view -> action.run());
+        return card;
+    }
+
+    private LinearLayout suggestionCard(String title, String hint) {
+        LinearLayout card = Ui.row(this);
+        card.setBackground(Ui.rounded(Ui.CARD, Ui.LINE, 20, this));
+        card.setElevation(Ui.dp(this, 1));
+        card.setPadding(Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16));
+        card.setLayoutParams(Ui.withTop(this, 8));
+        LinearLayout labels = Ui.column(this);
+        boolean wide = getResources().getConfiguration().screenWidthDp >= 600;
+        TextView cardTitle = Ui.text(this, title, wide ? 13.5f : 15.5f, Ui.INK);
+        cardTitle.setTypeface(Typeface.create("serif", Typeface.BOLD));
+        labels.addView(cardTitle);
+        TextView cardHint = Ui.text(this, hint, 13f, Ui.MUTED);
+        cardHint.setPadding(0, Ui.dp(this, 3), 0, 0);
+        labels.addView(cardHint);
+        card.addView(labels, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView arrow = Ui.text(this, "\u2192", 22f, Ui.GOLD_DEEP);
+        arrow.setPadding(Ui.dp(this, 8), 0, 0, 0);
+        card.addView(arrow);
+        return card;
+    }
     private void rebuildMessages() {
         messages.removeAllViews();
         if (turns.isEmpty()) {

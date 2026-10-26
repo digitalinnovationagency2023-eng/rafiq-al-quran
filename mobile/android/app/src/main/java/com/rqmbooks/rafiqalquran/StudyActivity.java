@@ -1,5 +1,7 @@
 package com.rqmbooks.rafiqalquran;
 
+import android.graphics.Color;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -65,11 +67,11 @@ public final class StudyActivity extends Activity {
 
         scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(Ui.PAPER);
+        scroll.setBackgroundColor(Color.TRANSPARENT);
         scroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         content = Ui.column(this);
         content.setPadding(Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 28));
-        content.setBackgroundColor(Ui.PAPER);
+        content.setBackgroundColor(Color.TRANSPARENT);
         content.addView(Ui.text(this, "Loading study data\u2026", 13f, Ui.MUTED));
         scroll.addView(content);
         root.addView(scroll);

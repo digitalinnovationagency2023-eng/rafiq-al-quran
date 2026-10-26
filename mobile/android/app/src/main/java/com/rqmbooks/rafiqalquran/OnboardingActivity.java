@@ -11,16 +11,17 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 /** Three short cards shown once, immediately after the first Bismillah screen. */
 public final class OnboardingActivity extends Activity {
-    private static final int GOLD = Color.rgb(212, 175, 90);
-    private static final int WHITE = Color.rgb(245, 247, 245);
-    private static final int BODY = Color.rgb(210, 224, 216);
-    private static final int MUTED = Color.rgb(150, 170, 160);
-    private static final int DARK = Color.rgb(3, 10, 7);
+    private static final int GOLD = Color.rgb(231, 111, 81);
+    private static final int WHITE = Color.rgb(24, 43, 58);
+    private static final int BODY = Color.rgb(98, 116, 138);
+    private static final int MUTED = Color.rgb(132, 150, 171);
+    private static final int DARK = Color.rgb(11, 85, 104);
 
     private static final String[] ICONS = {"\u2726", "\u201C", "\u25C9"};
     private static final String[] HEADINGS = {"Ask naturally", "Quran-only answers", "Talk and listen"};
@@ -45,16 +46,15 @@ public final class OnboardingActivity extends Activity {
         super.onCreate(savedInstanceState);
         prefs = new Prefs(this);
         getWindow().setStatusBarColor(DARK);
-        getWindow().setNavigationBarColor(DARK);
+        getWindow().setNavigationBarColor(Color.WHITE);
+        getWindow().getDecorView().setSystemUiVisibility(0);
         setContentView(build());
         render(false);
     }
 
     private View build() {
         FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(DARK);
-        root.addView(new IntroArt(this), new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        root.setBackgroundResource(R.drawable.bg_page_light);
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -79,9 +79,9 @@ public final class OnboardingActivity extends Activity {
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(20), dp(22), dp(20), dp(20));
         GradientDrawable cardBg = new GradientDrawable();
-        cardBg.setColor(Color.argb(216, 5, 24, 17));
+        cardBg.setColor(Color.WHITE);
         cardBg.setCornerRadius(dp(24));
-        cardBg.setStroke(dp(1), Color.argb(80, 212, 175, 90));
+        cardBg.setStroke(dp(1), Color.rgb(220, 230, 242));
         card.setBackground(cardBg);
 
         icon = text(ICONS[0], 38f, GOLD);
@@ -136,7 +136,7 @@ public final class OnboardingActivity extends Activity {
         next.setGravity(Gravity.CENTER);
         next.setPadding(dp(34), dp(14), dp(34), dp(14));
         GradientDrawable nextBg = new GradientDrawable();
-        nextBg.setColor(Color.rgb(16, 122, 87));
+        nextBg.setColor(Color.rgb(14, 124, 134));
         nextBg.setCornerRadius(dp(24));
         next.setBackground(nextBg);
         next.setOnClickListener(view -> {
@@ -177,7 +177,7 @@ public final class OnboardingActivity extends Activity {
             View dot = new View(this);
             GradientDrawable shape = new GradientDrawable();
             shape.setShape(GradientDrawable.OVAL);
-            shape.setColor(i == page ? GOLD : Color.argb(80, 220, 230, 224));
+            shape.setColor(i == page ? GOLD : Color.argb(80, 132, 150, 171));
             dot.setBackground(shape);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(7), dp(7));
             params.leftMargin = dp(4);

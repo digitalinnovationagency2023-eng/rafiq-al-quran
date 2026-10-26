@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ink">#0C0C0C</color>
-    <color name="paper">#FFFFFF</color>
-    <color name="muted">#6A6A6A</color>
-    <color name="line">#E7E7E7</color>
-    <color name="gold">#A97C22</color>
+    <color name="ink">#182B3A</color>
+    <color name="paper">#F8F7FF</color>
+    <color name="muted">#62748A</color>
+    <color name="line">#DCE6F2</color>
+    <color name="gold">#E76F51</color>
+    <color name="splash_bg">#0B5568</color>
 </resources>

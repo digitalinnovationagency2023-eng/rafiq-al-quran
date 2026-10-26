@@ -51,7 +51,9 @@ const aapt2 = path.join(buildTools, process.platform === "win32" ? "aapt2.exe" :
 const badging = capture(aapt2, ["dump", "badging", apk]);
 const badgingText = badging.output;
 check(`package is ${PACKAGE}`, badgingText.includes(`package: name='${PACKAGE}'`));
-check("launchable activity present", badgingText.includes(`launchable-activity: name='${PACKAGE}.MainActivity'`));
+check("launchable activity present",
+  badgingText.includes(`launchable-activity: name='${PACKAGE}.MainActivity'`)
+  || badgingText.includes(`launchable-activity: name='${PACKAGE}.SplashActivity'`));
 check("microphone permission declared", /uses-permission: name='android\.permission\.RECORD_AUDIO'/.test(badgingText));
 check("internet permission declared", /uses-permission: name='android\.permission\.INTERNET'/.test(badgingText));
 check("minimum Android 7.0 (sdk 24)", /sdkVersion:'24'/.test(badgingText));

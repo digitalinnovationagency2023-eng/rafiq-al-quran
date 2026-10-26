@@ -27,7 +27,7 @@ public final class HistoryActivity extends Activity {
         prefs = new Prefs(this);
 
         LinearLayout root = Ui.column(this);
-        root.setBackgroundColor(Ui.PAPER);
+        root.setBackground(Ui.pageBackground(this));
         root.addView(Ui.bar(this, "History", "Saved on this device", this::finish));
         View rule = new View(this);
         rule.setBackgroundColor(Ui.LINE);

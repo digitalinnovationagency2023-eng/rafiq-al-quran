@@ -1,6 +1,6 @@
 # Rafiq Al-Quran: AI Assistant
 
-**Status: 1.3.0** — native Android release, versionCode 15, versionName 1.3.0 (Android 7.0+, minSdk 24, targetSdk 36).
+**Status: 1.4.0** — native Android release, versionCode 21, versionName 1.4.0 (Android 7.0+, minSdk 24, targetSdk 36).
 
 A free, Quran-only **native Android app** with an offline Quran reader, study tools, a conversational
 verse-finding assistant and enabled Quran.com recitation, plus an optional API. The complete Quran — all 114
@@ -9,6 +9,22 @@ surah/verse reference and the source provenance separately. It is not a website 
 Android application with no WebView and no Gradle, the Quran dataset is bundled in the APK, and reading, search,
 answers, conversation replies and study tools work fully offline. Recitation streams from Quran.com and the
 optional AI assistance needs the operator to configure a free key; see below.
+
+## What's in the 1.4.0 build
+
+- **Premium visual refresh**: illustrated Islamic-geometric page backgrounds, a jewel-tone palette (teal,
+  indigo, coral, amber, violet), calligraphy artwork, rounded hero cards, serif display type and larger reading
+  sizes across the home, reader, surah list, listening and study screens.
+- **New listening home**: a dedicated **Listen** destination in the quick actions and menu, with the three
+  Quran.com reciters, a resume card, and all 114 surahs just one tap from playback. Recitation is no longer
+  buried in Settings.
+- **Responsive phone and tablet layouts**: quick actions reflow for tablet widths, the home layout is tested at
+  phone (720×1600) and tablet (1600×2560) sizes, and titles/actions use single-line ellipsis instead of vertical
+  wrapping.
+- **Calligraphy and colour**: an Amiri Basmala/Iqra watermark, a dua card (20:114), multicolour section rules and
+  per-action accent colours replace the previous black-and-gold treatment.
+- **Fixes**: surah-list names no longer split mid-word, reader controls no longer collapse into a vertical
+  column, and the top-bar title area is protected from action-button crowding.
 
 ## What's in the 1.3.0 build
 

@@ -1,5 +1,7 @@
 package com.rqmbooks.rafiqalquran;
 
+import android.graphics.Color;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -105,18 +107,18 @@ public final class PlayerActivity extends Activity {
         requestedVerseKey = getIntent().getStringExtra(EXTRA_VERSE);
 
         LinearLayout root = Ui.screen(this);
-        LinearLayout bar = Ui.bar(this, "Verse audio", "Quran.com  \u00B7  source: Quran.com", this::finish);
+        LinearLayout bar = Ui.bar(this, "Listen", "Quran.com  \u00B7  recitation", this::finish);
         bar.addView(Ui.themeToggle(this));
         root.addView(bar);
         root.addView(Ui.goldRule(this));
 
         scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(Ui.PAPER);
+        scroll.setBackgroundColor(Color.TRANSPARENT);
         scroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         content = Ui.column(this);
         content.setPadding(Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 28));
-        content.setBackgroundColor(Ui.PAPER);
+        content.setBackgroundColor(Color.TRANSPARENT);
         content.addView(Ui.text(this, "Loading the verse\u2026", 13f, Ui.MUTED));
         scroll.addView(content);
         root.addView(scroll);
@@ -159,15 +161,9 @@ public final class PlayerActivity extends Activity {
 
     @Override
     protected void onPause() {
+        // Keep the recitation playing when the screen locks or the user switches
+        // to navigation. The activity only releases audio when it is closed.
         super.onPause();
-        if (player != null && prepared) {
-            try {
-                if (player.isPlaying()) player.pause();
-            } catch (Exception ignored) {
-                // playback state is best effort
-            }
-            updatePlayButton();
-        }
     }
 
     @Override
@@ -215,16 +211,15 @@ public final class PlayerActivity extends Activity {
         content.removeAllViews();
 
         LinearLayout heading = Ui.row(this);
-        TextView title = Ui.text(this, chapter.nameEnglish, 20f, Ui.INK);
-        title.setTypeface(Typeface.SERIF, Typeface.BOLD);
+        TextView title = Ui.display(this, chapter.nameEnglish, 28f);
         heading.addView(title);
         heading.addView(Ui.spacer(this));
-        TextView arabicName = Ui.text(this, chapter.nameArabic, 18f, Ui.MUTED);
+        TextView arabicName = Ui.arabic(this, chapter.nameArabic, 22f, Ui.GOLD_DEEP);
         arabicName.setTextDirection(View.TEXT_DIRECTION_RTL);
         heading.addView(arabicName);
         content.addView(heading);
         TextView subhead = Ui.text(this,
-                "Recitation \u00B7 " + chapter.verseCount + " verses in this surah", 12f, Ui.MUTED);
+                "Recitation \u00B7 " + chapter.verseCount + " verses in this surah", 13.5f, Ui.MUTED);
         subhead.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 10));
         content.addView(subhead);
 
@@ -279,11 +274,10 @@ public final class PlayerActivity extends Activity {
         head.addView(Ui.chip(this, "STREAMED", Ui.GREEN, Ui.GREEN_SOFT, Ui.GREEN));
         card.addView(head);
 
-        TextView arabic = Ui.text(this, verse.arabic, 24f * prefs.textScale(), Ui.INK);
+        TextView arabic = Ui.arabic(this, verse.arabic, 30f * prefs.textScale(), Ui.INK);
         arabic.setTextDirection(View.TEXT_DIRECTION_RTL);
         arabic.setGravity(Gravity.RIGHT);
-        arabic.setLineSpacing(Ui.dp(this, 8), 1.25f);
-        arabic.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 12));
+        arabic.setPadding(0, Ui.dp(this, 14), 0, Ui.dp(this, 14));
         card.addView(arabic);
 
         card.addView(Ui.divider(this));
@@ -299,7 +293,7 @@ public final class PlayerActivity extends Activity {
                 translation == null || translation.isEmpty()
                         ? "A reviewed translation is not available for this verse in this build."
                         : translation,
-                15f * prefs.textScale(), translation == null || translation.isEmpty() ? Ui.MUTED : Ui.INK);
+                17f * prefs.textScale(), translation == null || translation.isEmpty() ? Ui.MUTED : Ui.INK);
         translated.setPadding(0, Ui.dp(this, 8), 0, Ui.dp(this, 4));
         card.addView(translated);
         if (fallback) {

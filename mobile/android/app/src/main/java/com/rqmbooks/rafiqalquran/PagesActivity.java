@@ -1,5 +1,7 @@
 package com.rqmbooks.rafiqalquran;
 
+import android.graphics.Color;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -48,7 +50,7 @@ public final class PagesActivity extends Activity {
         ScrollView scroll = new ScrollView(this);
         LinearLayout content = Ui.column(this);
         content.setPadding(Ui.dp(this, 16), Ui.dp(this, 18), Ui.dp(this, 16), Ui.dp(this, 24));
-        content.setBackgroundColor(Ui.PAPER);
+        content.setBackgroundColor(Color.TRANSPARENT);
         scroll.addView(content);
         setContentView(scroll);
 

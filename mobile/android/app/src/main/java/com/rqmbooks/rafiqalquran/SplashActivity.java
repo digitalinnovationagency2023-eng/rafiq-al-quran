@@ -18,6 +18,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -27,10 +28,10 @@ import android.widget.TextView;
  * three-card introduction.
  */
 public final class SplashActivity extends Activity {
-    private static final int GOLD = Color.rgb(212, 175, 90);
-    private static final int SILVER = Color.rgb(214, 222, 217);
-    private static final int MUTED = Color.rgb(150, 170, 160);
-    private static final int DARK = Color.rgb(3, 10, 7);
+    private static final int GOLD = Color.rgb(255, 209, 102);
+    private static final int SILVER = Color.rgb(234, 248, 255);
+    private static final int MUTED = Color.rgb(184, 198, 217);
+    private static final int DARK = Color.rgb(8, 24, 36);
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable advance = this::advance;
@@ -44,6 +45,7 @@ public final class SplashActivity extends Activity {
         prefs = new Prefs(this);
         getWindow().setStatusBarColor(DARK);
         getWindow().setNavigationBarColor(DARK);
+        getWindow().getDecorView().setSystemUiVisibility(0);
         Window window = getWindow();
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         setContentView(build());
@@ -54,8 +56,18 @@ public final class SplashActivity extends Activity {
     private View build() {
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(DARK);
-        root.addView(new IntroArt(this), new FrameLayout.LayoutParams(
+        ImageView backdrop = new ImageView(this);
+        backdrop.setImageResource(R.drawable.bg_hero);
+        backdrop.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        root.addView(backdrop, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        ImageView calligraphy = new ImageView(this);
+        calligraphy.setImageResource(R.drawable.calligraphy);
+        calligraphy.setAlpha(0.28f);
+        calligraphy.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        FrameLayout.LayoutParams calligraphyParams = new FrameLayout.LayoutParams(
+                dp(260), dp(182), Gravity.CENTER);
+        root.addView(calligraphy, calligraphyParams);
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -67,7 +79,7 @@ public final class SplashActivity extends Activity {
         bismillah.setSingleLine(true);
         bismillah.setGravity(Gravity.CENTER);
         bismillah.setLineSpacing(0, 1.35f);
-        bismillah.setShadowLayer(18, 0, 3, Color.argb(150, 212, 175, 90));
+        bismillah.setShadowLayer(18, 0, 3, Color.argb(150, 255, 209, 102));
         bismillah.setAlpha(0f);
         bismillah.setScaleX(0.94f);
         bismillah.setScaleY(0.94f);

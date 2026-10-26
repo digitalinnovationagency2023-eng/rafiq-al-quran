@@ -1,5 +1,7 @@
 package com.rqmbooks.rafiqalquran;
 
+import android.graphics.Color;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
@@ -88,7 +90,7 @@ public final class ReaderActivity extends Activity {
         root.addView(info);
 
         scroll = new ScrollView(this);
-        scroll.setBackgroundColor(Ui.PAPER);
+        scroll.setBackgroundColor(Color.TRANSPARENT);
         scroll.setFillViewport(true);
         scroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         content = Ui.column(this);
@@ -148,21 +150,19 @@ public final class ReaderActivity extends Activity {
 
         // Chapter heading card
         LinearLayout heading = Ui.cardBox(this);
-        TextView name = Ui.text(this, chapter.nameEnglish, 24f, Ui.INK);
-        name.setTypeface(Typeface.SERIF, Typeface.BOLD);
+        TextView name = Ui.display(this, chapter.nameEnglish, 28f);
         heading.addView(name);
-        TextView arabicName = Ui.text(this, chapter.nameArabic, 22f, Ui.GOLD);
+        TextView arabicName = Ui.arabic(this, chapter.nameArabic, 24f, Ui.GOLD_DEEP);
         arabicName.setTextDirection(View.TEXT_DIRECTION_RTL);
         arabicName.setGravity(Gravity.RIGHT);
-        arabicName.setTypeface(Typeface.SERIF, Typeface.BOLD);
         heading.addView(arabicName);
         TextView chapterMeta = Ui.text(this,
                 chapter.verseCount + " verses  \u00B7  " + (chapter.revelation == null ? "" : chapter.revelation)
                         + "  \u00B7  " + meta.chapterIndicator(dataset, chapterId),
-                11f, Ui.MUTED);
+                13f, Ui.MUTED);
         chapterMeta.setPadding(0, Ui.dp(this, 6), 0, 0);
         heading.addView(chapterMeta);
-        TextView translationInfo = Ui.text(this, translationLine(), 10f, Ui.MUTED);
+        TextView translationInfo = Ui.text(this, translationLine(), 11.5f, Ui.MUTED);
         translationInfo.setPadding(0, Ui.dp(this, 6), 0, 0);
         heading.addView(translationInfo);
         content.addView(heading);
@@ -218,9 +218,6 @@ public final class ReaderActivity extends Activity {
                 });
         toggles.addView(translation);
         toggles.addView(layout);
-        TextView theme = Ui.action(this, Ui.isDark() ? "Light theme" : "Dark theme",
-                () -> Ui.toggleTheme(this));
-        toggles.addView(theme);
         card.addView(toggles);
         return card;
     }
@@ -349,11 +346,10 @@ public final class ReaderActivity extends Activity {
         }
         if (translation == null) translation = "";
 
-        TextView arabic = Ui.text(this, verse.arabic, 24f * scale, Ui.INK);
+        TextView arabic = Ui.arabic(this, verse.arabic, 29f * scale, Ui.INK);
         arabic.setTextDirection(View.TEXT_DIRECTION_RTL);
         arabic.setGravity(Gravity.RIGHT);
-        arabic.setLineSpacing(Ui.dp(this, 7), 1.18f);
-        arabic.setPadding(0, Ui.dp(this, 10), 0, Ui.dp(this, 6));
+        arabic.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 10));
 
         if (prefs.sideBySide() && prefs.translationVisible() && !TextUtils.isEmpty(translation)) {
             LinearLayout columns = Ui.row(this);
@@ -363,7 +359,7 @@ public final class ReaderActivity extends Activity {
             translationBox.setBackground(Ui.rounded(Ui.GOLD_SOFT, Ui.LINE, 6, this));
             translationBox.setPadding(Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 10), Ui.dp(this, 8));
             translationBox.addView(Ui.label(this, "Translation"));
-            translationBox.addView(Ui.text(this, translation, 13f * scale, Ui.INK));
+            translationBox.addView(Ui.text(this, translation, 15f * scale, Ui.INK));
             LinearLayout.LayoutParams boxParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
             boxParams.leftMargin = Ui.dp(this, 8);
             columns.addView(translationBox, boxParams);
@@ -372,7 +368,7 @@ public final class ReaderActivity extends Activity {
             card.addView(arabic);
             if (prefs.translationVisible() && !TextUtils.isEmpty(translation)) {
                 card.addView(Ui.divider(this));
-                TextView translated = Ui.text(this, translation, 15f * scale, Ui.MUTED);
+                TextView translated = Ui.text(this, translation, 17f * scale, Ui.MUTED);
                 card.addView(translated);
                 if (fallback) card.addView(Ui.text(this, "English translation shown for this interface language.", 10f, Ui.MUTED));
             }

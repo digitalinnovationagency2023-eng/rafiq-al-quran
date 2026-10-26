@@ -1,5 +1,7 @@
 package com.rqmbooks.rafiqalquran;
 
+import android.graphics.Color;
+
 import android.app.Activity;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -44,15 +46,21 @@ public final class SurahActivity extends Activity {
         store = new StudyStore(this);
         root = Ui.screen(this);
 
-        LinearLayout bar = Ui.bar(this, "Surah list", "114 surahs  \u00B7  offline", this::finish);
-        bar.addView(Ui.action(this, "Bookmarks", this::showBookmarks));
-        bar.addView(Ui.action(this, "History", this::showHistory));
+        LinearLayout bar = Ui.bar(this, "Surahs", "114  \u00B7  offline", this::finish);
+        TextView bookmarks = Ui.action(this, "\u2606", this::showBookmarks);
+        bookmarks.setTextSize(22f);
+        bookmarks.setContentDescription("Bookmarks");
+        bar.addView(bookmarks);
+        TextView history = Ui.action(this, "\u25F7", this::showHistory);
+        history.setTextSize(21f);
+        history.setContentDescription("Reading history");
+        bar.addView(history);
         bar.addView(Ui.themeToggle(this));
         root.addView(bar);
         root.addView(Ui.goldRule(this));
 
         LinearLayout paneBar = Ui.row(this);
-        paneBar.setBackgroundColor(Ui.PAPER);
+        paneBar.setBackgroundColor(Color.TRANSPARENT);
         paneBar.setPadding(Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 6));
         LinearLayout titleBox = Ui.column(this);
         paneTitle = Ui.text(this, "THE 114 SURAHS", 11f, Ui.GOLD_DEEP);
@@ -70,14 +78,14 @@ public final class SurahActivity extends Activity {
         root.addView(body);
 
         list = new ListView(this);
-        list.setBackgroundColor(Ui.PAPER);
+        list.setBackgroundColor(Color.TRANSPARENT);
         list.setDividerHeight(1);
         list.setDivider(new android.graphics.drawable.ColorDrawable(Ui.LINE));
         list.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         body.addView(list);
 
         pane = new ScrollView(this);
-        pane.setBackgroundColor(Ui.PAPER);
+        pane.setBackgroundColor(Color.TRANSPARENT);
         pane.setVisibility(View.GONE);
         pane.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         body.addView(pane);
@@ -135,48 +143,41 @@ public final class SurahActivity extends Activity {
         public View getView(int position, View convertView, ViewGroup parent) {
             Chapter chapter = dataset.chapter(position + 1);
             LinearLayout row = Ui.row(parent.getContext());
-            row.setPadding(Ui.dp(SurahActivity.this, 12), Ui.dp(SurahActivity.this, 10),
-                    Ui.dp(SurahActivity.this, 12), Ui.dp(SurahActivity.this, 10));
-            row.setBackgroundColor(Ui.PAPER);
+            row.setPadding(Ui.dp(SurahActivity.this, 14), Ui.dp(SurahActivity.this, 12),
+                    Ui.dp(SurahActivity.this, 12), Ui.dp(SurahActivity.this, 12));
+            row.setBackgroundColor(Color.TRANSPARENT);
 
-            TextView number = Ui.text(SurahActivity.this, String.valueOf(chapter.id), 13f, Ui.GOLD_DEEP);
-            number.setTypeface(Typeface.SERIF, Typeface.BOLD);
+            TextView number = Ui.text(SurahActivity.this, String.valueOf(chapter.id), 15f, Ui.GOLD_DEEP);
+            number.setTypeface(Typeface.create("serif", Typeface.BOLD));
             number.setGravity(Gravity.CENTER);
-            number.setBackground(Ui.rounded(Ui.GOLD_SOFT, Ui.LINE, 6, SurahActivity.this));
-            LinearLayout.LayoutParams numberParams = new LinearLayout.LayoutParams(Ui.dp(SurahActivity.this, 34), Ui.dp(SurahActivity.this, 34));
+            number.setBackground(Ui.rounded(Ui.GOLD_SOFT, Ui.LINE, 22, SurahActivity.this));
+            LinearLayout.LayoutParams numberParams = new LinearLayout.LayoutParams(Ui.dp(SurahActivity.this, 44), Ui.dp(SurahActivity.this, 44));
             number.setLayoutParams(numberParams);
             row.addView(number);
 
             LinearLayout titles = Ui.column(parent.getContext());
             LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-            titleParams.leftMargin = Ui.dp(SurahActivity.this, 10);
-            TextView english = Ui.text(SurahActivity.this, chapter.nameEnglish, 15f, Ui.INK);
-            english.setTypeface(Typeface.DEFAULT_BOLD);
-            TextView arabic = Ui.text(SurahActivity.this, chapter.nameArabic, 15f, Ui.GOLD_DEEP);
+            titleParams.leftMargin = Ui.dp(SurahActivity.this, 14);
+            TextView english = Ui.text(SurahActivity.this, chapter.nameEnglish, 18.5f, Ui.INK);
+            english.setTypeface(Typeface.create("serif", Typeface.BOLD));
+            TextView arabic = Ui.arabic(SurahActivity.this, chapter.nameArabic, 18f, Ui.GOLD_DEEP);
             arabic.setTextDirection(View.TEXT_DIRECTION_RTL);
             arabic.setGravity(Gravity.RIGHT);
-            arabic.setTypeface(Typeface.SERIF);
             titles.addView(english);
             titles.addView(arabic);
+            TextView meta = Ui.text(SurahActivity.this,
+                    chapter.verseCount + " verses  \u00B7  "
+                            + (chapter.revelation == null ? "Qur\u2019an" : chapter.revelation),
+                    11.5f, Ui.MUTED);
+            meta.setPadding(0, Ui.dp(SurahActivity.this, 2), 0, 0);
+            titles.addView(meta);
             row.addView(titles, titleParams);
 
-            LinearLayout meta = Ui.column(parent.getContext());
-            meta.setGravity(Gravity.END);
-            TextView verses = Ui.text(SurahActivity.this, chapter.verseCount + " verses", 11f, Ui.MUTED);
-            verses.setGravity(Gravity.END);
-            TextView revelation = Ui.text(SurahActivity.this, chapter.revelation == null ? "" : chapter.revelation, 9f, Ui.GOLD_DEEP);
-            revelation.setGravity(Gravity.END);
-            revelation.setLetterSpacing(0.1f);
-            meta.addView(verses);
-            meta.addView(revelation);
-            row.addView(meta);
-
-            TextView listen = Ui.action(SurahActivity.this, "\u25B7 Listen",
-                    () -> startActivity(PlayerActivity.intent(SurahActivity.this, chapter.id, null)));
+            TextView listen = Ui.circle(SurahActivity.this, "\u25B6", Ui.GREEN_SOFT, Ui.GREEN, 40, null);
             listen.setContentDescription("Listen to " + chapter.nameEnglish + " recitation from Quran.com");
-            LinearLayout.LayoutParams listenParams = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            listenParams.leftMargin = Ui.dp(SurahActivity.this, 8);
+            listen.setOnClickListener(view -> startActivity(PlayerActivity.intent(SurahActivity.this, chapter.id, null)));
+            LinearLayout.LayoutParams listenParams = new LinearLayout.LayoutParams(Ui.dp(SurahActivity.this, 40), Ui.dp(SurahActivity.this, 40));
+            listenParams.leftMargin = Ui.dp(SurahActivity.this, 10);
             row.addView(listen, listenParams);
             return row;
         }
