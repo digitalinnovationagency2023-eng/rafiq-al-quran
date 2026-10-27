@@ -1,6 +1,6 @@
 # Rafiq Al-Quran: AI Assistant
 
-**Status: 1.4.0** — native Android release, versionCode 21, versionName 1.4.0 (Android 7.0+, minSdk 24, targetSdk 36).
+**Status: 1.4.1** — native Android release, versionCode 22, versionName 1.4.1 (Android 7.0+, minSdk 24, targetSdk 36).
 
 A free, Quran-only **native Android app** with an offline Quran reader, study tools, a conversational
 verse-finding assistant and enabled Quran.com recitation, plus an optional API. The complete Quran — all 114
@@ -9,6 +9,12 @@ surah/verse reference and the source provenance separately. It is not a website 
 Android application with no WebView and no Gradle, the Quran dataset is bundled in the APK, and reading, search,
 answers, conversation replies and study tools work fully offline. Recitation streams from Quran.com and the
 optional AI assistance needs the operator to configure a free key; see below.
+
+## What's in the 1.4.1 build
+
+- **Premium navigation drawer**: compact gradient header with calligraphy, grouped Explore / Your Space / About sections, colour-coded icon badges and clearer menu descriptions. The large empty header gap is gone.
+- **Narrower drawer on tablets**: capped at 420 dp so it stays a menu rather than filling half the screen.
+- **Release 1.4.1 / versionCode 22** for the Play upload.
 
 ## What's in the 1.4.0 build
 

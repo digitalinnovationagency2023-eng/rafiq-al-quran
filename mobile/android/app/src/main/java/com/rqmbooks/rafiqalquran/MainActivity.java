@@ -363,56 +363,86 @@ public final class MainActivity extends Activity {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         LinearLayout drawer = Ui.column(this);
         drawer.setBackground(Ui.pageBackground(this));
-        drawer.setPadding(Ui.dp(this, 20), Ui.dp(this, 36), Ui.dp(this, 20), Ui.dp(this, 48));
+        drawer.setPadding(0, 0, 0, Ui.dp(this, 24));
 
-        TextView menuMark = Ui.arabic(this, "\uFDFD", 54f, Ui.LAVENDER);
-        menuMark.setAlpha(0.22f);
-        menuMark.setGravity(Gravity.END);
-        menuMark.setPadding(0, 0, 0, Ui.dp(this, 6));
-        drawer.addView(menuMark);
-        TextView title = Ui.display(this, "Rafiq", 31f);
-        drawer.addView(title);
-        TextView subtitle = Ui.text(this, "A quiet Qur\u2019an companion", 14f, Ui.MUTED);
-        subtitle.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 14));
-        drawer.addView(subtitle);
-        drawer.addView(Ui.goldRule(this));
+        // Compact branded header instead of an empty top gap.
+        FrameLayout header = new FrameLayout(this);
+        header.setBackground(Ui.heroBackground(this));
+        ImageView art = new ImageView(this);
+        art.setImageResource(R.drawable.calligraphy);
+        art.setAlpha(0.24f);
+        art.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        FrameLayout.LayoutParams artParams = new FrameLayout.LayoutParams(
+                Ui.dp(this, 220), Ui.dp(this, 155), Gravity.TOP | Gravity.END);
+        artParams.rightMargin = Ui.dp(this, 2);
+        artParams.topMargin = Ui.dp(this, 2);
+        header.addView(art, artParams);
 
-        drawer.addView(drawerRow("\u266B", "Listen to Qur\u2019an",
-                "Car & home", () -> {
+        LinearLayout headerText = Ui.column(this);
+        headerText.setPadding(Ui.dp(this, 22), Ui.dp(this, 20), Ui.dp(this, 22), Ui.dp(this, 20));
+        TextView eyebrow = Ui.text(this, "QUR\u2019AN COMPANION", 10.5f, Ui.SUN);
+        eyebrow.setLetterSpacing(0.14f);
+        eyebrow.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        headerText.addView(eyebrow);
+        TextView title = Ui.display(this, "Rafiq", 32f);
+        title.setTextColor(Color.WHITE);
+        title.setPadding(0, Ui.dp(this, 4), 0, 0);
+        headerText.addView(title);
+        TextView tagline = Ui.text(this, "Ask. Read. Listen.", 13.5f, Color.parseColor("#EAF8FF"));
+        tagline.setPadding(0, Ui.dp(this, 4), 0, 0);
+        headerText.addView(tagline);
+        header.addView(headerText, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        drawer.addView(header);
+
+        LinearLayout body = Ui.column(this);
+        body.setPadding(Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 4));
+
+        body.addView(menuSection("EXPLORE"));
+        body.addView(drawerRow("\u266B", "Listen to Qur\u2019an", "Car & home", Ui.CORAL, () -> {
             dialog.dismiss();
             startActivity(new Intent(this, ListenActivity.class));
         }));
-        drawer.addView(drawerRow("\u25A4", "Read the Qur\u2019an",
-                "114 surahs \u00B7 offline", () -> {
+        body.addView(drawerRow("\u25A4", "Read the Qur\u2019an", "114 surahs \u00B7 offline", Ui.TEAL, () -> {
             dialog.dismiss();
             startActivity(new Intent(this, SurahActivity.class));
         }));
-        drawer.addView(drawerRow("\uFF0B", "New chat", null, () -> {
+        body.addView(drawerRow("\uFF0B", "New chat", "Fresh conversation", Ui.PURPLE, () -> {
             dialog.dismiss();
             newConversation();
         }));
-        drawer.addView(drawerRow("\u25F7", "History", null, () -> {
+
+        body.addView(menuSection("YOUR SPACE"));
+        body.addView(drawerRow("\u25F7", "History", "Recent history", Ui.AMBER, () -> {
             dialog.dismiss();
             openHistory();
         }));
-        drawer.addView(drawerRow("\u25C9", "Voice chat",
-                handsFree ? "Hands-free \u00B7 On" : "Hands-free \u00B7 Off",
-                () -> {
+        body.addView(drawerRow("\u25C9", "Voice chat",
+                handsFree ? "Hands-free \u00B7 On" : "Hands-free \u00B7 Off", Ui.SKY, () -> {
                     dialog.dismiss();
                     toggleHandsFree();
                 }));
-        drawer.addView(drawerRow("\u2699", "Settings", null, () -> {
+        body.addView(drawerRow("\u2699", "Settings", "Language & privacy", Ui.LAVENDER, () -> {
             dialog.dismiss();
             showSettings();
         }));
-        drawer.addView(drawerRow("\u21BB", "Update app", null, () -> {
+
+        body.addView(menuSection("ABOUT"));
+        body.addView(drawerRow("\u21BB", "Update app", "Check for updates", Ui.MINT, () -> {
             dialog.dismiss();
             checkForUpdates();
         }));
-        drawer.addView(drawerRow("\u24D8", "About & legal", null, () -> {
+        body.addView(drawerRow("\u24D8", "About & legal", "Sources & licences", Ui.PINK, () -> {
             dialog.dismiss();
             showLegal();
         }));
+
+        TextView footer = Ui.text(this,
+                "Rafiq Al-Quran  \u00B7  v" + installedVersionName(), 11f, Ui.MUTED);
+        footer.setGravity(Gravity.CENTER);
+        footer.setPadding(0, Ui.dp(this, 16), 0, 0);
+        body.addView(footer);
+        drawer.addView(body);
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
@@ -428,45 +458,63 @@ public final class MainActivity extends Activity {
             WindowManager.LayoutParams params = window.getAttributes();
             params.dimAmount = 0.45f;
             window.setAttributes(params);
-            window.setLayout((int) (getResources().getDisplayMetrics().widthPixels * 0.90),
-                    ViewGroup.LayoutParams.MATCH_PARENT);
+            int drawerWidth = Math.min(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.88),
+                    Ui.dp(this, 420));
+            window.setLayout(drawerWidth, ViewGroup.LayoutParams.MATCH_PARENT);
         }
     }
 
+    private TextView menuSection(String label) {
+        TextView view = Ui.label(this, label);
+        view.setTextColor(Ui.GOLD_DEEP);
+        view.setPadding(Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 6), Ui.dp(this, 6));
+        return view;
+    }
+
     private LinearLayout drawerRow(String glyph, String label, String detail, Runnable action) {
+        return drawerRow(glyph, label, detail, Ui.TEAL, action);
+    }
+    private LinearLayout drawerRow(String glyph, String label, String detail, int accent, Runnable action) {
         LinearLayout row = Ui.row(this);
-        row.setPadding(Ui.dp(this, 6), Ui.dp(this, 9), Ui.dp(this, 6), Ui.dp(this, 9));
-        row.setBackground(Ui.rounded(Ui.PAPER, 0, 14, this));
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rowParams.bottomMargin = Ui.dp(this, 5);
+        row.setLayoutParams(rowParams);
+        row.setPadding(Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8));
+        row.setBackground(Ui.rounded(Ui.CARD, Ui.alpha(Ui.LINE, 220), 16, this));
+        row.setElevation(Ui.dp(this, 1));
         row.setClickable(true);
 
-        TextView icon = Ui.text(this, glyph, 28f, Ui.INK);
+        TextView icon = Ui.text(this, glyph, 20f, Color.WHITE);
         icon.setGravity(Gravity.CENTER);
-        icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 52),
-                ViewGroup.LayoutParams.WRAP_CONTENT));
+        icon.setBackground(Ui.rounded(accent, 0, 20, this));
+        icon.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40)));
         row.addView(icon);
 
         LinearLayout labels = Ui.column(this);
-        TextView main = Ui.text(this, label, 16.5f, Ui.INK);
+        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        labelParams.leftMargin = Ui.dp(this, 12);
+        TextView main = Ui.text(this, label, 16f, Ui.INK);
         main.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         main.setSingleLine(true);
         main.setEllipsize(android.text.TextUtils.TruncateAt.END);
         labels.addView(main);
         if (detail != null && !detail.isEmpty()) {
-            TextView sub = Ui.text(this, detail, 12.5f, Ui.MUTED);
+            TextView sub = Ui.text(this, detail, 12f, Ui.MUTED);
             sub.setSingleLine(true);
             sub.setEllipsize(android.text.TextUtils.TruncateAt.END);
             sub.setPadding(0, Ui.dp(this, 2), 0, 0);
             labels.addView(sub);
         }
-        row.addView(labels, new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView chevron = Ui.text(this, "\u203A", 24f, Ui.MUTED);
+        row.addView(labels, labelParams);
+        TextView chevron = Ui.text(this, "\u203A", 24f, Ui.alpha(accent, 180));
         chevron.setPadding(Ui.dp(this, 6), 0, Ui.dp(this, 2), 0);
         row.addView(chevron);
         row.setOnClickListener(view -> action.run());
         return row;
     }
-
     private void showSettings() {
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
