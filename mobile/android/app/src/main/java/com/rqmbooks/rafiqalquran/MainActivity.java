@@ -79,6 +79,8 @@ public final class MainActivity extends Activity {
     // A grounded summary is a second AI request per question, so the device cap is
     // slightly higher than the old single-call allowance.
     private static final int AI_DAILY_LIMIT = 10;
+    private boolean aiQuotaBlocked;
+    private boolean aiQuotaNoticeShown;
 
     private Dataset dataset;
     private Prefs prefs;
@@ -529,7 +531,7 @@ public final class MainActivity extends Activity {
         settingsSection(sheet, "Assistant");
         settingsRow(sheet, "Language", Language.byCode(prefs.language()).englishName, dialog,
                 this::showLanguageDialog);
-        settingsRow(sheet, "AI answers", prefs.aiAssistEnabled() ? "On" : "Off", dialog, () -> {
+        settingsRow(sheet, "AI answers", prefs.aiAssistEnabled() ? "On · " + aiRemainingToday() + " of " + AI_DAILY_LIMIT + " left today" : "Off", dialog, () -> {
             prefs.setAiAssistEnabled(!prefs.aiAssistEnabled());
             toast(prefs.aiAssistEnabled()
                     ? (aiAvailable ? "AI answers on" : "AI answers on \u2014 server AI is not configured yet; local replies are used")
@@ -557,7 +559,7 @@ public final class MainActivity extends Activity {
         settingsRow(sheet, "Sources & licences", null, dialog, () -> openPage("sources"));
         settingsRow(sheet, "Report an issue", null, dialog, () -> openPage("report"));
         settingsRow(sheet, "Privacy", "Data handling", dialog, () -> openPage("privacy"));
-        settingsRow(sheet, "Support the app", "Donation", dialog, () -> openPage("support"));
+        settingsRow(sheet, "Support the app", "No donations — du'a and feedback", dialog, () -> openPage("support"));
         settingsRow(sheet, "Check for updates", "v" + installedVersionName(), dialog, this::checkForUpdates);
         if (operatorUnlocked) {
             settingsRow(sheet, "Operator admin", "Restricted", dialog,
@@ -651,7 +653,7 @@ public final class MainActivity extends Activity {
             dialog.dismiss();
             openPage("report");
         }));
-        sheet.addView(drawerRow("\u2661", "Support the app", "Voluntary donation", () -> {
+        sheet.addView(drawerRow("\u2661", "Support the app", "No donations — just du'a and feedback", () -> {
             dialog.dismiss();
             openPage("support");
         }));
@@ -1254,6 +1256,8 @@ public final class MainActivity extends Activity {
             return;
         }
         final String question = input.getText().toString().trim();
+        aiQuotaBlocked = false;
+        aiQuotaNoticeShown = false;
         final Attachments.File attachment = currentAttachment;
         if (question.isEmpty() && attachment == null) return;
         if (!question.isEmpty()) store.addSearch(question);
@@ -1376,6 +1380,11 @@ public final class MainActivity extends Activity {
         idle();
         turns.add(new HistoryCodec.Turn("assistant", null, answer));
         messages.addView(answerView(answer));
+        if (aiQuotaBlocked && !aiQuotaNoticeShown) {
+            aiQuotaNoticeShown = true;
+            messages.addView(aiQuotaNotice());
+        }
+        aiQuotaBlocked = false;
         saveHistory();
         messages.post(() -> {
             View last = messages.getChildAt(messages.getChildCount() - 1);
@@ -1396,6 +1405,8 @@ public final class MainActivity extends Activity {
     private Answer deepenAnswer(Answer answer, String question, String language, String indexFact) {
         if (question == null || question.trim().isEmpty()) return answer;
         if (answer.passages.isEmpty()) return answer;
+        // Do not ask AI to explain weak retrieval: weak matches produce confident-sounding but wrong answers.
+        if (answer.confidence < 0.35) return answer;
         if (!consumeAiAllowance()) return answer;
         try {
             JSONObject body = new JSONObject();
@@ -1435,8 +1446,9 @@ public final class MainActivity extends Activity {
             runOnUiThread(() -> busy("Thinking through the verses"));
             JSONObject response = Api.assistantAnswer(getResources(), body);
             String text = response.isNull("answer") ? "" : response.optString("answer", "");
-            if (!text.trim().isEmpty()) return answer.withSummary(text.trim());
-        } catch (Exception ignored) {
+            if (!text.trim().isEmpty() && hasGroundedCitation(text, answer) && hasQuestionOverlap(text, question)) return answer.withSummary(text.trim());
+        } catch (Exception error) {
+            if (isQuotaError(error)) aiQuotaBlocked = true;
             // The verses are still shown; the reasoning answer is optional.
         }
         return answer;
@@ -1501,7 +1513,8 @@ public final class MainActivity extends Activity {
             } else {
                 result.searchText = response.optString("searchTerms", "");
             }
-        } catch (Exception ignored) {
+        } catch (Exception error) {
+            if (isQuotaError(error)) aiQuotaBlocked = true;
             // Offline, unconfigured AI or rate limited: fall back to local replies.
         }
         return result;
@@ -1522,7 +1535,7 @@ public final class MainActivity extends Activity {
         return trimmed.length() <= max ? trimmed : trimmed.substring(0, max);
     }
 
-    /** Daily allowance (40) so the free AI tier cannot be exhausted. */
+    /** Daily allowance (10) so the free AI tier cannot be exhausted. */
     private boolean consumeAiAllowance() {
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
         int count = prefs.aiCallsToday();
@@ -1530,9 +1543,69 @@ public final class MainActivity extends Activity {
             count = 0;
             prefs.setAiDay(today);
         }
-        if (count >= AI_DAILY_LIMIT) return false;
+        if (count >= AI_DAILY_LIMIT) {
+            aiQuotaBlocked = true;
+            return false;
+        }
         prefs.setAiCallsToday(count + 1);
         return true;
+    }
+
+    /** Reject a fluent summary that never actually addresses the user's question words. */
+    private boolean hasQuestionOverlap(String summary, String question) {
+        try {
+            java.util.List<String> tokens = com.rqmbooks.rafiqalquran.logic.Retrieval.meaningfulTokens(question, prefs.language());
+            if (tokens.size() < 2) return true;
+            String normalized = com.rqmbooks.rafiqalquran.logic.ArabicText.normalize(summary);
+            for (String token : tokens) {
+                String needle = com.rqmbooks.rafiqalquran.logic.ArabicText.normalize(token);
+                if (needle.length() >= 3 && normalized.contains(needle)) return true;
+            }
+        } catch (Exception ignored) {
+            return true;
+        }
+        return false;
+    }
+
+    /** Require the AI summary to cite at least one verse the app actually showed. */
+    private boolean hasGroundedCitation(String text, Answer answer) {
+        if (text == null) return false;
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(\\d{1,3})\\s*:\\s*(\\d{1,3})").matcher(text);
+        java.util.Set<String> allowed = new java.util.HashSet<>();
+        for (Passage passage : answer.passages) allowed.add(passage.verseKey);
+        if (!answer.shownVerseKeys.isEmpty()) allowed.addAll(answer.shownVerseKeys);
+        while (matcher.find()) {
+            if (allowed.contains(matcher.group(1) + ":" + matcher.group(2))) return true;
+        }
+        return false;
+    }
+
+    private boolean isQuotaError(Exception error) {
+        String message = error == null || error.getMessage() == null ? "" : error.getMessage().toLowerCase(Locale.US);
+        return message.contains("429") || message.contains("daily ai") || message.contains("ai limit") || message.contains("quota");
+    }
+
+    private int aiRemainingToday() {
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
+        if (!today.equals(prefs.aiDay())) return AI_DAILY_LIMIT;
+        return Math.max(0, AI_DAILY_LIMIT - prefs.aiCallsToday());
+    }
+
+    private View aiQuotaNotice() {
+        LinearLayout card = Ui.cardBox(this);
+        LinearLayout.LayoutParams params = Ui.withTop(this, 8);
+        card.setLayoutParams(params);
+        TextView title = Ui.text(this, "Daily AI limit reached", 14f, Ui.GOLD_DEEP);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        card.addView(title);
+        TextView body = Ui.text(this,
+                "You have used your " + AI_DAILY_LIMIT + " free AI-assisted answers for today. "
+                        + "Quran reading, search, bookmarks and the verified verse answers still work normally. "
+                        + "Your AI quota resets tomorrow.",
+                12f, Ui.MUTED);
+        body.setPadding(0, Ui.dp(this, 4), 0, 0);
+        card.addView(body);
+        return card;
     }
 
     private void askMore(Answer previous) {

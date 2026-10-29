@@ -5,11 +5,14 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -19,6 +22,7 @@ import android.widget.TextView;
 
 import com.rqmbooks.rafiqalquran.logic.Chapter;
 import com.rqmbooks.rafiqalquran.logic.Dataset;
+import com.rqmbooks.rafiqalquran.logic.SurahSearch;
 
 /**
  * Listening home for Quran.com recitation.
@@ -34,6 +38,8 @@ public final class ListenActivity extends Activity {
     private LinearLayout root;
     private ListView list;
     private LinearLayout reciterRow;
+    private EditText search;
+    private final java.util.List<Integer> visibleIds = new java.util.ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,19 +125,38 @@ public final class ListenActivity extends Activity {
             content.addView(resume);
         }
 
+        search = new EditText(this);
+        search.setHint("Search surah");
+        search.setSingleLine(true);
+        search.setTextSize(14f);
+        search.setTextColor(Ui.INK);
+        search.setHintTextColor(Ui.MUTED);
+        search.setBackground(Ui.rounded(Ui.PAPER, Ui.LINE, 10, this));
+        search.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
+        LinearLayout.LayoutParams searchParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 46));
+        searchParams.topMargin = Ui.dp(this, 4);
+        searchParams.bottomMargin = Ui.dp(this, 4);
+        content.addView(search, searchParams);
+        search.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence value, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence value, int start, int before, int count) { }
+            @Override public void afterTextChanged(Editable value) { refreshList(); }
+        });
+
         LinearLayout tools = Ui.row(this);
         tools.setPadding(0, Ui.dp(this, 16), 0, Ui.dp(this, 4));
         TextView browse = Ui.textAction(this, "\u25A4 Browse & read", () -> startActivity(new Intent(this, SurahActivity.class)));
         tools.addView(browse);
         tools.addView(Ui.spacer(this));
-        TextView car = Ui.textAction(this, "\u266B Car mode", () -> {
-            startActivity(PlayerActivity.intent(this, store.hasProgress() ? store.lastChapter() : 1,
+        TextView car = Ui.textAction(this, "\u266B Car mode · continuous", () -> {
+            startActivity(PlayerActivity.carIntent(this, store.hasProgress() ? store.lastChapter() : 1,
                     store.hasProgress() ? store.lastVerseKey() : null));
         });
         tools.addView(car);
         content.addView(tools);
 
-        TextView allLabel = Ui.label(this, "ALL 114 SURAHS");
+        TextView allLabel = Ui.label(this, "MUSHAF ORDER · 1 → 114");
         allLabel.setTextColor(Ui.GOLD_DEEP);
         allLabel.setPadding(0, Ui.dp(this, 18), 0, Ui.dp(this, 8));
         content.addView(allLabel);
@@ -216,23 +241,26 @@ public final class ListenActivity extends Activity {
     }
 
     private void refreshList() {
+        if (dataset == null) return;
+        visibleIds.clear();
+        visibleIds.addAll(SurahSearch.filter(dataset, search == null ? "" : search.getText().toString()));
         list.setAdapter(new ChapterAdapter());
         list.setOnItemClickListener((parent, view, position, id) -> {
-            Chapter chapter = dataset.chapter(position + 1);
-            if (chapter != null) {
-                startActivity(PlayerActivity.intent(this, chapter.id, null));
-            }
+            if (position < 0 || position >= visibleIds.size()) return;
+            Chapter chapter = dataset.chapter(visibleIds.get(position));
+            if (chapter != null) startActivity(PlayerActivity.intent(this, chapter.id, null));
         });
     }
 
     private final class ChapterAdapter extends BaseAdapter {
-        @Override public int getCount() { return 114; }
-        @Override public Object getItem(int position) { return dataset == null ? null : dataset.chapter(position + 1); }
-        @Override public long getItemId(int position) { return position + 1; }
+        @Override public int getCount() { return visibleIds.size(); }
+        @Override public Object getItem(int position) { return dataset == null || position >= visibleIds.size() ? null : dataset.chapter(visibleIds.get(position)); }
+        @Override public long getItemId(int position) { return position < visibleIds.size() ? visibleIds.get(position) : 0; }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            Chapter chapter = dataset == null ? null : dataset.chapter(position + 1);
+            if (position < 0 || position >= visibleIds.size()) return new View(ListenActivity.this);
+            Chapter chapter = dataset == null ? null : dataset.chapter(visibleIds.get(position));
             if (chapter == null) return new View(ListenActivity.this);
 
             LinearLayout row = Ui.row(ListenActivity.this);

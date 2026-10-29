@@ -8,7 +8,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.media.AudioAttributes;
+import android.media.AudioDeviceInfo;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -45,6 +51,8 @@ public final class PlayerActivity extends Activity {
     public static final String EXTRA_CHAPTER = "chapter";
     /** Verse key ("2:255") extra for {@link #intent(Context, int, String)}. */
     public static final String EXTRA_VERSE = "verse";
+    /** Opens the player with continuous car-mode playback across surahs. */
+    public static final String EXTRA_CAR_MODE = "carMode";
 
     /** Verified Quran.com CDN reciters: display name, path template (chapter, verse). */
     public static final String[][] RECITERS = {
@@ -82,6 +90,12 @@ public final class PlayerActivity extends Activity {
     private boolean prepared;
     private boolean tickerRunning;
     private int loadGeneration;
+    private boolean carMode;
+    private boolean continuous;
+    private MediaSession mediaSession;
+    private AudioManager audioManager;
+    private boolean audioFocusHeld;
+    private TextView carStatusLabel;
 
     /**
      * Opens the verse player at a chapter and (optionally) a verse key.
@@ -97,6 +111,13 @@ public final class PlayerActivity extends Activity {
         return intent;
     }
 
+    /** Car mode: continuous recitation across the whole mushaf. */
+    public static Intent carIntent(Context context, int chapterId, String verseKey) {
+        Intent intent = intent(context, chapterId, verseKey);
+        intent.putExtra(EXTRA_CAR_MODE, true);
+        return intent;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,6 +126,10 @@ public final class PlayerActivity extends Activity {
         handler = new Handler(Looper.getMainLooper());
         chapterId = getIntent().getIntExtra(EXTRA_CHAPTER, 1);
         requestedVerseKey = getIntent().getStringExtra(EXTRA_VERSE);
+        carMode = getIntent().getBooleanExtra(EXTRA_CAR_MODE, false);
+        continuous = carMode || prefs.continuousListen();
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        setupMediaSession();
 
         LinearLayout root = Ui.screen(this);
         LinearLayout bar = Ui.bar(this, "Listen", "Quran.com  \u00B7  recitation", this::finish);
@@ -170,6 +195,12 @@ public final class PlayerActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         releasePlayer();
+        if (mediaSession != null) {
+            mediaSession.setActive(false);
+            mediaSession.release();
+            mediaSession = null;
+        }
+        abandonAudioFocus();
     }
 
     // ---------------------------------------------------------------- loading
@@ -222,6 +253,8 @@ public final class PlayerActivity extends Activity {
                 "Recitation \u00B7 " + chapter.verseCount + " verses in this surah", 13.5f, Ui.MUTED);
         subhead.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 10));
         content.addView(subhead);
+
+        if (carMode) content.addView(buildCarCard());
 
         verseHolder = Ui.column(this);
         content.addView(verseHolder);
@@ -308,6 +341,135 @@ public final class PlayerActivity extends Activity {
             card.addView(indicator);
         }
         verseHolder.addView(card);
+    }
+
+    private View buildCarCard() {
+        LinearLayout card = Ui.cardBox(this);
+        LinearLayout.LayoutParams params = Ui.withTop(this, 4);
+        card.setLayoutParams(params);
+        card.addView(Ui.label(this, "CAR MODE · CONTINUOUS"));
+        TextView headline = Ui.text(this, "The whole journey, surah after surah.", 18f, Ui.INK);
+        headline.setTypeface(Typeface.DEFAULT_BOLD);
+        headline.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
+        card.addView(headline);
+        carStatusLabel = Ui.text(this, bluetoothStatus(), 12f, Ui.MUTED);
+        carStatusLabel.setPadding(0, 0, 0, Ui.dp(this, 8));
+        card.addView(carStatusLabel);
+        TextView note = Ui.text(this,
+                "Audio uses the phone's media route, so a paired car Bluetooth system plays it automatically. "
+                        + "Keep this screen open or lock the phone; playback continues through the surah and then the next surah in mushaf order.",
+                11.5f, Ui.MUTED);
+        card.addView(note);
+        LinearLayout actions = Ui.row(this);
+        actions.setPadding(0, Ui.dp(this, 8), 0, 0);
+        Button nextSurah = Ui.button(this, "Next surah \u2192", false);
+        nextSurah.setOnClickListener(view -> playNextChapter());
+        actions.addView(nextSurah);
+        card.addView(actions);
+        return card;
+    }
+
+    private String bluetoothStatus() {
+        try {
+            if (audioManager == null) return "Connect your car Bluetooth in Android settings.";
+            if (Build.VERSION.SDK_INT >= 31 && checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                return "Allow Bluetooth access to detect your car, or connect it in Android settings.";
+            }
+            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+            for (AudioDeviceInfo device : devices) {
+                int type = device.getType();
+                if (type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO || type == AudioDeviceInfo.TYPE_USB_HEADSET) {
+                    CharSequence name = device.getProductName();
+                    return "Connected audio: " + (name == null ? "car / Bluetooth" : name) + ". Playback will route there automatically.";
+                }
+            }
+        } catch (Exception ignored) {
+            // permission or device enumeration can fail on some OEMs
+        }
+        return "No car audio detected yet. Pair your car in Android Bluetooth settings; playback will route there automatically.";
+    }
+
+    private void setupMediaSession() {
+        mediaSession = new MediaSession(this, "RafiqAlQuran");
+        mediaSession.setCallback(new MediaSession.Callback() {
+            @Override public void onPlay() { if (!isPlaying()) togglePlay(); }
+            @Override public void onPause() { if (isPlaying()) togglePlay(); }
+            @Override public void onSkipToNext() { playNextChapter(); }
+            @Override public void onSkipToPrevious() { previousSurah(); }
+        });
+        mediaSession.setActive(true);
+        updateMediaState();
+    }
+
+    private boolean isPlaying() {
+        try { return player != null && prepared && player.isPlaying(); } catch (Exception ignored) { return false; }
+    }
+
+    private void updateMediaState() {
+        if (mediaSession == null) return;
+        int state = isPlaying() ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED;
+        mediaSession.setPlaybackState(new PlaybackState.Builder()
+                .setActions(PlaybackState.ACTION_PLAY | PlaybackState.ACTION_PAUSE | PlaybackState.ACTION_PLAY_PAUSE | PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_SKIP_TO_PREVIOUS)
+                .setState(state, player == null ? 0 : 0, 1f)
+                .build());
+    }
+
+    private void requestAudioFocus() {
+        if (audioManager == null || audioFocusHeld) return;
+        try {
+            if (Build.VERSION.SDK_INT >= 26) {
+                AudioAttributes attributes = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build();
+                AudioFocusRequest request = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                        .setAudioAttributes(attributes)
+                        .setOnAudioFocusChangeListener(change -> { if (change <= 0) pauseForFocusLoss(); })
+                        .build();
+                audioManager.requestAudioFocus(request);
+            } else {
+                audioManager.requestAudioFocus(change -> { if (change <= 0) pauseForFocusLoss(); },
+                        AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+            }
+            audioFocusHeld = true;
+        } catch (Exception ignored) { }
+    }
+
+    private void pauseForFocusLoss() {
+        runOnUiThread(() -> {
+            try {
+                if (player != null && player.isPlaying()) player.pause();
+            } catch (Exception ignored) { }
+            updatePlayButton();
+            updateMediaState();
+            setStatus("Paused because another app started playing.", false);
+        });
+    }
+
+    private void abandonAudioFocus() {
+        if (audioManager == null || !audioFocusHeld) return;
+        try { audioManager.abandonAudioFocus(null); } catch (Exception ignored) { }
+        audioFocusHeld = false;
+    }
+
+    private void playNextChapter() {
+        if (chapterId >= 114) {
+            stopPlayback(true);
+            setStatus("Completed the recitation through Surah An-Nas.", false);
+            return;
+        }
+        chapterId++;
+        requestedVerseKey = null;
+        prepareChapter();
+        prepareAndPlay();
+        scroll.post(() -> scroll.scrollTo(0, 0));
+    }
+
+    private void previousSurah() {
+        if (chapterId <= 1) { move(-1); return; }
+        chapterId--;
+        requestedVerseKey = null;
+        prepareChapter();
     }
 
     // ----------------------------------------------------------------- player
@@ -469,10 +631,12 @@ public final class PlayerActivity extends Activity {
                 if (player.isPlaying()) {
                     player.pause();
                     updatePlayButton();
+                    updateMediaState();
                     setStatus("Paused.", false);
                 } else {
                     player.start();
                     updatePlayButton();
+                    updateMediaState();
                     setStatus("Playing \u2014 Source: Quran.com", false);
                     startTicker();
                 }
@@ -503,6 +667,7 @@ public final class PlayerActivity extends Activity {
     private void prepareAndPlay() {
         if (verses.isEmpty()) return;
         releasePlayer();
+        requestAudioFocus();
         final int generation = ++loadGeneration;
         final String url = verseUrl();
         setStatus("Buffering from Quran.com\u2026", false);
@@ -524,6 +689,7 @@ public final class PlayerActivity extends Activity {
                     // start failure is handled by the error listener path below
                 }
                 updatePlayButton();
+                updateMediaState();
                 startTicker();
                 setStatus("Playing \u2014 Source: Quran.com", false);
             });
@@ -537,10 +703,13 @@ public final class PlayerActivity extends Activity {
                     updateNavigation();
                     if (reciterLabel != null) reciterLabel.setText(reciterName());
                     prepareAndPlay();
+                } else if (continuous && chapterId < 114) {
+                    playNextChapter();
                 } else {
                     playButton.setText("\u25B6 Play");
                     playButton.setEnabled(true);
-                    setStatus("Finished reciting this surah.", false);
+                    updateMediaState();
+                    setStatus(continuous ? "Completed the recitation through Surah An-Nas." : "Finished reciting this surah.", false);
                     seekBar.setProgress(1000);
                 }
             });
@@ -640,6 +809,8 @@ public final class PlayerActivity extends Activity {
 
     private void releasePlayer() {
         stopTicker();
+        abandonAudioFocus();
+        updateMediaState();
         loadGeneration++;
         prepared = false;
         if (player != null) {

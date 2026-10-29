@@ -58,6 +58,12 @@ public final class Prefs {
     public boolean sideBySide() { return prefs.getBoolean("sideBySide", false); }
     public void setSideBySide(boolean value) { prefs.edit().putBoolean("sideBySide", value).apply(); }
 
+    public boolean bookMode() { return prefs.getBoolean("bookMode", true); }
+    public void setBookMode(boolean value) { prefs.edit().putBoolean("bookMode", value).apply(); }
+
+    public boolean continuousListen() { return prefs.getBoolean("continuousListen", true); }
+    public void setContinuousListen(boolean value) { prefs.edit().putBoolean("continuousListen", value).apply(); }
+
     public boolean translationVisible() { return prefs.getBoolean("translationVisible", true); }
     public void setTranslationVisible(boolean value) { prefs.edit().putBoolean("translationVisible", value).apply(); }
 

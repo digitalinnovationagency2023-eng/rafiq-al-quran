@@ -4,12 +4,15 @@ import android.graphics.Color;
 
 import android.app.Activity;
 import android.graphics.Typeface;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
@@ -18,6 +21,7 @@ import android.widget.Toast;
 
 import com.rqmbooks.rafiqalquran.logic.Chapter;
 import com.rqmbooks.rafiqalquran.logic.Dataset;
+import com.rqmbooks.rafiqalquran.logic.SurahSearch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +41,8 @@ public final class SurahActivity extends Activity {
     private ListView list;
     private ScrollView pane;
     private boolean showingList = true;
+    private EditText search;
+    private final List<Integer> visibleIds = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +78,27 @@ public final class SurahActivity extends Activity {
         paneBar.addView(titleBox);
         paneBar.addView(Ui.spacer(this));
         root.addView(paneBar);
+
+        search = new EditText(this);
+        search.setHint("Search surah");
+        search.setSingleLine(true);
+        search.setTextSize(14f);
+        search.setTextColor(Ui.INK);
+        search.setHintTextColor(Ui.MUTED);
+        search.setBackground(Ui.rounded(Ui.PAPER, Ui.LINE, 10, this));
+        search.setPadding(Ui.dp(this, 14), 0, Ui.dp(this, 14), 0);
+        LinearLayout.LayoutParams searchParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(this, 46));
+        searchParams.leftMargin = Ui.dp(this, 14);
+        searchParams.rightMargin = Ui.dp(this, 14);
+        searchParams.topMargin = Ui.dp(this, 4);
+        searchParams.bottomMargin = Ui.dp(this, 4);
+        root.addView(search, searchParams);
+        search.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence value, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence value, int start, int before, int count) { }
+            @Override public void afterTextChanged(Editable value) { applyFilter(); }
+        });
 
         body = Ui.column(this);
         body.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
@@ -117,8 +144,9 @@ public final class SurahActivity extends Activity {
 
     private void showList() {
         showingList = true;
+        if (search != null) search.setVisibility(View.VISIBLE);
         paneTitle.setText("THE 114 SURAHS");
-        paneSubtitle.setText("Tap a surah to read");
+        paneSubtitle.setText("Mushaf order 1 → 114 · search in English, Arabic or Roman");
         pane.removeAllViews();
         pane.setVisibility(View.GONE);
         list.setVisibility(View.VISIBLE);
@@ -127,21 +155,34 @@ public final class SurahActivity extends Activity {
 
     private void refreshAdapter() {
         if (dataset == null) return;
+        applyFilter();
         list.setAdapter(new ChapterAdapter());
         list.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
-            Chapter chapter = dataset.chapter(position + 1);
+            if (position < 0 || position >= visibleIds.size()) return;
+            Chapter chapter = dataset.chapter(visibleIds.get(position));
             if (chapter != null) startActivity(ReaderActivity.intent(this, chapter.id, null));
         });
     }
 
+    private void applyFilter() {
+        if (dataset == null) return;
+        visibleIds.clear();
+        visibleIds.addAll(SurahSearch.filter(dataset, search == null ? "" : search.getText().toString()));
+        if (paneSubtitle != null && showingList) {
+            paneSubtitle.setText(visibleIds.size() + " of 114 surahs · Mushaf order · search English / Arabic / Roman");
+        }
+        if (list != null && list.getAdapter() instanceof BaseAdapter) ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
+    }
+
     private final class ChapterAdapter extends BaseAdapter {
-        @Override public int getCount() { return 114; }
-        @Override public Object getItem(int position) { return dataset.chapter(position + 1); }
-        @Override public long getItemId(int position) { return position + 1; }
+        @Override public int getCount() { return visibleIds.size(); }
+        @Override public Object getItem(int position) { return dataset.chapter(visibleIds.get(position)); }
+        @Override public long getItemId(int position) { return visibleIds.get(position); }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            Chapter chapter = dataset.chapter(position + 1);
+            if (position < 0 || position >= visibleIds.size()) return new View(SurahActivity.this);
+            Chapter chapter = dataset.chapter(visibleIds.get(position));
             LinearLayout row = Ui.row(parent.getContext());
             row.setPadding(Ui.dp(SurahActivity.this, 14), Ui.dp(SurahActivity.this, 12),
                     Ui.dp(SurahActivity.this, 12), Ui.dp(SurahActivity.this, 12));
@@ -190,6 +231,7 @@ public final class SurahActivity extends Activity {
             return;
         }
         showingList = false;
+        if (search != null) search.setVisibility(View.GONE);
         paneTitle.setText("BOOKMARKS");
         paneSubtitle.setText(store.bookmarkTotal() + " saved verses across " + store.collections().size() + " collections");
         list.setVisibility(View.GONE);
@@ -287,6 +329,7 @@ public final class SurahActivity extends Activity {
             return;
         }
         showingList = false;
+        if (search != null) search.setVisibility(View.GONE);
         paneTitle.setText("READING HISTORY");
         paneSubtitle.setText("Most recent chapters you opened");
         list.setVisibility(View.GONE);

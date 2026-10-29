@@ -171,64 +171,19 @@ public final class PagesActivity extends Activity {
     // ----------------------------------------------------------------- support
     private void renderSupport(LinearLayout parent) {
         heading(parent, "Support the app",
-                "Rafiq Al-Quran is free to read, search and use. There is no account, and nothing on this page is required to use the app.");
-        section(parent, "Voluntary only",
-                "Donating is entirely optional and never affects access to reading, search or the conversational experience. No religious reward is promised and no charitable or tax-deductible status is claimed.");
-        section(parent, "What it costs to run",
-                "The Quran, translations, search, recitation and study tools are free. The optional AI layer costs money per "
-                        + "answer: roughly USD 40-60 a month at 1,000 active users and USD 300-400 a month at 10,000. "
-                        + "AI questions are limited to 10 a day per device so this stays bounded. There are no ads and no "
-                        + "data selling; anything given here goes to server and AI costs only.");
-
-        // The donation form is only ever built when the server confirms that
-        // collection is live. When it is not, this page shows plain copy only.
-        final LinearLayout donations = Ui.column(this);
-        donations.setPadding(0, Ui.dp(this, 12), 0, 0);
-        parent.addView(donations);
-        donations.addView(Ui.text(this, "Checking donation availability…", 12f, Ui.MUTED));
-
-        new Thread(() -> {
-            String donationUrl = "";
-            try {
-                donationUrl = Api.assistantStatus(getResources()).optString("donationUrl", "");
-            } catch (Exception ignored) {
-                // donation support is optional; offline devices just see the static copy
-            }
-            final String link = donationUrl == null ? "" : donationUrl.trim();
-            try {
-                JSONObject config = Api.get(getResources(), "/api/donations/config");
-                final boolean live = config.optBoolean("live");
-                final boolean recurringEnabled = config.optBoolean("recurringEnabled");
-                final String currency = config.optString("currency", "AED").toUpperCase();
-                final int minMinor = config.optInt("minAmountMinor", DonationRules.MIN_MINOR);
-                final int maxMinor = config.optInt("maxAmountMinor", DonationRules.MAX_MINOR);
-                runOnUiThread(() -> {
-                    donations.removeAllViews();
-                    if (live) {
-                        renderDonationForm(donations, currency, minMinor, maxMinor, recurringEnabled);
-                    } else {
-                        renderDonationsDisabled(donations);
-                        if (!link.isEmpty()) {
-                            Button donate = Ui.button(this, "Donate / support hosting", true);
-                            donate.setLayoutParams(Ui.withTop(this, 8));
-                            donate.setOnClickListener(view -> openDonationLink(link));
-                            donations.addView(donate);
-                        }
-                    }
-                });
-            } catch (Exception error) {
-                runOnUiThread(() -> {
-                    donations.removeAllViews();
-                    infoCard(donations, "Donation collection is unavailable",
-                            "Donations are not enabled in this release. No payment is requested.");
-                });
-            }
-        }).start();
-
-        section(parent, "Other ways to help",
-                "You can support the app by sharing it with others and sending feedback.");
+                "Rafiq Al-Quran is free to read, search and use. There is no account, no subscription and no payment required.");
+        section(parent, "We do not need money",
+                "We do not ask for donations, and we do not need any money from you.\n\n"
+                        + "If anyone asks for money in our name, or tells you the app needs a payment, please do not pay them. "
+                        + "That request is not from us.");
+        section(parent, "How you can support us",
+                "• Make du'a for us and for everyone who reads and learns from the Quran.\n"
+                        + "• Use the app regularly, and use it with your family and friends.\n"
+                        + "• Share it with someone who will benefit from it.\n"
+                        + "• Send us your valuable feedback, corrections and suggestions.\n\n"
+                        + "That is all we ask. Your prayers, your use and your feedback are worth more to us than any donation.");
         LinearLayout actions = Ui.row(this);
-        actions.setPadding(0, Ui.dp(this, 8), 0, 0);
+        actions.setPadding(0, Ui.dp(this, 10), 0, 0);
         Button share = Ui.button(this, "Share the app", false);
         share.setOnClickListener(view -> shareApp());
         Button feedback = Ui.button(this, "Send feedback", true);
@@ -241,101 +196,10 @@ public final class PagesActivity extends Activity {
         parent.addView(actions);
 
         TextView footnote = Ui.text(this,
-                "No purchase is offered in this app. Reading, search, study tools and a limited number of AI answers stay free.",
+                "No purchase, subscription, donation or payment is requested in this app.",
                 11f, Ui.MUTED);
-        footnote.setPadding(0, Ui.dp(this, 18), 0, 0);
+        footnote.setPadding(0, Ui.dp(this, 16), 0, 0);
         parent.addView(footnote);
-    }
-
-    private void openDonationLink(String url) {
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-        } catch (Exception error) {
-            Toast.makeText(this, "No browser is available to open the donation page.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void renderDonationsDisabled(LinearLayout parent) {
-        infoCard(parent, "Donations are not enabled in this release",
-                "No payment is requested. No checkout form is shown, and the app never collects card details.");
-    }
-
-    private void renderDonationForm(LinearLayout parent, String currency, int minMinor, int maxMinor, boolean recurringEnabled) {
-        LinearLayout card = cardShell(parent, "Make a voluntary donation");
-        TextView description = Ui.text(this,
-                "Donation collection is enabled. You will be taken to the payment provider's secure checkout; "
-                        + "card details are entered on the provider's page, never in this app.",
-                13f, Ui.MUTED);
-        description.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 8));
-        card.addView(description);
-
-        final EditText amount = new EditText(this);
-        amount.setHint("Amount in " + currency + " (for example " + Math.max(1, minMinor / 100) + ")");
-        amount.setTextColor(Ui.INK);
-        amount.setHintTextColor(Ui.MUTED);
-        amount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        card.addView(amount);
-
-        final CheckBox recurring = new CheckBox(this);
-        recurring.setText("Make this a monthly donation");
-        recurring.setTextColor(Ui.INK);
-        recurring.setVisibility(recurringEnabled ? View.VISIBLE : View.GONE);
-        card.addView(recurring);
-
-        final TextView status = Ui.text(this, "", 12f, Ui.MUTED);
-        status.setPadding(0, Ui.dp(this, 6), 0, 0);
-
-        Button donate = Ui.button(this, "Continue to secure checkout", true);
-        donate.setOnClickListener(view -> submitDonation(amount, recurring, status, currency, minMinor, maxMinor));
-        card.addView(donate, Ui.withTop(this, 8));
-        card.addView(status);
-    }
-
-    private void submitDonation(EditText amount, CheckBox recurring, TextView status,
-                                String currency, int minMinor, int maxMinor) {
-        String raw = amount.getText().toString().trim();
-        int minor;
-        try {
-            minor = Math.round(Float.parseFloat(raw) * 100);
-        } catch (Exception error) {
-            status.setText("Enter a valid amount.");
-            return;
-        }
-        if (minor < minMinor) {
-            status.setText("Enter at least " + (minMinor / 100) + " " + currency + ".");
-            return;
-        }
-        if (minor > maxMinor) {
-            status.setText("Enter at most " + (maxMinor / 100) + " " + currency + ".");
-            return;
-        }
-        String invalid = DonationRules.validate(minor, currency);
-        if (invalid != null) {
-            status.setText(invalid);
-            return;
-        }
-        status.setText("Preparing checkout…");
-        new Thread(() -> {
-            try {
-                JSONObject body = new JSONObject();
-                body.put("amountMinor", minor);
-                body.put("currency", currency);
-                body.put("recurring", recurring.isChecked());
-                JSONObject response = Api.post(getResources(), "/api/donations/checkout", body);
-                final String url = response.optString("checkoutUrl", "");
-                final String message = response.optString("message",
-                        "Donation recorded. Follow the provider's checkout to complete the payment.");
-                runOnUiThread(() -> {
-                    status.setText(message);
-                    if (!url.isEmpty()) {
-                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                    }
-                });
-            } catch (Exception error) {
-                runOnUiThread(() -> status.setText(
-                        "Checkout could not be started. No payment has been requested."));
-            }
-        }).start();
     }
 
     // ------------------------------------------------------------- study tools

@@ -9,6 +9,8 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.text.SpannableStringBuilder;
+import android.text.style.RelativeSizeSpan;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -76,6 +78,9 @@ public final class ReaderActivity extends Activity {
         chapterId = getIntent().getIntExtra(EXTRA_CHAPTER, 1);
         if (chapterId < 1 || chapterId > 114) chapterId = 1;
         startVerseKey = getIntent().getStringExtra(EXTRA_VERSE);
+        if ((startVerseKey == null || startVerseKey.isEmpty()) && store.hasProgress() && store.lastChapter() == chapterId) {
+            startVerseKey = store.lastVerseKey();
+        }
 
         LinearLayout root = Ui.screen(this);
         LinearLayout bar = Ui.bar(this, "Reader", "Offline  \u00B7  source-tagged", this::finish);
@@ -181,6 +186,10 @@ public final class ReaderActivity extends Activity {
         }
 
         listBox = Ui.column(this);
+        if (prefs.bookMode()) {
+            listBox.setBackground(Ui.card(this));
+            listBox.setPadding(Ui.dp(this, 18), Ui.dp(this, 14), Ui.dp(this, 18), Ui.dp(this, 14));
+        }
         content.addView(listBox);
         footerBox = Ui.column(this);
         content.addView(footerBox);
@@ -211,14 +220,28 @@ public final class ReaderActivity extends Activity {
                     prefs.setTranslationVisible(!prefs.translationVisible());
                     rebuildKeepingPosition();
                 });
-        TextView layout = Ui.action(this, prefs.sideBySide() ? "Side by side" : "Stacked",
+        TextView viewMode = Ui.action(this, prefs.bookMode() ? "Book view" : "Card view",
                 () -> {
-                    prefs.setSideBySide(!prefs.sideBySide());
+                    prefs.setBookMode(!prefs.bookMode());
                     rebuildKeepingPosition();
                 });
         toggles.addView(translation);
-        toggles.addView(layout);
+        toggles.addView(viewMode);
+        if (!prefs.bookMode()) {
+            TextView layout = Ui.action(this, prefs.sideBySide() ? "Side by side" : "Stacked",
+                    () -> {
+                        prefs.setSideBySide(!prefs.sideBySide());
+                        rebuildKeepingPosition();
+                    });
+            toggles.addView(layout);
+        }
         card.addView(toggles);
+
+        LinearLayout actions = Ui.row(this);
+        actions.setPadding(0, Ui.dp(this, 6), 0, 0);
+        actions.addView(Ui.action(this, "Save my place", this::savePlace));
+        actions.addView(Ui.action(this, "Search surah", () -> startActivity(new Intent(this, SurahActivity.class))));
+        card.addView(actions);
         return card;
     }
 
@@ -317,6 +340,7 @@ public final class ReaderActivity extends Activity {
 
     // ------------------------------------------------------------------ cards
     private View verseCard(Verse verse) {
+        if (prefs.bookMode()) return bookVerseBlock(verse);
         float scale = prefs.textScale();
         LinearLayout card = Ui.column(this);
         card.setBackground(Ui.card(this));
@@ -399,6 +423,64 @@ public final class ReaderActivity extends Activity {
         actions.addView(Ui.action(this, "Listen", () -> startActivity(PlayerActivity.intent(this, chapterId, verse.key))));
         card.addView(actions);
         return card;
+    }
+
+    /** Continuous mushaf-style block: big Arabic, translation directly under each verse. */
+    private View bookVerseBlock(Verse verse) {
+        float scale = prefs.textScale();
+        LinearLayout block = Ui.column(this);
+        block.setTag(verse.key);
+        block.setPadding(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
+
+        TextView reference = Ui.text(this, verse.chapter.nameEnglish + " · " + verse.key, 10.5f, Ui.MUTED);
+        reference.setLetterSpacing(0.04f);
+        block.addView(reference);
+
+        String marked = verse.arabic + "  \u06DD" + toArabicDigits(verse.number);
+        TextView arabic = Ui.arabic(this, marked, 32f * scale, Ui.INK);
+        arabic.setTextDirection(View.TEXT_DIRECTION_RTL);
+        arabic.setGravity(Gravity.RIGHT);
+        arabic.setLineSpacing(Ui.dp(this, 8), 1.18f);
+        arabic.setPadding(0, Ui.dp(this, 7), 0, Ui.dp(this, 5));
+        block.addView(arabic);
+
+        String language = prefs.language();
+        String translation = dataset.translationText(language, verse.key);
+        if (translation == null || translation.isEmpty()) translation = dataset.translationText("en", verse.key);
+        if (prefs.translationVisible() && translation != null && !translation.isEmpty()) {
+            TextView translated = Ui.text(this, translation, 15.5f * scale, Ui.MUTED);
+            translated.setLineSpacing(Ui.dp(this, 3), 1.15f);
+            translated.setPadding(0, Ui.dp(this, 2), 0, Ui.dp(this, 2));
+            block.addView(translated);
+        }
+
+        LinearLayout actions = Ui.row(this);
+        actions.setPadding(0, Ui.dp(this, 3), 0, 0);
+        boolean bookmarked = store.isBookmarked(verse.key);
+        actions.addView(Ui.action(this, bookmarked ? "Saved \u2713" : "Save", () -> bookmarkDialog(verse.key, bookmarked)));
+        actions.addView(Ui.action(this, "Note", () -> editNote(verse.key)));
+        actions.addView(Ui.action(this, "Listen", () -> startActivity(PlayerActivity.intent(this, chapterId, verse.key))));
+        block.addView(actions);
+        block.addView(Ui.divider(this));
+        return block;
+    }
+
+    private static String toArabicDigits(int number) {
+        String digits = String.valueOf(number);
+        StringBuilder builder = new StringBuilder();
+        for (int index = 0; index < digits.length(); index++) {
+            builder.append((char) ('\u0660' + (digits.charAt(index) - '0')));
+        }
+        return builder.toString();
+    }
+
+    private void savePlace() {
+        String key = currentVisibleKey();
+        if (key == null || key.isEmpty()) key = renderedKeys.isEmpty() ? "" : renderedKeys.get(0);
+        if (key.isEmpty()) { toast("Open a surah first."); return; }
+        store.recordProgress(chapterId, key);
+        lastRecordedKey = key;
+        toast("Reading place saved · " + key);
     }
 
     private void buildFooter() {
