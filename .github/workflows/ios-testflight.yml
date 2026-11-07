@@ -83,6 +83,22 @@ jobs:
           echo "build=$BUILD" >> "$GITHUB_OUTPUT"
           echo "$APP_SLUG iOS $VERSION ($BUILD)"
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The Quran dataset is not in the repo (see docs/FLUTTER-PORT-MAP.md section 3):
+      # import it from Quran.com, export the Android TSVs, then copy them into the
+      # Flutter asset folders (translations split per language).
+      - name: Generate the dataset assets
+        working-directory: .
+        run: |
+          npm install --no-audit --no-fund
+          npm run import:quran -w server
+          node mobile/android/scripts/exportAssets.js
+          node mobile/flutter/tool/sync_assets.mjs
+
       - name: Install dependencies
         run: flutter pub get
 
