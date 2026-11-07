@@ -6,6 +6,15 @@ import 'roman.dart';
 import 'translation_meta.dart';
 import 'verse.dart';
 
+/// One language's parsed translation rows and token index (see
+/// [Dataset.buildTranslationBundle]).
+class TranslationBundle {
+  final Map<String, String> text;
+  final Map<String, List<int>> index;
+
+  const TranslationBundle(this.text, this.index);
+}
+
 /// Immutable in-memory dataset built from the bundled asset files. Everything the
 /// app shows comes from here; no network call is needed to read or search.
 class Dataset {
@@ -127,10 +136,17 @@ class Dataset {
 
   /// Adds one language's translation rows and indexes it on demand.
   void addTranslations(List<String> lines) {
-    final verseIndexByKey = <String, int>{};
-    for (var index = 0; index < verses.length; index++) {
-      verseIndexByKey[verses[index].key] = index;
-    }
+    mergeTranslationBundle(buildTranslationBundle(lines, verseIndexByKey()));
+  }
+
+  /// Verse key -> position in [verses]; the input [buildTranslationBundle] needs.
+  Map<String, int> verseIndexByKey() => {for (var index = 0; index < verses.length; index++) verses[index].key: index};
+
+  /// Parses and indexes translation rows without touching the dataset, so the
+  /// work can run in another isolate; apply the result with [mergeTranslationBundle].
+  static TranslationBundle buildTranslationBundle(List<String> lines, Map<String, int> verseIndexByKey) {
+    final text = <String, String>{};
+    final index = <String, List<int>>{};
     for (final line in lines) {
       if (line.trim().isEmpty) continue;
       final firstTab = line.indexOf('\t');
@@ -139,17 +155,24 @@ class Dataset {
       if (secondTab < 0) continue;
       final language = line.substring(0, firstTab);
       final verseKey = line.substring(firstTab + 1, secondTab);
-      final text = line.substring(secondTab + 1);
-      _translationText['$language|$verseKey'] = text;
+      final value = line.substring(secondTab + 1);
+      text['$language|$verseKey'] = value;
       final verseIndex = verseIndexByKey[verseKey];
       if (verseIndex == null) continue;
-      for (final token in latinTokens(text).toSet()) {
+      for (final token in latinTokens(value).toSet()) {
         if (token.length < 2) continue;
         for (final form in latinForms(token)) {
-          final key = '$language|$form';
-          (translationIndex[key] ??= <int>[]).add(verseIndex);
+          (index['$language|$form'] ??= <int>[]).add(verseIndex);
         }
       }
+    }
+    return TranslationBundle(text, index);
+  }
+
+  void mergeTranslationBundle(TranslationBundle bundle) {
+    _translationText.addAll(bundle.text);
+    for (final entry in bundle.index.entries) {
+      (translationIndex[entry.key] ??= <int>[]).addAll(entry.value);
     }
   }
 
@@ -259,6 +282,16 @@ class Dataset {
     if (token.length > 5 && token.endsWith('ing')) forms.add(token.substring(0, token.length - 3));
     if (token.length > 4 && token.endsWith('ed')) forms.add(token.substring(0, token.length - 2));
     return forms;
+  }
+
+  /// Sorted codes of the languages whose translation rows are in memory.
+  List<String> loadedTranslationLanguages() {
+    final codes = <String>{};
+    for (final key in _translationText.keys) {
+      final bar = key.indexOf('|');
+      if (bar > 0) codes.add(key.substring(0, bar));
+    }
+    return codes.toList()..sort();
   }
 
   void _validate() {
