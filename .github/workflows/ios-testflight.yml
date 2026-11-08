@@ -1,0 +1,154 @@
+name: iOS TestFlight release
+
+# Builds the Rafiq Al-Quran Flutter iOS app (mobile/flutter/) on a macOS runner,
+# signs it with the distribution certificate and App Store profile kept in the
+# private ios-certificates repository (tool/ios/match_sign.sh, fastlane match),
+# and uploads it to TestFlight with the App Store Connect API key.
+#
+# Required repository secrets:
+#   APPLE_TEAM_ID, APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID,
+#   APP_STORE_CONNECT_PRIVATE_KEY (full contents of AuthKey_<KEY_ID>.p8),
+#   MATCH_PASSWORD, MATCH_DEPLOY_KEY (SSH key with write access to ios-certificates)
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Build number (empty = 100 + run number)"
+        required: false
+        default: ""
+      upload:
+        description: "Upload to TestFlight after the build"
+        type: boolean
+        default: true
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: mobile/flutter
+
+jobs:
+  testflight:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_SLUG: rafiq-al-quran
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check secrets
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          for v in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY; do
+            [ -n "${!v}" ] || { echo "::error::secret for $v is missing"; exit 1; }
+          done
+
+      - name: Select Xcode
+        run: |
+          # App Store Connect requires the iOS 26 SDK: pick the newest Xcode 26 on the image.
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          sudo xcode-select -s "${XC:-/Applications/Xcode.app}"
+          xcodebuild -version
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install App Store Connect API key
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s\n' "$ASC_PRIVATE_KEY" > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          chmod 600 ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          echo "ASC_KEY_PATH=$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" >> "$GITHUB_ENV"
+
+      - name: Resolve version and build number
+        id: ver
+        env:
+          INPUT_BUILD: ${{ inputs.build_number }}
+        run: |
+          VERSION=$(sed -n 's/^version: *\([0-9.]*\)+.*/\1/p' pubspec.yaml)
+          if [ -n "$INPUT_BUILD" ]; then BUILD="$INPUT_BUILD"; else BUILD=$((100 + ${{ github.run_number }})); fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "$APP_SLUG iOS $VERSION ($BUILD)"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The Quran dataset is not in the repo (see docs/FLUTTER-PORT-MAP.md section 3):
+      # import it from Quran.com, export the Android TSVs, then copy them into the
+      # Flutter asset folders (translations split per language).
+      - name: Generate the dataset assets
+        working-directory: .
+        run: |
+          npm install --no-audit --no-fund
+          npm run import:quran -w server
+          node mobile/android/scripts/exportAssets.js
+          node mobile/flutter/tool/sync_assets.mjs
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze and test
+        run: |
+          flutter analyze
+          if [ -d test ]; then flutter test; fi
+
+      # Automatic signing fails on runners (it wants a development profile that
+      # needs a registered device), so the distribution certificate and the App
+      # Store profile come from the private ios-certificates repo via fastlane match.
+      - name: Distribution signing (fastlane match)
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+        run: tool/ios/match_sign.sh com.rqmbooks.rafiqalquran
+
+      - name: Build signed IPA
+        run: |
+          flutter build ipa --release \
+            --export-options-plist=build/ios/ExportOptions.plist \
+            --build-name=${{ steps.ver.outputs.version }} \
+            --build-number=${{ steps.ver.outputs.build }}
+          ls -la build/ios/ipa
+          IPA=$(ls build/ios/ipa/*.ipa | head -1)
+          NAMED="build/ios/ipa/${APP_SLUG}-${{ steps.ver.outputs.version }}-${{ steps.ver.outputs.build }}.ipa"
+          mv "$IPA" "$NAMED"
+          echo "IPA=$PWD/$NAMED" >> "$GITHUB_ENV"
+
+      - name: Validate with App Store Connect
+        run: xcrun altool --validate-app --type ios -f "$IPA" --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Upload to TestFlight
+        if: ${{ inputs.upload }}
+        run: xcrun altool --upload-app --type ios -f "$IPA" --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Keep the IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_SLUG }}-ios-${{ steps.ver.outputs.version }}-${{ steps.ver.outputs.build }}
+          path: mobile/flutter/build/ios/ipa/*.ipa
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Remove keys and keychain
+        if: always()
+        run: |
+          rm -f ~/private_keys/AuthKey_*.p8 ~/.ssh/ios_certificates_key "$RUNNER_TEMP/asc_api_key.json"
+          security delete-keychain "$RUNNER_TEMP/match.keychain-db" 2>/dev/null || true
