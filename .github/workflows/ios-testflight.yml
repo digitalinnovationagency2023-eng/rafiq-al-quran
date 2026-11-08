@@ -11,6 +11,9 @@ name: iOS TestFlight release
 #   MATCH_PASSWORD, MATCH_DEPLOY_KEY (SSH key with write access to ios-certificates)
 
 on:
+  # Temporary while the workflow is not yet on the default branch: a push to this branch builds and uploads.
+  push:
+    branches: [feat/flutter-ios-app]
   workflow_dispatch:
     inputs:
       build_number:
@@ -136,7 +139,7 @@ jobs:
         run: xcrun altool --validate-app --type ios -f "$IPA" --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
 
       - name: Upload to TestFlight
-        if: ${{ inputs.upload }}
+        if: ${{ github.event_name == 'push' || inputs.upload }}
         run: xcrun altool --upload-app --type ios -f "$IPA" --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
 
       - name: Keep the IPA
