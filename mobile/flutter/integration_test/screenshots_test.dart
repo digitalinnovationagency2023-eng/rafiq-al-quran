@@ -61,6 +61,9 @@ void main() {
     // 03: the surah list.
     unawaited(navigator.push(MaterialPageRoute<void>(builder: (_) => const SurahScreen())));
     await shooter.until(find.text('Al-Fatihah'), const Duration(seconds: 20));
+    // The list pads its top by the safe-area inset; scroll past that empty band.
+    await shooter.scrollIntoView(find.text('Al-Fatihah'),
+        find.descendant(of: find.byType(SurahScreen), matching: find.byType(ListView)), 12);
     await shooter.shot('03-surahs');
     navigator.popUntil((route) => route.isFirst);
     await shooter.wait(const Duration(milliseconds: 600));
