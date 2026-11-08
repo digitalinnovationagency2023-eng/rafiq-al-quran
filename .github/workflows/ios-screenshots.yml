@@ -9,10 +9,6 @@ name: iOS App Store screenshots
 
 on:
   workflow_dispatch:
-  # TEMPORARY: lets the branch iterate before this file is on the default
-  # branch (workflow_dispatch only works from there). Remove before merging.
-  push:
-    branches: [feat/ios-screenshots]
 
 concurrency:
   group: ios-screenshots-${{ github.ref }}
