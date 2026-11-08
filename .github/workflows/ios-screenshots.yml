@@ -1,0 +1,224 @@
+name: iOS App Store screenshots
+
+# Captures App Store screenshots of the Rafiq Al-Quran Flutter app
+# (mobile/flutter/) on iOS simulators: one 6.9-inch iPhone and one 13-inch iPad.
+# integration_test/screenshots_test.dart drives the real app with seeded,
+# device-local study data; test_driver/screenshots_driver.dart saves each PNG.
+# Simulator builds need no signing and no secrets. The result is the
+# `app-store-screenshots` artifact with iphone/ and ipad/ folders.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: mobile/flutter
+
+jobs:
+  screenshots:
+    runs-on: macos-26
+    timeout-minutes: 75
+    env:
+      # Screens captured per device by the integration test.
+      EXPECTED_SCREENSHOTS: 7
+      SHOTS: ${{ github.workspace }}/screenshots
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          # Newest Xcode 26 on the image, as in ios-testflight.yml.
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          sudo xcode-select -s "${XC:-/Applications/Xcode.app}"
+          xcodebuild -version
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The Quran dataset is not in the repo (see docs/FLUTTER-PORT-MAP.md section 3):
+      # import it from Quran.com, export the Android TSVs, then copy them into the
+      # Flutter asset folders (translations split per language).
+      - name: Generate the dataset assets
+        working-directory: .
+        run: |
+          npm install --no-audit --no-fund
+          npm run import:quran -w server
+          node mobile/android/scripts/exportAssets.js
+          node mobile/flutter/tool/sync_assets.mjs
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Pick simulators
+        id: sims
+        working-directory: .
+        run: |
+          xcrun simctl list runtimes available
+          xcrun simctl list devices available -j > "$RUNNER_TEMP/devices.json"
+          xcrun simctl list devicetypes -j > "$RUNNER_TEMP/devicetypes.json"
+          xcrun simctl list runtimes available -j > "$RUNNER_TEMP/runtimes.json"
+          python3 - "$RUNNER_TEMP" <<'PY'
+          import json, os, re, subprocess, sys
+
+          tmp = sys.argv[1]
+          devices = json.load(open(os.path.join(tmp, "devices.json")))["devices"]
+          devicetypes = json.load(open(os.path.join(tmp, "devicetypes.json")))["devicetypes"]
+          runtimes = json.load(open(os.path.join(tmp, "runtimes.json")))["runtimes"]
+
+          def version(identifier):
+              m = re.search(r"iOS-(\d+)-(\d+)(?:-(\d+))?$", identifier)
+              return tuple(int(x or 0) for x in m.groups()) if m else None
+
+          # Available iOS simulators, newest runtime first.
+          available = []
+          for runtime, items in devices.items():
+              v = version(runtime)
+              if v is None:
+                  continue
+              for d in items:
+                  if d.get("isAvailable", True):
+                      available.append((v, d["name"], d["udid"]))
+          available.sort(key=lambda item: item[0], reverse=True)
+
+          ios_runtimes = sorted(
+              (r for r in runtimes if r.get("platform") == "iOS" and r.get("isAvailable", True)),
+              key=lambda r: version(r["identifier"]) or (0,), reverse=True)
+
+          # 6.9-inch iPhone (1320x2868), 6.7-inch accepted too (1290x2796);
+          # 13-inch iPad (2064x2752), 12.9-inch accepted too (2048x2732).
+          kinds = {
+              "iphone": [
+                  lambda n: n == "iPhone 17 Pro Max",
+                  lambda n: n == "iPhone 16 Pro Max",
+                  lambda n: re.fullmatch(r"iPhone \d+ Pro Max", n) is not None,
+              ],
+              "ipad": [
+                  lambda n: "iPad Pro 13" in n,
+                  lambda n: "iPad Pro (12.9-inch)" in n,
+              ],
+          }
+
+          def pick(rules):
+              for rule in rules:
+                  for v, name, udid in available:
+                      if rule(name):
+                          return name, udid
+              # Not on the image: create one from the device types and the newest runtime.
+              for rule in rules:
+                  for dt in devicetypes:
+                      if not rule(dt["name"]):
+                          continue
+                      for rt in ios_runtimes:
+                          supported = [s["identifier"] for s in rt.get("supportedDeviceTypes", [])]
+                          if supported and dt["identifier"] not in supported:
+                              continue
+                          udid = subprocess.check_output(
+                              ["xcrun", "simctl", "create", "Screens " + dt["name"], dt["identifier"], rt["identifier"]],
+                              text=True).strip()
+                          return dt["name"] + " (created)", udid
+              return None, None
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              for kind, rules in kinds.items():
+                  name, udid = pick(rules)
+                  if not udid:
+                      print(f"::error::No simulator found for {kind}")
+                      sys.exit(1)
+                  print(f"{kind}: {name} {udid}")
+                  out.write(f"{kind}_name={name}\n{kind}_udid={udid}\n")
+          PY
+
+      - name: Screenshots on ${{ steps.sims.outputs.iphone_name }}
+        env:
+          UDID: ${{ steps.sims.outputs.iphone_udid }}
+          SCREENSHOT_DIR: ${{ env.SHOTS }}/iphone
+        run: |
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl ui "$UDID" appearance light || true
+          flutter drive \
+            --driver=test_driver/screenshots_driver.dart \
+            --target=integration_test/screenshots_test.dart \
+            -d "$UDID"
+          xcrun simctl shutdown "$UDID" || true
+
+      - name: Screenshots on ${{ steps.sims.outputs.ipad_name }}
+        env:
+          UDID: ${{ steps.sims.outputs.ipad_udid }}
+          SCREENSHOT_DIR: ${{ env.SHOTS }}/ipad
+        run: |
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl ui "$UDID" appearance light || true
+          flutter drive \
+            --driver=test_driver/screenshots_driver.dart \
+            --target=integration_test/screenshots_test.dart \
+            -d "$UDID"
+          xcrun simctl shutdown "$UDID" || true
+
+      - name: Check screenshot sizes
+        working-directory: .
+        run: |
+          fail=0
+          echo "| File | Size |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          check() {
+            dir="$1"; shift
+            count=0
+            for f in "$SHOTS/$dir"/*.png; do
+              [ -e "$f" ] || continue
+              count=$((count + 1))
+              w=$(sips -g pixelWidth "$f" | awk '/pixelWidth/ {print $2}')
+              h=$(sips -g pixelHeight "$f" | awk '/pixelHeight/ {print $2}')
+              size="${w}x${h}"
+              ok=0
+              for accepted in "$@"; do [ "$size" = "$accepted" ] && ok=1; done
+              if [ "$ok" = 1 ]; then
+                echo "ok    $dir/$(basename "$f")  $size"
+              else
+                echo "::error::$dir/$(basename "$f") is $size; App Store accepts $*"
+                fail=1
+              fi
+              echo "| $dir/$(basename "$f") | $size |" >> "$GITHUB_STEP_SUMMARY"
+            done
+            if [ "$count" -ne "$EXPECTED_SCREENSHOTS" ]; then
+              echo "::error::$dir has $count screenshots, expected $EXPECTED_SCREENSHOTS"
+              fail=1
+            fi
+          }
+          check iphone 1320x2868 1290x2796
+          check ipad 2064x2752 2048x2732
+          exit "$fail"
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: screenshots/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload partial screenshots for debugging
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-debug
+          path: screenshots/
+          retention-days: 7
+          if-no-files-found: ignore
