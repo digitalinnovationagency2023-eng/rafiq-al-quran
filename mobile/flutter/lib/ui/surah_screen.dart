@@ -149,6 +149,10 @@ class _SurahScreenState extends State<SurahScreen> {
     switch (_pane) {
       case _Pane.list:
         return ListView.separated(
+          // Explicit padding: without it the list adds the top safe-area inset
+          // again (RafiqBar already draws under the status bar), leaving an
+          // empty band above Al-Fatihah on iOS.
+          padding: const EdgeInsets.only(bottom: 20),
           itemCount: _visible.length,
           separatorBuilder: (_, _) => Container(height: 1, color: palette.line),
           itemBuilder: (context, index) => _chapterRow(palette, _dataset!.chapter(_visible[index])!),
